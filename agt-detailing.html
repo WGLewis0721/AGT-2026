@@ -1,0 +1,2350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A Gentlemen's Touch | Full Luxury Mobile Detailing</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400&family=Bebas+Neue&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --black: #0a0a0a;
+    --black-soft: #111111;
+    --black-card: #161616;
+    --black-border: #1e1e1e;
+    --gold: #C9A84C;
+    --gold-light: #E8C96B;
+    --gold-dark: #9A7A2E;
+    --white: #FFFFFF;
+    --white-soft: #F0EDE8;
+    --white-muted: #9A9A9A;
+    --silver: #C0C0C0;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--black);
+    color: var(--white);
+    font-family: 'Montserrat', sans-serif;
+    overflow-x: hidden;
+    cursor: default;
+  }
+
+  /* ─── NOISE TEXTURE OVERLAY ─── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 9999;
+    opacity: 0.4;
+  }
+
+  /* ─── SCROLLBAR ─── */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: var(--black); }
+  ::-webkit-scrollbar-thumb { background: var(--gold); border-radius: 2px; }
+
+  /* ─── NAV ─── */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 1000;
+    padding: 24px 60px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: linear-gradient(180deg, rgba(10,10,10,0.98) 0%, transparent 100%);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid rgba(201,168,76,0.1);
+    transition: all 0.3s ease;
+  }
+
+  nav.scrolled {
+    padding: 16px 60px;
+    background: rgba(10,10,10,0.98);
+    border-bottom: 1px solid rgba(201,168,76,0.25);
+  }
+
+  .nav-logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    letter-spacing: 3px;
+    color: var(--white);
+    text-decoration: none;
+  }
+
+  .nav-logo span { color: var(--gold); }
+
+  .nav-links {
+    display: flex;
+    gap: 40px;
+    list-style: none;
+  }
+
+  .nav-links a {
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--white-muted);
+    text-decoration: none;
+    transition: color 0.3s;
+    font-weight: 500;
+  }
+
+  .nav-links a:hover { color: var(--gold); }
+
+  .nav-cta {
+    background: transparent;
+    border: 1px solid var(--gold);
+    color: var(--gold);
+    padding: 10px 28px;
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.3s;
+  }
+
+  .nav-cta:hover {
+    background: var(--gold);
+    color: var(--black);
+  }
+
+  /* ─── HERO ─── */
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+    background: var(--black);
+  }
+
+  .hero-bg {
+    position: absolute;
+    inset: 0;
+    background: 
+      radial-gradient(ellipse 80% 60% at 70% 50%, rgba(201,168,76,0.07) 0%, transparent 60%),
+      radial-gradient(ellipse 40% 40% at 20% 80%, rgba(201,168,76,0.04) 0%, transparent 50%),
+      linear-gradient(135deg, #0a0a0a 0%, #111111 50%, #0d0d0d 100%);
+  }
+
+  /* Hex pattern */
+  .hero-bg::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg width='60' height='52' viewBox='0 0 60 52' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 0 L60 17.3 L60 34.6 L30 52 L0 34.6 L0 17.3 Z' fill='none' stroke='rgba(201,168,76,0.06)' stroke-width='1'/%3E%3C/svg%3E");
+    background-size: 60px 52px;
+    opacity: 0.8;
+  }
+
+  .hero-content {
+    position: relative;
+    z-index: 2;
+    padding: 0 60px;
+    max-width: 800px;
+    animation: heroFadeIn 1.2s ease forwards;
+  }
+
+  @keyframes heroFadeIn {
+    from { opacity: 0; transform: translateY(40px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .hero-eyebrow {
+    font-size: 11px;
+    letter-spacing: 6px;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-weight: 500;
+  }
+
+  .hero-eyebrow::before {
+    content: '';
+    width: 40px;
+    height: 1px;
+    background: var(--gold);
+  }
+
+  .hero-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(64px, 9vw, 120px);
+    font-weight: 300;
+    line-height: 0.9;
+    letter-spacing: -2px;
+    margin-bottom: 32px;
+  }
+
+  .hero-title em {
+    font-style: italic;
+    color: var(--gold);
+  }
+
+  .hero-sub {
+    font-size: 13px;
+    letter-spacing: 2px;
+    line-height: 1.9;
+    color: var(--white-muted);
+    max-width: 480px;
+    margin-bottom: 48px;
+    font-weight: 300;
+  }
+
+  .hero-actions {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .btn-gold {
+    background: var(--gold);
+    color: var(--black);
+    padding: 16px 40px;
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.3s;
+    display: inline-block;
+  }
+
+  .btn-gold:hover {
+    background: var(--gold-light);
+    transform: translateY(-2px);
+    box-shadow: 0 12px 40px rgba(201,168,76,0.3);
+  }
+
+  .btn-outline {
+    background: transparent;
+    color: var(--white);
+    padding: 16px 40px;
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 600;
+    border: 1px solid rgba(255,255,255,0.25);
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.3s;
+    display: inline-block;
+  }
+
+  .btn-outline:hover {
+    border-color: var(--gold);
+    color: var(--gold);
+  }
+
+  .hero-phone {
+    font-size: 13px;
+    color: var(--white-muted);
+    letter-spacing: 2px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .hero-phone strong { color: var(--white); font-weight: 400; }
+
+  .hero-badge {
+    position: absolute;
+    right: 80px;
+    bottom: 80px;
+    width: 140px;
+    height: 140px;
+    border: 1px solid rgba(201,168,76,0.3);
+    border-radius: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    animation: rotateBadge 20s linear infinite;
+  }
+
+  @keyframes rotateBadge {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  .hero-badge-inner {
+    animation: rotateBadge 20s linear infinite reverse;
+    text-align: center;
+  }
+
+  .hero-badge-inner span {
+    display: block;
+    font-size: 9px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--gold);
+    line-height: 1.6;
+    font-weight: 600;
+  }
+
+  /* ─── SECTION COMMON ─── */
+  section { padding: 120px 60px; }
+
+  .section-label {
+    font-size: 10px;
+    letter-spacing: 6px;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    font-weight: 500;
+  }
+
+  .section-label::before {
+    content: '';
+    width: 30px;
+    height: 1px;
+    background: var(--gold);
+  }
+
+  .section-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(42px, 5vw, 72px);
+    font-weight: 300;
+    line-height: 1.05;
+    letter-spacing: -1px;
+    margin-bottom: 24px;
+  }
+
+  .section-title em { font-style: italic; color: var(--gold); }
+
+  .divider {
+    width: 60px;
+    height: 1px;
+    background: linear-gradient(90deg, var(--gold), transparent);
+    margin-bottom: 24px;
+  }
+
+  /* ─── STATS BAR ─── */
+  .stats-bar {
+    background: var(--black-soft);
+    border-top: 1px solid var(--black-border);
+    border-bottom: 1px solid var(--black-border);
+    padding: 40px 60px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0;
+  }
+
+  .stat {
+    text-align: center;
+    padding: 0 20px;
+    border-right: 1px solid var(--black-border);
+  }
+
+  .stat:last-child { border-right: none; }
+
+  .stat-num {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 52px;
+    font-weight: 300;
+    color: var(--gold);
+    line-height: 1;
+    margin-bottom: 8px;
+  }
+
+  .stat-label {
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--white-muted);
+    font-weight: 500;
+  }
+
+  /* ─── ABOUT ─── */
+  .about {
+    background: var(--black);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 100px;
+    align-items: center;
+  }
+
+  .about-text p {
+    font-size: 14px;
+    line-height: 2;
+    color: var(--white-muted);
+    margin-bottom: 20px;
+    font-weight: 300;
+  }
+
+  .about-features {
+    margin-top: 40px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+
+  .feature-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .feature-icon {
+    width: 32px;
+    height: 32px;
+    border: 1px solid var(--gold);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 14px;
+  }
+
+  .feature-item span {
+    font-size: 11px;
+    letter-spacing: 1px;
+    color: var(--white-soft);
+    line-height: 1.6;
+    font-weight: 500;
+  }
+
+  .about-visual {
+    position: relative;
+  }
+
+  .about-img-container {
+    position: relative;
+    aspect-ratio: 4/5;
+    overflow: hidden;
+    background: var(--black-card);
+    border: 1px solid var(--black-border);
+  }
+
+  .about-img-placeholder {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #161616 0%, #1a1a1a 50%, #0f0f0f 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    color: var(--gold);
+  }
+
+  .about-img-placeholder svg { opacity: 0.4; }
+
+  .about-img-placeholder p {
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--white-muted);
+    font-weight: 500;
+  }
+
+  .about-accent-box {
+    position: absolute;
+    bottom: -30px;
+    left: -30px;
+    background: var(--gold);
+    color: var(--black);
+    padding: 30px;
+    text-align: center;
+    width: 160px;
+  }
+
+  .about-accent-box .big-num {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 48px;
+    font-weight: 700;
+    line-height: 1;
+    display: block;
+  }
+
+  .about-accent-box .small-text {
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    font-weight: 700;
+    margin-top: 6px;
+  }
+
+  /* ─── SERVICES ─── */
+  .services {
+    background: var(--black-soft);
+    border-top: 1px solid var(--black-border);
+  }
+
+  .services-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 80px;
+  }
+
+  .services-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2px;
+    background: var(--black-border);
+  }
+
+  .service-card {
+    background: var(--black-card);
+    padding: 50px 40px;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.4s ease;
+    cursor: pointer;
+  }
+
+  .service-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%;
+    height: 2px;
+    background: linear-gradient(90deg, var(--gold), transparent);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.4s ease;
+  }
+
+  .service-card:hover::before { transform: scaleX(1); }
+
+  .service-card:hover {
+    background: #1a1a1a;
+    transform: translateY(-4px);
+  }
+
+  .service-num {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 80px;
+    font-weight: 300;
+    color: rgba(201,168,76,0.08);
+    position: absolute;
+    top: 20px; right: 30px;
+    line-height: 1;
+    pointer-events: none;
+  }
+
+  .service-icon {
+    font-size: 28px;
+    margin-bottom: 24px;
+  }
+
+  .service-name {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 26px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    letter-spacing: -0.5px;
+  }
+
+  .service-desc {
+    font-size: 12px;
+    line-height: 1.9;
+    color: var(--white-muted);
+    margin-bottom: 24px;
+    font-weight: 300;
+  }
+
+  .service-price {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 32px;
+    color: var(--gold);
+    font-weight: 600;
+  }
+
+  .service-price span {
+    font-size: 12px;
+    color: var(--white-muted);
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 300;
+    letter-spacing: 2px;
+  }
+
+  /* ─── PACKAGES ─── */
+  .packages {
+    background: var(--black);
+  }
+
+  .packages-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+    margin-top: 80px;
+  }
+
+  .package-card {
+    border: 1px solid var(--black-border);
+    padding: 50px 40px;
+    position: relative;
+    transition: all 0.4s;
+    background: var(--black-card);
+  }
+
+  .package-card.featured {
+    border-color: var(--gold);
+    background: linear-gradient(180deg, rgba(201,168,76,0.04) 0%, var(--black-card) 100%);
+  }
+
+  .package-card.featured::before {
+    content: 'MOST POPULAR';
+    position: absolute;
+    top: -1px; left: 50%;
+    transform: translateX(-50%);
+    background: var(--gold);
+    color: var(--black);
+    font-size: 9px;
+    letter-spacing: 3px;
+    padding: 6px 20px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .package-card:hover {
+    border-color: rgba(201,168,76,0.5);
+    transform: translateY(-6px);
+    box-shadow: 0 30px 60px rgba(0,0,0,0.5);
+  }
+
+  .package-size {
+    font-size: 10px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 12px;
+    font-weight: 600;
+  }
+
+  .package-name {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 36px;
+    font-weight: 300;
+    margin-bottom: 8px;
+  }
+
+  .package-time {
+    font-size: 11px;
+    color: var(--white-muted);
+    letter-spacing: 2px;
+    margin-bottom: 32px;
+    font-weight: 300;
+  }
+
+  .package-price {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 64px;
+    color: var(--gold);
+    font-weight: 300;
+    line-height: 1;
+    margin-bottom: 8px;
+  }
+
+  .package-price-note {
+    font-size: 10px;
+    color: var(--white-muted);
+    letter-spacing: 1px;
+    margin-bottom: 36px;
+    font-weight: 300;
+  }
+
+  .package-divider {
+    width: 100%;
+    height: 1px;
+    background: var(--black-border);
+    margin-bottom: 32px;
+  }
+
+  .package-features {
+    list-style: none;
+    margin-bottom: 40px;
+  }
+
+  .package-features li {
+    font-size: 12px;
+    color: var(--white-muted);
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-weight: 300;
+    letter-spacing: 0.5px;
+  }
+
+  .package-features li::before {
+    content: '✦';
+    color: var(--gold);
+    font-size: 8px;
+    flex-shrink: 0;
+  }
+
+  .btn-package {
+    width: 100%;
+    padding: 16px;
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 700;
+    border: 1px solid var(--gold);
+    background: transparent;
+    color: var(--gold);
+    cursor: pointer;
+    transition: all 0.3s;
+  }
+
+  .btn-package:hover, .package-card.featured .btn-package {
+    background: var(--gold);
+    color: var(--black);
+  }
+
+  /* ─── ADD-ONS ─── */
+  .addons {
+    background: var(--black-soft);
+    border-top: 1px solid var(--black-border);
+  }
+
+  .addons-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 2px;
+    background: var(--black-border);
+    margin-top: 80px;
+  }
+
+  .addon-card {
+    background: var(--black-card);
+    padding: 36px 28px;
+    transition: all 0.3s;
+    cursor: pointer;
+    position: relative;
+  }
+
+  .addon-card:hover {
+    background: #1c1c1c;
+  }
+
+  .addon-card.selected {
+    background: rgba(201,168,76,0.08);
+  }
+
+  .addon-card.selected::after {
+    content: '✦';
+    position: absolute;
+    top: 16px; right: 16px;
+    color: var(--gold);
+    font-size: 12px;
+  }
+
+  .addon-icon {
+    font-size: 24px;
+    margin-bottom: 16px;
+  }
+
+  .addon-name {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    letter-spacing: 0.5px;
+  }
+
+  .addon-desc {
+    font-size: 11px;
+    color: var(--white-muted);
+    line-height: 1.7;
+    font-weight: 300;
+    margin-bottom: 16px;
+  }
+
+  .addon-price {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 24px;
+    color: var(--gold);
+    font-weight: 600;
+  }
+
+  /* ─── BOOKING ─── */
+  .booking {
+    background: var(--black);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .booking::before {
+    content: '';
+    position: absolute;
+    top: 0; right: 0;
+    width: 50%;
+    height: 100%;
+    background: radial-gradient(ellipse at right center, rgba(201,168,76,0.05) 0%, transparent 60%);
+  }
+
+  .booking-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 80px;
+    align-items: start;
+    position: relative;
+    z-index: 1;
+  }
+
+  .booking-form {
+    background: var(--black-card);
+    border: 1px solid var(--black-border);
+    padding: 50px;
+  }
+
+  .form-section-title {
+    font-size: 10px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 24px;
+    margin-top: 36px;
+    font-weight: 600;
+  }
+
+  .form-section-title:first-child { margin-top: 0; }
+
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  .form-group {
+    margin-bottom: 16px;
+  }
+
+  .form-group label {
+    display: block;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--white-muted);
+    margin-bottom: 8px;
+    font-weight: 500;
+  }
+
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    width: 100%;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--black-border);
+    color: var(--white);
+    padding: 14px 16px;
+    font-size: 13px;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 300;
+    outline: none;
+    transition: border-color 0.3s;
+    -webkit-appearance: none;
+  }
+
+  .form-group input:focus,
+  .form-group select:focus,
+  .form-group textarea:focus {
+    border-color: var(--gold);
+  }
+
+  .form-group select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%23C9A84C' stroke-width='1.5'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 16px center;
+    background-color: rgba(255,255,255,0.03);
+    cursor: pointer;
+  }
+
+  .form-group select option {
+    background: #1a1a1a;
+  }
+
+  .form-group textarea {
+    height: 100px;
+    resize: none;
+  }
+
+  /* Date picker */
+  .date-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+    margin-bottom: 16px;
+  }
+
+  .date-cell {
+    aspect-ratio: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: all 0.2s;
+    border-radius: 2px;
+    font-weight: 400;
+  }
+
+  .date-cell:hover { border-color: var(--gold); color: var(--gold); }
+  .date-cell.selected { background: var(--gold); color: var(--black); font-weight: 700; }
+  .date-cell.disabled { opacity: 0.2; cursor: not-allowed; }
+  .date-cell.today { border-color: rgba(201,168,76,0.3); }
+
+  .date-day-label {
+    font-size: 9px;
+    letter-spacing: 1px;
+    color: var(--white-muted);
+    text-align: center;
+    padding: 4px 0;
+    font-weight: 600;
+  }
+
+  /* Time slots */
+  .time-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-bottom: 24px;
+  }
+
+  .time-slot {
+    padding: 10px 8px;
+    text-align: center;
+    font-size: 11px;
+    border: 1px solid var(--black-border);
+    cursor: pointer;
+    transition: all 0.2s;
+    font-weight: 400;
+    letter-spacing: 0.5px;
+  }
+
+  .time-slot:hover { border-color: var(--gold); color: var(--gold); }
+  .time-slot.selected { background: var(--gold); color: var(--black); border-color: var(--gold); font-weight: 700; }
+
+  /* Deposit & waiver */
+  .deposit-box {
+    background: rgba(201,168,76,0.05);
+    border: 1px solid rgba(201,168,76,0.2);
+    padding: 24px;
+    margin-bottom: 20px;
+  }
+
+  .deposit-box h4 {
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 8px;
+    font-weight: 600;
+  }
+
+  .deposit-box p {
+    font-size: 12px;
+    color: var(--white-muted);
+    line-height: 1.7;
+    font-weight: 300;
+  }
+
+  .deposit-amount {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 36px;
+    color: var(--gold);
+    font-weight: 600;
+    display: block;
+    margin-top: 8px;
+  }
+
+  .waiver-check {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    margin-bottom: 24px;
+  }
+
+  .waiver-check input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    min-width: 16px;
+    margin-top: 2px;
+    accent-color: var(--gold);
+    cursor: pointer;
+  }
+
+  .waiver-check label {
+    font-size: 11px;
+    color: var(--white-muted);
+    line-height: 1.7;
+    cursor: pointer;
+    font-weight: 300;
+  }
+
+  .waiver-check label a {
+    color: var(--gold);
+    text-decoration: underline;
+  }
+
+  .btn-book {
+    width: 100%;
+    background: var(--gold);
+    color: var(--black);
+    border: none;
+    padding: 20px;
+    font-size: 12px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s;
+    margin-top: 8px;
+  }
+
+  .btn-book:hover {
+    background: var(--gold-light);
+    box-shadow: 0 12px 40px rgba(201,168,76,0.4);
+  }
+
+  /* Booking sidebar info */
+  .booking-info .section-label { margin-bottom: 40px; }
+
+  .info-card {
+    border-left: 2px solid var(--gold);
+    padding: 28px 28px;
+    background: var(--black-card);
+    margin-bottom: 24px;
+  }
+
+  .info-card h4 {
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--white);
+    margin-bottom: 8px;
+    font-weight: 600;
+  }
+
+  .info-card p {
+    font-size: 12px;
+    color: var(--white-muted);
+    line-height: 1.8;
+    font-weight: 300;
+  }
+
+  .contact-detail {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 20px 0;
+    border-bottom: 1px solid var(--black-border);
+  }
+
+  .contact-detail:last-child { border-bottom: none; }
+
+  .contact-detail .icon {
+    width: 44px;
+    height: 44px;
+    border: 1px solid rgba(201,168,76,0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+
+  .contact-detail .info h5 {
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--white-muted);
+    font-weight: 500;
+    margin-bottom: 4px;
+  }
+
+  .contact-detail .info p {
+    font-size: 14px;
+    color: var(--white);
+    font-weight: 400;
+  }
+
+  /* ─── TESTIMONIALS ─── */
+  .testimonials {
+    background: var(--black-soft);
+    border-top: 1px solid var(--black-border);
+    text-align: center;
+  }
+
+  .testimonials-header { margin-bottom: 80px; }
+  .testimonials-header .section-label { justify-content: center; }
+  .testimonials-header .section-label::before { display: none; }
+
+  .testimonials-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+  }
+
+  .testimonial-card {
+    background: var(--black-card);
+    border: 1px solid var(--black-border);
+    padding: 44px 36px;
+    text-align: left;
+    position: relative;
+    transition: all 0.3s;
+  }
+
+  .testimonial-card:hover {
+    border-color: rgba(201,168,76,0.25);
+    transform: translateY(-4px);
+  }
+
+  .testimonial-card::before {
+    content: '\201C';
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 120px;
+    color: rgba(201,168,76,0.08);
+    position: absolute;
+    top: 10px; left: 20px;
+    line-height: 1;
+    pointer-events: none;
+  }
+
+  .stars {
+    color: var(--gold);
+    font-size: 12px;
+    letter-spacing: 3px;
+    margin-bottom: 20px;
+  }
+
+  .testimonial-text {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 18px;
+    font-style: italic;
+    font-weight: 300;
+    line-height: 1.7;
+    color: var(--white-soft);
+    margin-bottom: 28px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .testimonial-author {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .author-avatar {
+    width: 44px;
+    height: 44px;
+    background: linear-gradient(135deg, var(--gold-dark), var(--gold));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--black);
+    flex-shrink: 0;
+  }
+
+  .author-name {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 1px;
+  }
+
+  .author-vehicle {
+    font-size: 11px;
+    color: var(--white-muted);
+    font-weight: 300;
+    letter-spacing: 0.5px;
+  }
+
+  /* ─── PORTFOLIO ─── */
+  .portfolio {
+    background: var(--black);
+  }
+
+  .portfolio-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: auto auto;
+    gap: 4px;
+    margin-top: 80px;
+  }
+
+  .portfolio-item {
+    aspect-ratio: 4/3;
+    background: var(--black-card);
+    border: 1px solid var(--black-border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 12px;
+    color: var(--white-muted);
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.4s;
+  }
+
+  .portfolio-item:first-child {
+    grid-column: span 2;
+    grid-row: span 2;
+    aspect-ratio: auto;
+  }
+
+  .portfolio-item:hover .portfolio-overlay {
+    opacity: 1;
+  }
+
+  .portfolio-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .portfolio-placeholder svg { opacity: 0.2; }
+
+  .portfolio-placeholder p {
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    font-weight: 500;
+    opacity: 0.4;
+  }
+
+  .portfolio-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, transparent 30%, rgba(10,10,10,0.9) 100%);
+    opacity: 0;
+    transition: opacity 0.4s;
+    display: flex;
+    align-items: flex-end;
+    padding: 28px;
+  }
+
+  .portfolio-overlay-text {
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--gold);
+    font-weight: 600;
+  }
+
+  /* ─── CTA BANNER ─── */
+  .cta-banner {
+    background: var(--gold);
+    padding: 80px 60px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 40px;
+  }
+
+  .cta-banner h2 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(36px, 4vw, 56px);
+    color: var(--black);
+    font-weight: 300;
+    line-height: 1.1;
+  }
+
+  .cta-banner p {
+    color: rgba(0,0,0,0.6);
+    font-size: 13px;
+    margin-top: 12px;
+    font-weight: 400;
+  }
+
+  .btn-black {
+    background: var(--black);
+    color: var(--white);
+    padding: 18px 48px;
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    white-space: nowrap;
+    text-decoration: none;
+    display: inline-block;
+    transition: all 0.3s;
+    flex-shrink: 0;
+  }
+
+  .btn-black:hover {
+    background: #1a1a1a;
+    transform: translateY(-2px);
+  }
+
+  /* ─── FOOTER ─── */
+  footer {
+    background: var(--black-soft);
+    border-top: 1px solid var(--black-border);
+    padding: 80px 60px 40px;
+  }
+
+  .footer-top {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr;
+    gap: 60px;
+    margin-bottom: 60px;
+    padding-bottom: 60px;
+    border-bottom: 1px solid var(--black-border);
+  }
+
+  .footer-brand .logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    letter-spacing: 4px;
+    color: var(--white);
+    margin-bottom: 16px;
+  }
+
+  .footer-brand .logo span { color: var(--gold); }
+
+  .footer-brand p {
+    font-size: 12px;
+    color: var(--white-muted);
+    line-height: 1.9;
+    font-weight: 300;
+    max-width: 260px;
+  }
+
+  .footer-col h5 {
+    font-size: 10px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 24px;
+    font-weight: 600;
+  }
+
+  .footer-col ul {
+    list-style: none;
+  }
+
+  .footer-col ul li {
+    margin-bottom: 12px;
+  }
+
+  .footer-col ul li a {
+    font-size: 13px;
+    color: var(--white-muted);
+    text-decoration: none;
+    font-weight: 300;
+    transition: color 0.3s;
+    letter-spacing: 0.5px;
+  }
+
+  .footer-col ul li a:hover { color: var(--gold); }
+
+  .footer-bottom {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .footer-bottom p {
+    font-size: 11px;
+    color: var(--white-muted);
+    font-weight: 300;
+    letter-spacing: 1px;
+  }
+
+  .social-links {
+    display: flex;
+    gap: 16px;
+  }
+
+  .social-link {
+    width: 40px;
+    height: 40px;
+    border: 1px solid var(--black-border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--white-muted);
+    text-decoration: none;
+    font-size: 14px;
+    transition: all 0.3s;
+  }
+
+  .social-link:hover {
+    border-color: var(--gold);
+    color: var(--gold);
+  }
+
+  /* ─── CALENDAR MONTH HEADER ─── */
+  .cal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+  }
+
+  .cal-header button {
+    background: none;
+    border: 1px solid var(--black-border);
+    color: var(--white-muted);
+    width: 32px;
+    height: 32px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .cal-header button:hover {
+    border-color: var(--gold);
+    color: var(--gold);
+  }
+
+  .cal-month {
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    font-weight: 600;
+    color: var(--white);
+  }
+
+  /* ─── MOBILE ─── */
+  .hamburger {
+    display: none;
+    flex-direction: column;
+    gap: 5px;
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 4px;
+  }
+
+  .hamburger span {
+    width: 24px;
+    height: 1px;
+    background: var(--white);
+    transition: all 0.3s;
+  }
+
+  @media (max-width: 1024px) {
+    nav { padding: 20px 30px; }
+    nav.scrolled { padding: 14px 30px; }
+    .nav-links { gap: 24px; }
+    section { padding: 80px 30px; }
+    .hero-content { padding: 0 30px; }
+    .about { grid-template-columns: 1fr; gap: 60px; }
+    .about-img-container { max-width: 500px; }
+    .stats-bar { padding: 40px 30px; grid-template-columns: repeat(2, 1fr); }
+    .stat { border-right: none; border-bottom: 1px solid var(--black-border); padding: 20px; }
+    .stat:nth-child(odd) { border-right: 1px solid var(--black-border); }
+    .stat:nth-child(3), .stat:nth-child(4) { border-bottom: none; }
+    .services-grid { grid-template-columns: 1fr; }
+    .packages-grid { grid-template-columns: 1fr; }
+    .addons-grid { grid-template-columns: repeat(2, 1fr); }
+    .booking-layout { grid-template-columns: 1fr; }
+    .testimonials-grid { grid-template-columns: 1fr; }
+    .portfolio-grid { grid-template-columns: 1fr 1fr; }
+    .portfolio-item:first-child { grid-column: span 2; }
+    .footer-top { grid-template-columns: 1fr 1fr; gap: 40px; }
+    .cta-banner { flex-direction: column; text-align: center; }
+    .hero-badge { display: none; }
+  }
+
+  @media (max-width: 768px) {
+    .nav-links { display: none; }
+    .nav-cta { display: none; }
+    .hamburger { display: flex; }
+    .services-header { flex-direction: column; align-items: flex-start; gap: 20px; }
+    .form-row { grid-template-columns: 1fr; }
+    .footer-top { grid-template-columns: 1fr; }
+    .footer-bottom { flex-direction: column; text-align: center; }
+    .packages-grid { grid-template-columns: 1fr; }
+    .addons-grid { grid-template-columns: 1fr 1fr; }
+    .portfolio-grid { grid-template-columns: 1fr; }
+    .portfolio-item:first-child { grid-column: span 1; }
+  }
+
+  /* ─── FADE IN ANIMATIONS ─── */
+  .fade-in {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.7s ease, transform 0.7s ease;
+  }
+
+  .fade-in.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* ─── GOLD LINE ACCENT ─── */
+  .gold-line {
+    width: 100%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+    opacity: 0.3;
+    margin: 0;
+  }
+
+</style>
+</head>
+<body>
+
+<!-- ─── NAV ─── -->
+<nav id="mainNav">
+  <a href="#home" class="nav-logo">A <span>Gentlemen's</span> Touch</a>
+  <ul class="nav-links">
+    <li><a href="#about">About</a></li>
+    <li><a href="#services">Services</a></li>
+    <li><a href="#packages">Packages</a></li>
+    <li><a href="#portfolio">Portfolio</a></li>
+    <li><a href="#booking">Contact</a></li>
+  </ul>
+  <a href="tel:3342948228" style="color:var(--gold);font-size:12px;letter-spacing:2px;text-decoration:none;font-weight:600;display:none" id="navPhone">(334) 294-8228</a>
+  <a href="#booking" class="nav-cta">Book Now</a>
+  <button class="hamburger" onclick="toggleMenu()" aria-label="Menu">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+
+<!-- ─── HERO ─── -->
+<section class="hero" id="home">
+  <div class="hero-bg"></div>
+  <div class="hero-content">
+    <div class="hero-eyebrow">Full Luxury Mobile Detailing</div>
+    <h1 class="hero-title">
+      Your Car.<br>
+      <em>Immaculate.</em>
+    </h1>
+    <p class="hero-sub">We come to you. Premium mobile detailing service with luxury-grade products, meticulous attention to detail, and results that speak for themselves.</p>
+    <div class="hero-actions">
+      <a href="#booking" class="btn-gold">Book Appointment</a>
+      <a href="#packages" class="btn-outline">View Packages</a>
+    </div>
+    <div class="hero-phone" style="margin-top: 36px;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 014.69 6.11 19.79 19.79 0 011.62 2.52 2 2 0 013.69.5h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L7.91 8.15a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
+      <span>Call or Text: <strong>(334) 294-8228</strong></span>
+    </div>
+  </div>
+  <div class="hero-badge">
+    <div class="hero-badge-inner">
+      <span>Premium</span>
+      <span>★★★★★</span>
+      <span>Mobile</span>
+      <span>Detailing</span>
+    </div>
+  </div>
+</section>
+
+<!-- ─── STATS ─── -->
+<div class="stats-bar">
+  <div class="stat fade-in">
+    <div class="stat-num">500<span style="font-size:28px">+</span></div>
+    <div class="stat-label">Cars Detailed</div>
+  </div>
+  <div class="stat fade-in">
+    <div class="stat-num">5.0</div>
+    <div class="stat-label">Star Rating</div>
+  </div>
+  <div class="stat fade-in">
+    <div class="stat-num">100<span style="font-size:28px">%</span></div>
+    <div class="stat-label">Satisfaction</div>
+  </div>
+  <div class="stat fade-in">
+    <div class="stat-num">3</div>
+    <div class="stat-label">Years in Business</div>
+  </div>
+</div>
+
+<!-- ─── ABOUT ─── -->
+<section class="about" id="about">
+  <div class="about-text fade-in">
+    <div class="section-label">Who We Are</div>
+    <h2 class="section-title">The Art of<br><em>Pristine Detail</em></h2>
+    <div class="divider"></div>
+    <p>At A Gentlemen's Touch, we believe your vehicle deserves more than a basic wash. We bring a luxury detailing experience directly to your driveway, workplace, or wherever your day takes you.</p>
+    <p>Every vehicle we touch receives our full attention — from the deepest interior clean to a hand-finished exterior that turns heads. We use only premium, professional-grade products on every job.</p>
+    <div class="about-features">
+      <div class="feature-item">
+        <div class="feature-icon">🚗</div>
+        <span>We come to you — no drop-off needed</span>
+      </div>
+      <div class="feature-item">
+        <div class="feature-icon">✦</div>
+        <span>Luxury-grade products only</span>
+      </div>
+      <div class="feature-item">
+        <div class="feature-icon">🔒</div>
+        <span>Fully insured & professional</span>
+      </div>
+      <div class="feature-item">
+        <div class="feature-icon">⏱</div>
+        <span>On-time, every time</span>
+      </div>
+    </div>
+    <a href="#booking" class="btn-gold" style="margin-top:40px;display:inline-block">Get a Free Quote</a>
+  </div>
+  <div class="about-visual fade-in">
+    <div class="about-img-container">
+      <div class="about-img-placeholder">
+        <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="#C9A84C" stroke-width="0.8">
+          <rect x="1" y="3" width="15" height="13" rx="2"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>
+        </svg>
+        <p>Your Photos Go Here</p>
+      </div>
+    </div>
+    <div class="about-accent-box">
+      <span class="big-num">AGT</span>
+      <div class="small-text">Mobile Detailing</div>
+    </div>
+  </div>
+</section>
+
+<div class="gold-line"></div>
+
+<!-- ─── SERVICES ─── -->
+<section class="services" id="services">
+  <div class="services-header fade-in">
+    <div>
+      <div class="section-label">What We Offer</div>
+      <h2 class="section-title">Our <em>Services</em></h2>
+    </div>
+    <a href="#packages" class="btn-outline">See Packages & Pricing</a>
+  </div>
+  <div class="services-grid">
+    <div class="service-card fade-in">
+      <div class="service-num">01</div>
+      <div class="service-icon">🚿</div>
+      <div class="service-name">Exterior Detailing</div>
+      <p class="service-desc">Hand wash, bug & tar removal, clay bar treatment, wheel & tire cleaning, and a streak-free finish that makes your paint pop.</p>
+      <div class="service-price">Included <span>in all packages</span></div>
+    </div>
+    <div class="service-card fade-in">
+      <div class="service-num">02</div>
+      <div class="service-icon">🪑</div>
+      <div class="service-name">Interior Detailing</div>
+      <p class="service-desc">Deep vacuum, wipe-down of all surfaces, dashboard and console treatment, door panel cleaning, and interior window clarity.</p>
+      <div class="service-price">Included <span>in all packages</span></div>
+    </div>
+    <div class="service-card fade-in">
+      <div class="service-num">03</div>
+      <div class="service-icon">✨</div>
+      <div class="service-name">Hand Wax & Polish</div>
+      <p class="service-desc">Premium carnauba wax hand application and machine polish to restore depth, gloss, and protection to your paint surface.</p>
+      <div class="service-price">Add-On <span>available</span></div>
+    </div>
+    <div class="service-card fade-in">
+      <div class="service-num">04</div>
+      <div class="service-icon">🛡</div>
+      <div class="service-name">Ceramic Coating</div>
+      <p class="service-desc">Long-lasting hydrophobic protection that bonds to your clear coat — repels water, dirt, and UV rays for years of shine.</p>
+      <div class="service-price">Contact <span>for pricing</span></div>
+    </div>
+    <div class="service-card fade-in">
+      <div class="service-num">05</div>
+      <div class="service-icon">💡</div>
+      <div class="service-name">Headlight Restoration</div>
+      <p class="service-desc">Remove haze and yellowing from oxidized headlights. Improve visibility and restore that factory-clear appearance.</p>
+      <div class="service-price">Add-On <span>available</span></div>
+    </div>
+    <div class="service-card fade-in">
+      <div class="service-num">06</div>
+      <div class="service-icon">🌿</div>
+      <div class="service-name">Odor Elimination</div>
+      <p class="service-desc">Professional-grade odor neutralization treatment — not just a cover-up. Eliminates smoke, pet, and food odors at the source.</p>
+      <div class="service-price">Add-On <span>available</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── PACKAGES ─── -->
+<section class="packages" id="packages">
+  <div class="fade-in" style="text-align:center">
+    <div class="section-label" style="justify-content:center">
+      <span style="display:none">—</span>Pricing
+    </div>
+    <h2 class="section-title">Full Luxury <em>Detail Packages</em></h2>
+    <p style="font-size:13px;color:var(--white-muted);max-width:500px;margin:0 auto;line-height:1.8;font-weight:300">Choose the package that fits your vehicle's needs. Final price may vary based on vehicle condition and size after inspection.</p>
+  </div>
+  <div class="packages-grid">
+    <!-- Small -->
+    <div class="package-card fade-in">
+      <div class="package-size">Small Vehicle</div>
+      <div class="package-name">Full Luxury Detail</div>
+      <div class="package-time">⏱ Approx. 90 minutes</div>
+      <div class="package-price">$100</div>
+      <div class="package-price-note">Starting price · Final price after inspection</div>
+      <div class="package-divider"></div>
+      <ul class="package-features">
+        <li>Hand wash & bug removal</li>
+        <li>Vacuum & wipe interior</li>
+        <li>Interior & exterior window cleaning</li>
+        <li>Wheel & tire cleaning</li>
+        <li>Dashboard & console treatment</li>
+        <li>Door jamb wipe-down</li>
+      </ul>
+      <button class="btn-package" onclick="selectPackage('Small — Full Luxury Detail', 100)">Select Package</button>
+    </div>
+    <!-- Medium -->
+    <div class="package-card featured fade-in">
+      <div class="package-size">Medium Vehicle</div>
+      <div class="package-name">Full Luxury Detail</div>
+      <div class="package-time">⏱ Approx. 120 minutes</div>
+      <div class="package-price">$150</div>
+      <div class="package-price-note">Starting price · Final price after inspection</div>
+      <div class="package-divider"></div>
+      <ul class="package-features">
+        <li>Hand wash & bug removal</li>
+        <li>Vacuum & wipe interior</li>
+        <li>Interior & exterior window cleaning</li>
+        <li>Wheel & tire cleaning</li>
+        <li>Dashboard & console treatment</li>
+        <li>Door jamb wipe-down</li>
+      </ul>
+      <button class="btn-package" onclick="selectPackage('Medium — Full Luxury Detail', 150)">Select Package</button>
+    </div>
+    <!-- Large -->
+    <div class="package-card fade-in">
+      <div class="package-size">Large Vehicle / SUV / Truck</div>
+      <div class="package-name">Full Luxury Detail</div>
+      <div class="package-time">⏱ Approx. 150–180 minutes</div>
+      <div class="package-price">$200</div>
+      <div class="package-price-note">Starting price · Call for exact quote on oversized</div>
+      <div class="package-divider"></div>
+      <ul class="package-features">
+        <li>Hand wash & bug removal</li>
+        <li>Vacuum & wipe interior</li>
+        <li>Interior & exterior window cleaning</li>
+        <li>Wheel & tire cleaning</li>
+        <li>Dashboard & console treatment</li>
+        <li>Door jamb wipe-down</li>
+      </ul>
+      <button class="btn-package" onclick="selectPackage('Large — Full Luxury Detail', 200)">Select Package</button>
+    </div>
+  </div>
+</section>
+
+<!-- ─── ADD-ONS ─── -->
+<section class="addons" id="addons">
+  <div class="fade-in">
+    <div class="section-label">Customize Your Service</div>
+    <h2 class="section-title">Add-On <em>Services</em></h2>
+    <p style="font-size:13px;color:var(--white-muted);max-width:480px;line-height:1.8;font-weight:300;margin-top:8px">Enhance any package with our premium add-ons. Pricing determined after inspection.</p>
+  </div>
+  <div class="addons-grid">
+    <div class="addon-card fade-in" onclick="toggleAddon(this, 'Steam Cleaning')">
+      <div class="addon-icon">💨</div>
+      <div class="addon-name">Steam Cleaning</div>
+      <p class="addon-desc">Deep steam sanitization of interior surfaces, vents, and upholstery. Kills bacteria and allergens.</p>
+      <div class="addon-price">Price after inspection</div>
+    </div>
+    <div class="addon-card fade-in" onclick="toggleAddon(this, 'Interior Shampooing')">
+      <div class="addon-icon">🧴</div>
+      <div class="addon-name">Interior Shampooing</div>
+      <p class="addon-desc">Deep-clean carpets and fabric seats with hot water extraction for a like-new feel.</p>
+      <div class="addon-price">Price after inspection</div>
+    </div>
+    <div class="addon-card fade-in" onclick="toggleAddon(this, 'Hand Wax Upgrade')">
+      <div class="addon-icon">✨</div>
+      <div class="addon-name">Hand Wax Upgrade</div>
+      <p class="addon-desc">Premium carnauba wax hand applied to full exterior for deep gloss and paint protection.</p>
+      <div class="addon-price">Price after inspection</div>
+    </div>
+    <div class="addon-card fade-in" onclick="toggleAddon(this, 'Machine Polishing')">
+      <div class="addon-icon">🔄</div>
+      <div class="addon-name">Machine Polishing</div>
+      <p class="addon-desc">Remove light swirl marks, scratches, and oxidation for a showroom-quality finish.</p>
+      <div class="addon-price">Price after inspection</div>
+    </div>
+    <div class="addon-card fade-in" onclick="toggleAddon(this, 'Headlight Restoration')">
+      <div class="addon-icon">💡</div>
+      <div class="addon-name">Headlight Restoration</div>
+      <p class="addon-desc">Restore clarity to yellowed and hazed headlights for improved aesthetics and safety.</p>
+      <div class="addon-price">Price after inspection</div>
+    </div>
+    <div class="addon-card fade-in" onclick="toggleAddon(this, 'Leather Treatment')">
+      <div class="addon-icon">🪑</div>
+      <div class="addon-name">Leather Treatment</div>
+      <p class="addon-desc">Deep condition and protect leather seats and trim. Restores suppleness and prevents cracking.</p>
+      <div class="addon-price">Price after inspection</div>
+    </div>
+    <div class="addon-card fade-in" onclick="toggleAddon(this, 'Odor Removal')">
+      <div class="addon-icon">🌿</div>
+      <div class="addon-name">Odor Removal</div>
+      <p class="addon-desc">Professional-grade odor neutralization targeting smoke, pet, and food odors at the source.</p>
+      <div class="addon-price">Price after inspection</div>
+    </div>
+    <div class="addon-card fade-in" onclick="toggleAddon(this, 'Engine Bay Cleaning')">
+      <div class="addon-icon">⚙️</div>
+      <div class="addon-name">Engine Bay Cleaning</div>
+      <p class="addon-desc">Degrease and detail the engine bay for a clean, protected finish under the hood.</p>
+      <div class="addon-price">Price after inspection</div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── PORTFOLIO ─── -->
+<section class="portfolio" id="portfolio">
+  <div class="fade-in">
+    <div class="section-label">Before & After</div>
+    <h2 class="section-title">Our <em>Work</em></h2>
+    <p style="font-size:13px;color:var(--white-muted);max-width:480px;line-height:1.8;font-weight:300;margin-top:8px">Every vehicle tells a transformation story. These are ours.</p>
+  </div>
+  <div class="portfolio-grid">
+    <div class="portfolio-item fade-in" style="min-height:400px">
+      <div class="portfolio-placeholder">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#C9A84C" stroke-width="1">
+          <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
+        </svg>
+        <p>Featured Before & After</p>
+      </div>
+      <div class="portfolio-overlay">
+        <div class="portfolio-overlay-text">Black SUV Full Detail — Before & After ✦</div>
+      </div>
+    </div>
+    <div class="portfolio-item fade-in">
+      <div class="portfolio-placeholder">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#C9A84C" stroke-width="1"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+        <p>Add Photo</p>
+      </div>
+      <div class="portfolio-overlay"><div class="portfolio-overlay-text">Interior Detail ✦</div></div>
+    </div>
+    <div class="portfolio-item fade-in">
+      <div class="portfolio-placeholder">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#C9A84C" stroke-width="1"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+        <p>Add Photo</p>
+      </div>
+      <div class="portfolio-overlay"><div class="portfolio-overlay-text">Exterior Polish ✦</div></div>
+    </div>
+    <div class="portfolio-item fade-in">
+      <div class="portfolio-placeholder">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#C9A84C" stroke-width="1"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+        <p>Add Photo</p>
+      </div>
+      <div class="portfolio-overlay"><div class="portfolio-overlay-text">Wheel Detail ✦</div></div>
+    </div>
+    <div class="portfolio-item fade-in">
+      <div class="portfolio-placeholder">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#C9A84C" stroke-width="1"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+        <p>Add Photo</p>
+      </div>
+      <div class="portfolio-overlay"><div class="portfolio-overlay-text">Engine Bay ✦</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── TESTIMONIALS ─── -->
+<section class="testimonials">
+  <div class="testimonials-header fade-in">
+    <div class="section-label">Client Reviews</div>
+    <h2 class="section-title">What They're <em>Saying</em></h2>
+  </div>
+  <div class="testimonials-grid">
+    <div class="testimonial-card fade-in">
+      <div class="stars">★★★★★</div>
+      <p class="testimonial-text">"My truck has never looked this good — not even when I drove it off the lot. AGT paid attention to every single detail. I'll never go anywhere else."</p>
+      <div class="testimonial-author">
+        <div class="author-avatar">D</div>
+        <div>
+          <div class="author-name">David T.</div>
+          <div class="author-vehicle">2022 Ford F-150</div>
+        </div>
+      </div>
+    </div>
+    <div class="testimonial-card fade-in">
+      <div class="stars">★★★★★</div>
+      <p class="testimonial-text">"Booked online and they showed up on time with all their equipment. Interior was spotless, exterior was gleaming. Absolutely worth every penny."</p>
+      <div class="testimonial-author">
+        <div class="author-avatar">M</div>
+        <div>
+          <div class="author-name">Marcus W.</div>
+          <div class="author-vehicle">2021 BMW 5 Series</div>
+        </div>
+      </div>
+    </div>
+    <div class="testimonial-card fade-in">
+      <div class="stars">★★★★★</div>
+      <p class="testimonial-text">"They removed a coffee stain I thought was permanent. Car smells incredible and the paint looks like glass. Highly recommend the add-on package."</p>
+      <div class="testimonial-author">
+        <div class="author-avatar">J</div>
+        <div>
+          <div class="author-name">Jessica R.</div>
+          <div class="author-vehicle">2023 Cadillac Escalade</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── BOOKING ─── -->
+<section class="booking" id="booking">
+  <div class="booking-layout">
+    <div class="booking-info fade-in">
+      <div class="section-label">Schedule Your Service</div>
+      <h2 class="section-title">Book Your<br><em>Appointment</em></h2>
+      <p style="font-size:13px;color:var(--white-muted);line-height:1.9;font-weight:300;margin-bottom:48px">Ready to give your vehicle the treatment it deserves? Fill out the form and we'll confirm your booking within 24 hours.</p>
+
+      <div class="info-card">
+        <h4>Service Area</h4>
+        <p>We serve the greater Montgomery, AL area including Prattville, Pike Road, and surrounding communities. We come to your home, office, or any location of your choice.</p>
+      </div>
+      <div class="info-card">
+        <h4>What to Expect</h4>
+        <p>After booking, you'll receive a confirmation with your appointment details. A $25 deposit is required to secure your slot. The remaining balance is due upon service completion.</p>
+      </div>
+
+      <div style="margin-top:40px">
+        <div class="contact-detail">
+          <div class="icon">📞</div>
+          <div class="info">
+            <h5>Phone / Text</h5>
+            <p>(334) 294-8228</p>
+          </div>
+        </div>
+        <div class="contact-detail">
+          <div class="icon">✉️</div>
+          <div class="info">
+            <h5>Email</h5>
+            <p>gentlemenstouch5@gmail.com</p>
+          </div>
+        </div>
+        <div class="contact-detail">
+          <div class="icon">📘</div>
+          <div class="info">
+            <h5>Facebook</h5>
+            <p>AGT Mobile Detailing</p>
+          </div>
+        </div>
+        <div class="contact-detail">
+          <div class="icon">⏰</div>
+          <div class="info">
+            <h5>Hours</h5>
+            <p>Mon–Sat: 8:00 AM – 6:00 PM</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="booking-form fade-in">
+      <div class="form-section-title">Personal Information</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>First Name *</label>
+          <input type="text" placeholder="John" id="firstName">
+        </div>
+        <div class="form-group">
+          <label>Last Name *</label>
+          <input type="text" placeholder="Smith" id="lastName">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Phone *</label>
+          <input type="tel" placeholder="(334) 000-0000" id="phone">
+        </div>
+        <div class="form-group">
+          <label>Email *</label>
+          <input type="email" placeholder="john@email.com" id="email">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Service Address *</label>
+        <input type="text" placeholder="123 Main St, Montgomery, AL" id="address">
+      </div>
+
+      <div class="form-section-title">Vehicle & Package</div>
+      <div class="form-group">
+        <label>Vehicle Year, Make & Model *</label>
+        <input type="text" placeholder="e.g. 2022 Ford F-150 Platinum" id="vehicle">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Vehicle Color</label>
+          <input type="text" placeholder="e.g. Midnight Black" id="vehicleColor">
+        </div>
+        <div class="form-group">
+          <label>Vehicle Size</label>
+          <select id="vehicleSize">
+            <option value="">Select size</option>
+            <option>Small (Sedan, Coupe)</option>
+            <option>Medium (Midsize SUV, Crossover)</option>
+            <option>Large (Full-Size SUV, Truck)</option>
+            <option>XL (Oversized / Commercial)</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Detailing Package *</label>
+        <select id="packageSelect">
+          <option value="">Select a package</option>
+          <option value="Small — Full Luxury Detail — $100">Small — Full Luxury Detail — Starting at $100</option>
+          <option value="Medium — Full Luxury Detail — $150">Medium — Full Luxury Detail — Starting at $150</option>
+          <option value="Large — Full Luxury Detail — $200">Large — Full Luxury Detail — Starting at $200</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Add-On Services</label>
+        <select id="addonSelect" multiple style="height:100px">
+          <option>Steam Cleaning</option>
+          <option>Interior Shampooing</option>
+          <option>Hand Wax Upgrade</option>
+          <option>Machine Polishing</option>
+          <option>Headlight Restoration</option>
+          <option>Leather Treatment</option>
+          <option>Odor Removal</option>
+          <option>Engine Bay Cleaning</option>
+        </select>
+        <p style="font-size:10px;color:var(--white-muted);margin-top:6px;letter-spacing:1px">Hold Ctrl / Cmd to select multiple add-ons</p>
+      </div>
+
+      <div class="form-section-title">Select a Date</div>
+      <div class="cal-header">
+        <button onclick="prevMonth()">‹</button>
+        <span class="cal-month" id="calMonth"></span>
+        <button onclick="nextMonth()">›</button>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:8px">
+        <div class="date-day-label">SU</div>
+        <div class="date-day-label">MO</div>
+        <div class="date-day-label">TU</div>
+        <div class="date-day-label">WE</div>
+        <div class="date-day-label">TH</div>
+        <div class="date-day-label">FR</div>
+        <div class="date-day-label">SA</div>
+      </div>
+      <div class="date-grid" id="dateGrid"></div>
+
+      <div class="form-section-title">Select a Time</div>
+      <div class="time-grid" id="timeGrid"></div>
+
+      <div class="form-group">
+        <label>Special Requests / Notes</label>
+        <textarea placeholder="Pet hair, heavy stains, specific concerns..." id="notes"></textarea>
+      </div>
+
+      <div class="form-section-title">Deposit & Payment</div>
+      <div class="deposit-box">
+        <h4>Booking Deposit Required</h4>
+        <p>A $25 deposit is required to reserve your appointment. This amount will be applied to your total service cost.</p>
+        <span class="deposit-amount">$25.00</span>
+      </div>
+      <div class="form-group">
+        <label>Card Number</label>
+        <input type="text" placeholder="•••• •••• •••• ••••" maxlength="19" id="cardNum" oninput="formatCard(this)">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Expiration Date</label>
+          <input type="text" placeholder="MM / YY" maxlength="7" id="cardExp" oninput="formatExp(this)">
+        </div>
+        <div class="form-group">
+          <label>CVV</label>
+          <input type="text" placeholder="•••" maxlength="4" id="cardCvv">
+        </div>
+      </div>
+
+      <div class="form-section-title">Service Waiver</div>
+      <div style="background:rgba(255,255,255,0.02);border:1px solid var(--black-border);padding:20px;margin-bottom:20px;max-height:120px;overflow-y:auto">
+        <p style="font-size:11px;color:var(--white-muted);line-height:1.9;font-weight:300">
+          By booking this service, I acknowledge that A Gentlemen's Touch Mobile Detailing will perform services on my vehicle. I understand that pricing is subject to change based on vehicle condition assessed during inspection. I agree that AGT is not responsible for pre-existing damage, scratches, or paint defects. I authorize the $25 deposit charge to my card. I understand that cancellations must be made 24+ hours in advance for a refund. I confirm all information provided is accurate.
+        </p>
+      </div>
+      <div class="waiver-check">
+        <input type="checkbox" id="waiverCheck">
+        <label for="waiverCheck">I have read and agree to the <a href="#">Service Agreement & Waiver</a>. I authorize the $25 deposit charge and understand the cancellation policy.</label>
+      </div>
+
+      <button class="btn-book" onclick="submitBooking()">✦ Confirm Booking & Pay $25 Deposit ✦</button>
+    </div>
+  </div>
+</section>
+
+<!-- ─── CTA BANNER ─── -->
+<div class="cta-banner">
+  <div>
+    <h2>Ready for an Immaculate Ride?</h2>
+    <p>We come to you. No drop-off. No hassle. Just a stunning result.</p>
+  </div>
+  <a href="tel:3342948228" class="btn-black">Call (334) 294-8228</a>
+</div>
+
+<!-- ─── FOOTER ─── -->
+<footer>
+  <div class="footer-top">
+    <div class="footer-brand">
+      <div class="logo">A <span>Gentlemen's</span> Touch</div>
+      <p>Full luxury mobile detailing delivered to your door. Premium products, meticulous care, and results that turn heads.</p>
+      <div style="margin-top:24px;font-size:12px;color:var(--gold);letter-spacing:1px">★★★★★ 5.0 Rating on Google & Facebook</div>
+    </div>
+    <div class="footer-col">
+      <h5>Services</h5>
+      <ul>
+        <li><a href="#services">Exterior Detailing</a></li>
+        <li><a href="#services">Interior Detailing</a></li>
+        <li><a href="#services">Hand Wax & Polish</a></li>
+        <li><a href="#services">Ceramic Coating</a></li>
+        <li><a href="#addons">Add-On Services</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h5>Company</h5>
+      <ul>
+        <li><a href="#about">About Us</a></li>
+        <li><a href="#portfolio">Portfolio</a></li>
+        <li><a href="#packages">Pricing</a></li>
+        <li><a href="#booking">Book Now</a></li>
+        <li><a href="#">Waiver & Terms</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h5>Contact</h5>
+      <ul>
+        <li><a href="tel:3342948228">(334) 294-8228</a></li>
+        <li><a href="mailto:gentlemenstouch5@gmail.com">gentlemenstouch5@gmail.com</a></li>
+        <li><a href="#">Montgomery, AL Area</a></li>
+        <li><a href="#">Mon–Sat: 8AM–6PM</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <p>© 2025 A Gentlemen's Touch Mobile Detailing. All rights reserved.</p>
+    <div class="social-links">
+      <a href="#" class="social-link" title="Facebook">f</a>
+      <a href="#" class="social-link" title="Instagram">in</a>
+      <a href="#" class="social-link" title="Google">G</a>
+    </div>
+  </div>
+</footer>
+
+<!-- ─── SUCCESS MODAL ─── -->
+<div id="successModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.9);z-index:9000;display:none;align-items:center;justify-content:center;">
+  <div style="background:var(--black-card);border:1px solid var(--gold);padding:60px;max-width:500px;width:90%;text-align:center">
+    <div style="font-size:40px;margin-bottom:24px">✦</div>
+    <h3 style="font-family:'Cormorant Garamond',serif;font-size:36px;font-weight:300;margin-bottom:16px">Booking Confirmed!</h3>
+    <p style="color:var(--white-muted);font-size:13px;line-height:1.9;font-weight:300;margin-bottom:32px">Thank you for choosing A Gentlemen's Touch. Your $25 deposit has been processed and your appointment is confirmed. We'll reach out within 24 hours to confirm all details.</p>
+    <button onclick="closeModal()" class="btn-gold" style="border:none;padding:16px 40px;font-size:11px;letter-spacing:3px;text-transform:uppercase;font-family:'Montserrat',sans-serif;font-weight:700;cursor:pointer">Done</button>
+  </div>
+</div>
+
+<script>
+  // ─── NAV SCROLL ───
+  window.addEventListener('scroll', () => {
+    document.getElementById('mainNav').classList.toggle('scrolled', window.scrollY > 60);
+  });
+
+  // ─── FADE IN OBSERVER ───
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add('visible');
+      }
+    });
+  }, { threshold: 0.1 });
+
+  document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+
+  // ─── ADDON TOGGLE ───
+  const selectedAddons = new Set();
+  function toggleAddon(el, name) {
+    if (selectedAddons.has(name)) {
+      selectedAddons.delete(name);
+      el.classList.remove('selected');
+    } else {
+      selectedAddons.add(name);
+      el.classList.add('selected');
+    }
+  }
+
+  // ─── PACKAGE SELECT FROM CARD ───
+  function selectPackage(name, price) {
+    const sel = document.getElementById('packageSelect');
+    for (let i = 0; i < sel.options.length; i++) {
+      if (sel.options[i].value.startsWith(name)) {
+        sel.selectedIndex = i;
+        break;
+      }
+    }
+    document.getElementById('booking').scrollIntoView({ behavior: 'smooth' });
+  }
+
+  // ─── CALENDAR ───
+  let currentDate = new Date();
+  let selectedDate = null;
+  let selectedTime = null;
+
+  function renderCalendar() {
+    const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    document.getElementById('calMonth').textContent = `${months[currentDate.getMonth()]} ${currentDate.getFullYear()}`;
+
+    const grid = document.getElementById('dateGrid');
+    grid.innerHTML = '';
+
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const today = new Date();
+
+    // Empty cells
+    for (let i = 0; i < firstDay; i++) {
+      const cell = document.createElement('div');
+      cell.className = 'date-cell disabled';
+      grid.appendChild(cell);
+    }
+
+    for (let d = 1; d <= daysInMonth; d++) {
+      const cell = document.createElement('div');
+      const cellDate = new Date(year, month, d);
+      const isPast = cellDate < new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      const isSunday = cellDate.getDay() === 0;
+
+      cell.className = 'date-cell';
+      cell.textContent = d;
+
+      if (isPast || isSunday) {
+        cell.classList.add('disabled');
+      } else {
+        const isToday = d === today.getDate() && month === today.getMonth() && year === today.getFullYear();
+        if (isToday) cell.classList.add('today');
+        if (selectedDate && selectedDate.getDate() === d && selectedDate.getMonth() === month && selectedDate.getFullYear() === year) {
+          cell.classList.add('selected');
+        }
+        cell.addEventListener('click', () => selectDate(d, month, year, cell));
+      }
+
+      grid.appendChild(cell);
+    }
+  }
+
+  function selectDate(d, month, year, cell) {
+    document.querySelectorAll('.date-cell.selected').forEach(c => c.classList.remove('selected'));
+    cell.classList.add('selected');
+    selectedDate = new Date(year, month, d);
+  }
+
+  function prevMonth() {
+    const today = new Date();
+    if (currentDate.getFullYear() === today.getFullYear() && currentDate.getMonth() === today.getMonth()) return;
+    currentDate.setMonth(currentDate.getMonth() - 1);
+    renderCalendar();
+  }
+
+  function nextMonth() {
+    currentDate.setMonth(currentDate.getMonth() + 1);
+    renderCalendar();
+  }
+
+  // ─── TIME SLOTS ───
+  function renderTimeSlots() {
+    const grid = document.getElementById('timeGrid');
+    const slots = ['9:00 AM','9:30 AM','10:00 AM','10:30 AM','11:00 AM','11:30 AM','12:00 PM','12:30 PM','1:00 PM','1:30 PM','2:00 PM','2:30 PM','3:00 PM','3:30 PM','4:00 PM','4:30 PM'];
+    grid.innerHTML = '';
+    slots.forEach(t => {
+      const el = document.createElement('div');
+      el.className = 'time-slot';
+      el.textContent = t;
+      if (selectedTime === t) el.classList.add('selected');
+      el.addEventListener('click', () => {
+        document.querySelectorAll('.time-slot.selected').forEach(s => s.classList.remove('selected'));
+        el.classList.add('selected');
+        selectedTime = t;
+      });
+      grid.appendChild(el);
+    });
+  }
+
+  // ─── CARD FORMATTING ───
+  function formatCard(input) {
+    let v = input.value.replace(/\D/g, '').substring(0,16);
+    input.value = v.replace(/(.{4})/g, '$1 ').trim();
+  }
+
+  function formatExp(input) {
+    let v = input.value.replace(/\D/g, '').substring(0,4);
+    if (v.length >= 2) v = v.substring(0,2) + ' / ' + v.substring(2);
+    input.value = v;
+  }
+
+  // ─── SUBMIT ───
+  function submitBooking() {
+    const req = ['firstName','lastName','phone','email','address','vehicle'];
+    let valid = true;
+    req.forEach(id => {
+      const el = document.getElementById(id);
+      if (!el.value.trim()) {
+        el.style.borderColor = '#c0392b';
+        valid = false;
+      } else {
+        el.style.borderColor = 'var(--black-border)';
+      }
+    });
+
+    if (!document.getElementById('packageSelect').value) {
+      document.getElementById('packageSelect').style.borderColor = '#c0392b';
+      valid = false;
+    }
+
+    if (!document.getElementById('waiverCheck').checked) {
+      alert('Please read and agree to the Service Agreement & Waiver to proceed.');
+      return;
+    }
+
+    if (!valid) {
+      alert('Please fill in all required fields.');
+      return;
+    }
+
+    const modal = document.getElementById('successModal');
+    modal.style.display = 'flex';
+  }
+
+  function closeModal() {
+    document.getElementById('successModal').style.display = 'none';
+  }
+
+  // ─── MOBILE MENU ───
+  function toggleMenu() {
+    const links = document.querySelector('.nav-links');
+    const cta = document.querySelector('.nav-cta');
+    if (links.style.display === 'flex') {
+      links.style.display = 'none';
+    } else {
+      links.style.cssText = 'display:flex;flex-direction:column;position:fixed;top:70px;left:0;right:0;background:rgba(10,10,10,0.98);padding:30px;gap:20px;border-bottom:1px solid var(--black-border);z-index:999';
+    }
+  }
+
+  // ─── INIT ───
+  renderCalendar();
+  renderTimeSlots();
+</script>
+</body>
+</html>
