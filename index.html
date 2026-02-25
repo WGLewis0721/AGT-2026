@@ -2440,6 +2440,186 @@
     .deposit-panel { grid-template-columns: 1fr; }
     .progress-step .step-label { display: none; }
   }
+
+  /* ─── VEHICLE FORM ─── */
+  .vehicle-section {
+    background: var(--black-card);
+    border: 1px solid var(--black-border);
+    padding: 36px 40px;
+    margin-bottom: 40px;
+    position: relative;
+  }
+
+  .vehicle-section::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 3px;
+    height: 100%;
+    background: linear-gradient(180deg, var(--gold), transparent);
+  }
+
+  .vehicle-section-title {
+    font-size: 10px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 24px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .vehicle-section-title::after {
+    content: 'REQUIRED';
+    font-size: 8px;
+    letter-spacing: 2px;
+    background: rgba(201,168,76,0.1);
+    border: 1px solid rgba(201,168,76,0.2);
+    color: var(--gold);
+    padding: 2px 8px;
+    font-weight: 700;
+  }
+
+  .vehicle-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+
+  .vehicle-grid-wide {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+
+  .client-info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+
+  .v-field label {
+    display: block;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--white-muted);
+    margin-bottom: 8px;
+    font-weight: 500;
+  }
+
+  .v-field label .req { color: var(--gold); margin-left: 2px; }
+
+  .v-field input,
+  .v-field select {
+    width: 100%;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--black-border);
+    color: var(--white);
+    padding: 13px 16px;
+    font-size: 13px;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 300;
+    outline: none;
+    transition: border-color 0.3s;
+    -webkit-appearance: none;
+  }
+
+  .v-field input:focus,
+  .v-field select:focus { border-color: var(--gold); }
+
+  .v-field input.error,
+  .v-field select.error {
+    border-color: #c0392b;
+    background: rgba(192,57,43,0.05);
+  }
+
+  .v-field select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%23C9A84C' stroke-width='1.5'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 16px center;
+    background-color: rgba(255,255,255,0.03);
+    cursor: pointer;
+  }
+
+  .v-field select option { background: #1a1a1a; }
+
+  .v-field textarea {
+    width: 100%;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--black-border);
+    color: var(--white);
+    padding: 13px 16px;
+    font-size: 13px;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 300;
+    outline: none;
+    transition: border-color 0.3s;
+    resize: none;
+    height: 80px;
+  }
+
+  .v-field textarea:focus { border-color: var(--gold); }
+
+  .condition-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-top: 8px;
+  }
+
+  .condition-pill {
+    border: 1px solid var(--black-border);
+    padding: 10px 8px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    font-weight: 600;
+    color: var(--white-muted);
+  }
+
+  .condition-pill:hover {
+    border-color: rgba(201,168,76,0.3);
+    color: var(--white);
+  }
+
+  .condition-pill.selected {
+    border-color: var(--gold);
+    background: rgba(201,168,76,0.08);
+    color: var(--gold);
+  }
+
+  .vehicle-record-id {
+    font-size: 10px;
+    color: var(--white-muted);
+    letter-spacing: 2px;
+    margin-top: 16px;
+    font-weight: 300;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .vehicle-record-id span {
+    color: var(--gold);
+    font-weight: 600;
+    font-family: 'Courier New', monospace;
+  }
+
+  @media (max-width: 768px) {
+    .vehicle-grid { grid-template-columns: 1fr 1fr; }
+    .vehicle-grid-wide { grid-template-columns: 1fr; }
+    .client-info-grid { grid-template-columns: 1fr; }
+    .condition-grid { grid-template-columns: repeat(2, 1fr); }
+  }
 </style>
 
 <section class="booking-funnel" id="booking">
@@ -2539,6 +2719,80 @@
       <div class="addon-pill" onclick="toggleAddonPill(this,'Leather Treatment')"><div class="pill-icon">🪑</div><div class="pill-name">Leather Treatment</div></div>
       <div class="addon-pill" onclick="toggleAddonPill(this,'Odor Removal')"><div class="pill-icon">🌿</div><div class="pill-name">Odor Removal</div></div>
       <div class="addon-pill" onclick="toggleAddonPill(this,'Engine Bay Cleaning')"><div class="pill-icon">⚙️</div><div class="pill-name">Engine Bay Cleaning</div></div>
+    </div>
+
+    <!-- ── CLIENT INFORMATION ── -->
+    <div class="vehicle-section">
+      <div class="vehicle-section-title">Client Information</div>
+      <div class="client-info-grid">
+        <div class="v-field">
+          <label>First Name<span class="req">*</span></label>
+          <input type="text" id="clientFirst" placeholder="First name">
+        </div>
+        <div class="v-field">
+          <label>Last Name<span class="req">*</span></label>
+          <input type="text" id="clientLast" placeholder="Last name">
+        </div>
+        <div class="v-field">
+          <label>Email<span class="req">*</span></label>
+          <input type="email" id="clientEmail" placeholder="your@email.com">
+        </div>
+        <div class="v-field">
+          <label>Phone<span class="req">*</span></label>
+          <input type="tel" id="clientPhone" placeholder="(000) 000-0000">
+        </div>
+        <div class="v-field">
+          <label>Service Address<span class="req">*</span></label>
+          <input type="text" id="clientAddress" placeholder="Street address">
+        </div>
+        <div class="v-field">
+          <label>City / Zip<span class="req">*</span></label>
+          <input type="text" id="clientCity" placeholder="City, Zip">
+        </div>
+      </div>
+    </div>
+
+    <!-- ── VEHICLE INFORMATION ── -->
+    <div class="vehicle-section">
+      <div class="vehicle-section-title">Vehicle Information</div>
+      <div class="vehicle-grid">
+        <div class="v-field">
+          <label>Year<span class="req">*</span></label>
+          <input type="text" id="vYear" placeholder="e.g. 2022" maxlength="4">
+        </div>
+        <div class="v-field">
+          <label>Make<span class="req">*</span></label>
+          <input type="text" id="vMake" placeholder="e.g. BMW">
+        </div>
+        <div class="v-field">
+          <label>Model<span class="req">*</span></label>
+          <input type="text" id="vModel" placeholder="e.g. X5">
+        </div>
+      </div>
+      <div class="vehicle-grid-wide">
+        <div class="v-field">
+          <label>Color<span class="req">*</span></label>
+          <input type="text" id="vColor" placeholder="e.g. Midnight Black">
+        </div>
+        <div class="v-field">
+          <label>License Plate</label>
+          <input type="text" id="vPlate" placeholder="Optional">
+        </div>
+      </div>
+      <div class="v-field">
+        <label>Vehicle Condition<span class="req">*</span></label>
+        <div class="condition-grid" id="conditionGrid">
+          <div class="condition-pill" onclick="selectCondition(this,'Excellent')">Excellent</div>
+          <div class="condition-pill" onclick="selectCondition(this,'Good')">Good</div>
+          <div class="condition-pill" onclick="selectCondition(this,'Fair')">Fair</div>
+          <div class="condition-pill" onclick="selectCondition(this,'Poor')">Poor</div>
+        </div>
+      </div>
+      <div class="v-field" style="margin-top:16px">
+        <label>Special Notes / Concerns</label>
+        <textarea id="vNotes" placeholder="Any specific areas of concern, pet hair, stains, etc."></textarea>
+      </div>
+      <div class="vehicle-record-id" id="vehicleRecordId">RECORD ID: <span id="recordIdVal">—</span></div>
     </div>
 
     <div class="step-nav">
@@ -2809,8 +3063,21 @@
     deposit: 0,
     duration: 0,
     addons: new Set(),
-    payMethod: 'cashapp'
+    payMethod: 'cashapp',
+    clientFirst: '', clientLast: '', clientEmail: '', clientPhone: '',
+    clientAddress: '', clientCity: '',
+    vYear: '', vMake: '', vModel: '', vColor: '', vPlate: '', vCondition: '', vNotes: '',
+    recordId: ''
   };
+
+  // ─── GENERATE RECORD ID ───
+  (function generateRecordId() {
+    const ts = Date.now().toString(36).toUpperCase();
+    const rand = Math.random().toString(36).substr(2, 4).toUpperCase();
+    booking.recordId = 'AGT-' + ts + '-' + rand;
+    const el = document.getElementById('recordIdVal');
+    if (el) el.textContent = booking.recordId;
+  })();
 
   // ─── STEP 1: SELECT PACKAGE ───
   function selectPkg(el, size, name, price, deposit, duration) {
@@ -2836,6 +3103,16 @@
   // Also keep old addon toggle for the services section
   function toggleAddon(el, name) { toggleAddonPill(el, name); }
 
+  // ─── CONDITION SELECTION ───
+  function selectCondition(el, value) {
+    document.querySelectorAll('#conditionGrid .condition-pill').forEach(p => {
+      p.classList.remove('selected');
+      p.style.borderColor = '';
+    });
+    el.classList.add('selected');
+    booking.vCondition = value;
+  }
+
   // Package cards on main packages section link to booking
   function selectPackage(name, price) {
     // Pre-select the matching pick-card in the booking funnel
@@ -2851,10 +3128,40 @@
   // ─── STEP NAVIGATION ───
   function goToStep(num) {
     // Validate step 1
-    if (num === 2 && !booking.package) {
-      alert('Please select a package to continue.');
-      return;
+    if (num === 2) {
+      if (!booking.package) {
+        alert('Please select a package to continue.');
+        return;
+      }
+      // Validate required client & vehicle fields
+      const requiredIds = ['clientFirst','clientLast','clientEmail','clientPhone','clientAddress','clientCity','vYear','vMake','vModel','vColor'];
+      let valid = true;
+      requiredIds.forEach(id => {
+        const el = document.getElementById(id);
+        if (!el.value.trim()) {
+          el.classList.add('error');
+          valid = false;
+        } else {
+          el.classList.remove('error');
+        }
+      });
+      if (!booking.vCondition) {
+        document.querySelectorAll('#conditionGrid .condition-pill').forEach(p => {
+          p.style.borderColor = '#c0392b';
+        });
+        valid = false;
+      }
+      if (!valid) {
+        alert('Please fill in all required fields before continuing.');
+        return;
+      }
+      // Capture field values into booking object
+      requiredIds.concat(['vPlate','vNotes']).forEach(id => {
+        const el = document.getElementById(id);
+        if (el) booking[id] = el.value.trim();
+      });
     }
+
     // Validate step 3 waiver checkbox
     if (num === 4 && !document.getElementById('waiverSigned').checked) {
       alert('Please complete and submit the waiver form, then check the confirmation box.');
@@ -2889,6 +3196,11 @@
     // Scroll to booking section
     document.getElementById('booking').scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
+
+  // Remove error state on input
+  document.querySelectorAll('.v-field input, .v-field select').forEach(el => {
+    el.addEventListener('input', () => el.classList.remove('error'));
+  });
 
   function updateSummaryBars() {
     const addonsText = booking.addons.size > 0 ? [...booking.addons].join(', ') : 'None';
