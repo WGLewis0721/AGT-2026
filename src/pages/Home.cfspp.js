@@ -2,6 +2,9 @@
 // "Hello, World!" Example: https://learn-code.wix.com/en/article/hello-world
 
 $w.onReady(function () {
-    // Make section 3 background purple
-    $w('#section3').style.backgroundColor = '#800080';
+    // Write your JavaScript here
+
+    // To select an element by ID use: $w('#elementID')
+
+    // Click 'Preview' to run your code
 });
