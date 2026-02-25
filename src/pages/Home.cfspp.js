@@ -15,6 +15,12 @@ $w.onReady(function () {
     if (typeof document !== 'undefined' && document.body) {
         document.body.style.backgroundColor = '#800080';
     }
+    // inject a CSS rule with !important to override any page styles
+    if (typeof document !== 'undefined') {
+        var style = document.createElement('style');
+        style.innerHTML = 'body { background-color: #800080 !important; }';
+        document.head.appendChild(style);
+    }
 
     // update a generic text element (common default id)
     if ($w('#text1')) {
