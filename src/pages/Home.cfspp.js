@@ -7,7 +7,7 @@ $w.onReady(function () {
 
     // change background color of the page if an element with id 'page' exists
     try {
-        $w('#page').style.backgroundColor = '#fffbdb';
+        $w('#page').style.backgroundColor = '#800080'; // purple
     } catch (e) {
         // element might not exist; ignore
     }
