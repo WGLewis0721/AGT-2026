@@ -25,7 +25,11 @@ $w.onReady(function () {
     // update a generic text element (common default id)
     if ($w('#text1')) {
         $w('#text1').text = '🚀 This homepage has been updated by AI code';
-        $w('#text1').style.color = '#d00';
+        try {
+            $w('#text1').style.color = '#d00';
+        } catch (e) {
+            // some Wix text elements don't expose .style; ignore
+        }
     }
 
     // you can inspect elements in the Wix editor to adjust IDs further
