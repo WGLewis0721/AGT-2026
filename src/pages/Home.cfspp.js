@@ -5,11 +5,15 @@ $w.onReady(function () {
     // Example AI-generated UI tweak: update a text element and change page background.
     // This should result in a noticeable change on the homepage.
 
-    // change background color of the page if an element with id 'page' exists
+    // change background color; attempt multiple approaches to override black
     try {
         $w('#page').style.backgroundColor = '#800080'; // purple
     } catch (e) {
         // element might not exist; ignore
+    }
+    // also set document body directly as a backup
+    if (typeof document !== 'undefined' && document.body) {
+        document.body.style.backgroundColor = '#800080';
     }
 
     // update a generic text element (common default id)
