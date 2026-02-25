@@ -5,6 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>A Gentlemen's Touch | Full Luxury Mobile Detailing</title>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400&family=Bebas+Neue&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script type="text/javascript">
+  (function (C, A, L) { let p = function (a, ar) { a.q.push(ar); }; let d = C.document; C.Cal = C.Cal || function () { let cal = C.Cal; let ar = arguments; if (!cal.loaded) { cal.ns = {}; cal.q = cal.q || []; d.head.appendChild(d.createElement("script")).src = A; cal.loaded = true; } if (ar[0] === L) { const api = function () { p(api, arguments); }; const namespace = ar[1]; api.q = api.q || []; if(typeof namespace === "string"){cal.ns[namespace] = cal.ns[namespace] || api;p(cal.ns[namespace], ar);p(cal, ["initNamespace", namespace]);} else p(cal, ar); return;} p(cal, ar); }; })(window, "https://app.cal.com/embed/embed.js", "init");
+  Cal("init", "mobile-detail-appointment", {origin:"https://app.cal.com"});
+  Cal.ns["mobile-detail-appointment"]("ui", {"hideEventTypeDetails":false,"layout":"month_view"});
+</script>
 <style>
   :root {
     --black: #0a0a0a;
@@ -1907,13 +1912,6 @@
 
 <!-- ─── BOOKING ─── -->
 
-<!-- Cal.com embed script -->
-<script type="text/javascript">
-  (function (C, A, L) { let p = function (a, ar) { a.q.push(ar); }; let d = C.document; C.Cal = C.Cal || function () { let cal = C.Cal; let ar = arguments; if (!cal.loaded) { cal.ns = {}; cal.q = cal.q || []; d.head.appendChild(d.createElement("script")).src = A; cal.loaded = true; } if (ar[0] === L) { const api = function () { p(api, arguments); }; const namespace = ar[1]; api.q = api.q || []; if(typeof namespace === "string"){cal.ns[namespace] = cal.ns[namespace] || api;p(cal.ns[namespace], ar);p(cal, ["initNamespace", namespace]);} else p(cal, ar); return;} p(cal, ar); }; })(window, "https://app.cal.com/embed/embed.js", "init");
-  Cal("init", "mobile-detail-appointment", {origin:"https://app.cal.com"});
-  Cal.ns["mobile-detail-appointment"]("ui", {"hideEventTypeDetails":false,"layout":"month_view"});
-</script>
-
 <style>
   /* ─── BOOKING FUNNEL STYLES ─── */
   .booking-funnel {
@@ -2779,7 +2777,7 @@
     </div>
   </div>
   <div class="footer-bottom">
-    <p>© 2025 A Gentlemen's Touch Mobile Detailing. All rights reserved.</p>
+    <p>© 2026 A Gentlemen's Touch Mobile Detailing. All rights reserved.</p>
     <div class="social-links">
       <a href="#" class="social-link" title="Facebook">f</a>
       <a href="#" class="social-link" title="Instagram">in</a>
@@ -2794,7 +2792,10 @@
 <script>
   // ─── NAV SCROLL ───
   window.addEventListener('scroll', () => {
-    document.getElementById('mainNav').classList.toggle('scrolled', window.scrollY > 60);
+    const scrolled = window.scrollY > 60;
+    document.getElementById('mainNav').classList.toggle('scrolled', scrolled);
+    const navPhone = document.getElementById('navPhone');
+    navPhone.style.display = scrolled ? 'inline-block' : 'none';
   });
 
   // ─── FADE IN OBSERVER ───
@@ -2812,6 +2813,13 @@
       links.style.cssText = 'display:flex;flex-direction:column;position:fixed;top:70px;left:0;right:0;background:rgba(10,10,10,0.98);padding:30px;gap:20px;border-bottom:1px solid var(--black-border);z-index:999';
     }
   }
+
+  // Close mobile menu when any nav link is clicked
+  document.querySelectorAll('.nav-links a').forEach(link => {
+    link.addEventListener('click', () => {
+      document.querySelector('.nav-links').style.display = 'none';
+    });
+  });
 
   // ─── BOOKING STATE ───
   const booking = {
@@ -2850,6 +2858,13 @@
 
   // Package cards on main packages section link to booking
   function selectPackage(name, price) {
+    // Pre-select the matching pick-card in the booking funnel
+    const sizeMap = { 100: 0, 150: 1, 200: 2 };
+    const idx = sizeMap[price];
+    if (idx !== undefined) {
+      const cards = document.querySelectorAll('.pick-card');
+      if (cards[idx]) cards[idx].click();
+    }
     document.getElementById('booking').scrollIntoView({ behavior: 'smooth' });
   }
 
