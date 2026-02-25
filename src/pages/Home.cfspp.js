@@ -2,6 +2,6 @@
 // "Hello, World!" Example: https://learn-code.wix.com/en/article/hello-world
 
 $w.onReady(function () {
-    // Make the page background purple
-    document.body.style.backgroundColor = '#800080';
+    // Make section 3 background purple
+    $w('#section3').style.backgroundColor = '#800080';
 });
