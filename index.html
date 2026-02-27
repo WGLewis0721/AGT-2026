@@ -1602,6 +1602,322 @@
     .testimonials-grid { gap: 16px; }
   }
 
+  /* ─── FIX 2: WAIVER MODAL ─── */
+  #waiver-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.88);
+    z-index: 10000;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  #waiver-modal.open { display: flex; }
+  .waiver-modal-card {
+    background: var(--black-card);
+    border: 1px solid var(--black-border);
+    max-width: 640px;
+    width: 100%;
+    max-height: 88vh;
+    overflow-y: auto;
+    padding: 48px;
+    position: relative;
+  }
+  .waiver-modal-card h3 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 28px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: var(--white);
+  }
+  .waiver-modal-card h3 em { color: var(--gold); font-style: italic; }
+  .waiver-modal-card .waiver-subtitle {
+    font-size: 11px;
+    color: var(--white-muted);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 32px;
+    font-weight: 300;
+  }
+  .waiver-close {
+    position: absolute;
+    top: 16px; right: 20px;
+    background: none;
+    border: none;
+    color: var(--white-muted);
+    font-size: 26px;
+    cursor: pointer;
+    line-height: 1;
+    padding: 4px;
+  }
+  .waiver-close:hover { color: var(--gold); }
+  .waiver-clauses { list-style: none; margin-bottom: 32px; }
+  .waiver-clauses li {
+    font-size: 13px;
+    color: var(--white-muted);
+    line-height: 1.8;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--black-border);
+    display: flex;
+    gap: 14px;
+    font-weight: 300;
+  }
+  .waiver-clauses li .clause-num {
+    color: var(--gold);
+    font-weight: 700;
+    font-size: 11px;
+    flex-shrink: 0;
+    min-width: 20px;
+    padding-top: 2px;
+  }
+  .waiver-agree-btn {
+    width: 100%;
+    padding: 16px;
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    background: var(--gold);
+    color: var(--black);
+    border: none;
+    cursor: pointer;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 700;
+    margin-top: 28px;
+    display: block;
+    transition: background 0.2s;
+  }
+  .waiver-agree-btn:hover { background: var(--gold-light); }
+
+  /* ─── FIX 4: TRUST BADGES ─── */
+  .trust-badges {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 32px;
+  }
+  .trust-badge {
+    color: var(--gold);
+    border: 1px solid rgba(201,168,76,0.3);
+    padding: 8px 16px;
+    font-size: 11px;
+    letter-spacing: 1px;
+    font-weight: 600;
+    font-family: 'Montserrat', sans-serif;
+    white-space: nowrap;
+  }
+
+  /* ─── FIX 5: HOW IT WORKS ─── */
+  .how-it-works {
+    background: var(--black-soft);
+    padding: 100px 60px;
+  }
+  .how-steps {
+    display: flex;
+    gap: 24px;
+    margin-top: 60px;
+  }
+  .how-step {
+    flex: 1;
+    text-align: center;
+    padding: 40px 24px;
+    border: 1px solid var(--black-border);
+    background: var(--black-card);
+    position: relative;
+  }
+  .how-step::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(201,168,76,0.3), transparent);
+  }
+  .how-step-num {
+    font-size: 9px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 16px;
+    font-weight: 700;
+  }
+  .how-step-icon { font-size: 28px; margin-bottom: 14px; }
+  .how-step-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 10px;
+  }
+  .how-step-desc {
+    font-size: 12px;
+    color: var(--white-muted);
+    line-height: 1.7;
+    font-weight: 300;
+  }
+  @media (max-width: 768px) {
+    .how-steps { flex-direction: column; }
+    .how-it-works { padding: 60px 20px; }
+  }
+
+  /* ─── FIX 6: FAQ ACCORDION ─── */
+  .faq { padding: 100px 60px; background: var(--black); }
+  .faq-list { max-width: 860px; margin: 60px auto 0; }
+  .faq-item { border-bottom: 1px solid var(--black-border); }
+  .faq-question {
+    width: 100%;
+    background: none;
+    border: none;
+    color: var(--white);
+    text-align: left;
+    padding: 22px 0;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    letter-spacing: 0.3px;
+    transition: color 0.2s;
+  }
+  .faq-question:hover { color: var(--gold); }
+  .faq-chevron {
+    color: var(--gold);
+    font-size: 20px;
+    flex-shrink: 0;
+    transition: transform 0.3s;
+    display: inline-block;
+    line-height: 1;
+  }
+  .faq-item.open .faq-chevron { transform: rotate(45deg); }
+  .faq-answer {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s ease;
+    font-size: 13px;
+    color: var(--white-muted);
+    line-height: 1.8;
+    font-weight: 300;
+  }
+  .faq-answer-inner { padding-bottom: 24px; }
+  .faq-item.open .faq-answer { max-height: 300px; }
+  @media (max-width: 768px) { .faq { padding: 60px 20px; } }
+
+  /* ─── FIX 7: STICKY MOBILE CTA BAR ─── */
+  #mobile-cta-bar {
+    display: none;
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    width: 100%;
+    z-index: 9999;
+    background: rgba(10,10,10,0.97);
+    border-top: 1px solid rgba(201,168,76,0.3);
+  }
+  #mobile-cta-bar a {
+    flex: 1;
+    text-align: center;
+    padding: 16px 8px;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-decoration: none;
+    color: var(--gold);
+    border-right: 1px solid rgba(201,168,76,0.15);
+  }
+  #mobile-cta-bar a:last-child { border-right: none; }
+  #mobile-cta-bar a:hover { background: rgba(201,168,76,0.08); }
+  body.has-mobile-cta { padding-bottom: 56px; }
+  @media (max-width: 768px) { #mobile-cta-bar { display: flex; } }
+
+  /* ─── FIX 8: PORTFOLIO FILTER TABS ─── */
+  .portfolio-filters {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 32px;
+  }
+  .portfolio-filter-btn {
+    background: none;
+    border: 1px solid var(--black-border);
+    color: var(--white-muted);
+    padding: 8px 20px;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .portfolio-filter-btn:hover { border-color: rgba(201,168,76,0.4); color: var(--gold); }
+  .portfolio-filter-btn.active {
+    border-color: var(--gold);
+    color: var(--gold);
+    background: rgba(201,168,76,0.06);
+  }
+  .portfolio-item.hidden { display: none !important; }
+
+  /* ─── FIX 9: BOOKING UX ─── */
+  .addon-pill.selected::after {
+    content: '✓';
+    display: block;
+    font-size: 11px;
+    color: var(--gold);
+    margin-top: 4px;
+    font-weight: 700;
+  }
+  .field-error {
+    display: block;
+    font-size: 10px;
+    color: #c0392b;
+    margin-top: 5px;
+    letter-spacing: 0.5px;
+    font-weight: 500;
+  }
+  .progress-bar {
+    position: sticky;
+    top: 70px;
+    background: var(--black);
+    padding: 16px 0;
+    z-index: 100;
+    margin-bottom: 20px;
+  }
+
+  /* ─── FIX 10: SERVICE AREA ─── */
+  .service-area { padding: 100px 60px; background: var(--black-soft); }
+  .service-area-layout {
+    display: flex;
+    gap: 60px;
+    margin-top: 60px;
+    align-items: flex-start;
+  }
+  .service-area-list { flex: 1; min-width: 0; }
+  .service-area-list ul { list-style: none; }
+  .service-area-list ul li {
+    font-size: 14px;
+    color: var(--white-muted);
+    padding: 14px 0;
+    border-bottom: 1px solid var(--black-border);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    font-weight: 300;
+  }
+  .service-area-list ul li .area-check {
+    color: var(--gold);
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .service-area-map { flex: 1; min-width: 0; }
+  .service-area-map iframe { display: block; }
+  @media (max-width: 1024px) {
+    .service-area-layout { flex-direction: column; }
+    .service-area { padding: 60px 30px; }
+  }
+  @media (max-width: 768px) { .service-area { padding: 60px 20px; } }
+
 </style>
 </head>
 <body>
@@ -1614,6 +1930,9 @@
     <li><a href="#services">Services</a></li>
     <li><a href="#packages">Packages</a></li>
     <li><a href="#portfolio">Portfolio</a></li>
+    <li><a href="#how-it-works">How It Works</a></li>
+    <li><a href="#faq">FAQ</a></li>
+    <li><a href="#service-area">Service Area</a></li>
     <li><a href="#booking">Contact</a></li>
   </ul>
   <a href="tel:3342948228" style="color:var(--gold);font-size:12px;letter-spacing:2px;text-decoration:none;font-weight:600;display:none" id="navPhone">(334) 294-8228</a>
@@ -1788,30 +2107,28 @@
       <div class="package-price-note">Starting price · Final price after inspection</div>
       <div class="package-divider"></div>
       <ul class="package-features">
-        <li>Hand wash & bug removal</li>
-        <li>Vacuum & wipe interior</li>
-        <li>Interior & exterior window cleaning</li>
-        <li>Wheel & tire cleaning</li>
-        <li>Dashboard & console treatment</li>
-        <li>Door jamb wipe-down</li>
+        <li>Hand wash &amp; bug removal</li>
+        <li>Full interior vacuum</li>
+        <li>Interior &amp; exterior windows</li>
+        <li>Wheel &amp; tire cleaning</li>
+        <li>Dashboard &amp; console wipe-down</li>
+        <li>Door jamb cleaning</li>
       </ul>
       <button class="btn-package" onclick="selectPackage('Small — Full Luxury Detail', 100)">Select Package</button>
     </div>
     <!-- Medium -->
     <div class="package-card featured fade-in">
       <div class="package-size">Medium Vehicle</div>
-      <div class="package-name">Full Luxury Detail</div>
+      <div class="package-name">Full Luxury Detail <span style="background:var(--gold);color:var(--black);font-size:9px;font-weight:700;letter-spacing:1px;padding:3px 8px;border-radius:2px;vertical-align:middle;margin-left:8px">Most Popular</span></div>
       <div class="package-time">⏱ Approx. 120 minutes</div>
       <div class="package-price">$150</div>
       <div class="package-price-note">Starting price · Final price after inspection</div>
       <div class="package-divider"></div>
       <ul class="package-features">
-        <li>Hand wash & bug removal</li>
-        <li>Vacuum & wipe interior</li>
-        <li>Interior & exterior window cleaning</li>
-        <li>Wheel & tire cleaning</li>
-        <li>Dashboard & console treatment</li>
-        <li>Door jamb wipe-down</li>
+        <li>Everything included in Small</li>
+        <li>Deeper seat &amp; carpet extraction</li>
+        <li>Tire dressing application</li>
+        <li>Door pocket &amp; crevice detailing</li>
       </ul>
       <button class="btn-package" onclick="selectPackage('Medium — Full Luxury Detail', 150)">Select Package</button>
     </div>
@@ -1824,12 +2141,10 @@
       <div class="package-price-note">Starting price · Call for exact quote on oversized</div>
       <div class="package-divider"></div>
       <ul class="package-features">
-        <li>Hand wash & bug removal</li>
-        <li>Vacuum & wipe interior</li>
-        <li>Interior & exterior window cleaning</li>
-        <li>Wheel & tire cleaning</li>
-        <li>Dashboard & console treatment</li>
-        <li>Door jamb wipe-down</li>
+        <li>Everything included in Medium</li>
+        <li>Extended steam on surfaces</li>
+        <li>Full door jamb degreasing</li>
+        <li>Third-row &amp; cargo area detail</li>
       </ul>
       <button class="btn-package" onclick="selectPackage('Large — Full Luxury Detail', 200)">Select Package</button>
     </div>
@@ -1902,28 +2217,69 @@
     <h2 class="section-title">Our <em>Work</em></h2>
     <p style="font-size:13px;color:var(--white-muted);max-width:480px;line-height:1.8;font-weight:300;margin-top:8px">Every vehicle tells a transformation story. These are ours.</p>
   </div>
+  <div class="portfolio-filters">
+    <button class="portfolio-filter-btn active" onclick="filterPortfolio(this,'all')">All</button>
+    <button class="portfolio-filter-btn" onclick="filterPortfolio(this,'interior')">Interior</button>
+    <button class="portfolio-filter-btn" onclick="filterPortfolio(this,'exterior')">Exterior</button>
+    <button class="portfolio-filter-btn" onclick="filterPortfolio(this,'engine-bay')">Engine Bay</button>
+    <button class="portfolio-filter-btn" onclick="filterPortfolio(this,'full-detail')">Full Detail</button>
+  </div>
   <div class="portfolio-grid">
-    <div class="portfolio-item fade-in" style="min-height:400px">
+    <div class="portfolio-item fade-in" data-category="full-detail" style="min-height:400px">
       <img src="images/photo-1.jpeg" alt="Before and After Full Detail" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0;">
       <div class="portfolio-overlay">
         <div class="portfolio-overlay-text">Before &amp; After — Full Detail ✦</div>
       </div>
     </div>
-    <div class="portfolio-item fade-in">
+    <div class="portfolio-item fade-in" data-category="interior">
       <img src="images/photo-2.jpeg" alt="Interior Deep Clean" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0;">
       <div class="portfolio-overlay"><div class="portfolio-overlay-text">Interior Deep Clean ✦</div></div>
     </div>
-    <div class="portfolio-item fade-in">
+    <div class="portfolio-item fade-in" data-category="exterior">
       <img src="images/photo-3.jpeg" alt="Exterior Polish and Shine" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0;">
       <div class="portfolio-overlay"><div class="portfolio-overlay-text">Exterior Polish &amp; Shine ✦</div></div>
     </div>
-    <div class="portfolio-item fade-in">
+    <div class="portfolio-item fade-in" data-category="exterior">
       <img src="images/photo-4.jpeg" alt="Wheel and Tire Detail" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0;">
       <div class="portfolio-overlay"><div class="portfolio-overlay-text">Wheel &amp; Tire Detail ✦</div></div>
     </div>
-    <div class="portfolio-item fade-in">
+    <div class="portfolio-item fade-in" data-category="engine-bay">
       <img src="images/photo-5.jpeg" alt="Engine Bay Clean" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0;">
       <div class="portfolio-overlay"><div class="portfolio-overlay-text">Engine Bay Clean ✦</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── HOW IT WORKS ─── -->
+<section class="how-it-works" id="how-it-works">
+  <div class="fade-in" style="text-align:center">
+    <div class="section-label" style="justify-content:center">Simple Process</div>
+    <h2 class="section-title">How It <em>Works</em></h2>
+  </div>
+  <div class="how-steps">
+    <div class="how-step fade-in">
+      <div class="how-step-num">Step 01</div>
+      <div class="how-step-icon">📋</div>
+      <div class="how-step-title">Choose Your Package</div>
+      <p class="how-step-desc">Pick your vehicle size and any add-ons. Get an instant deposit estimate.</p>
+    </div>
+    <div class="how-step fade-in">
+      <div class="how-step-num">Step 02</div>
+      <div class="how-step-icon">📅</div>
+      <div class="how-step-title">Pick a Date &amp; Time</div>
+      <p class="how-step-desc">Choose any available slot Mon–Sat, 8AM–6PM that fits your schedule.</p>
+    </div>
+    <div class="how-step fade-in">
+      <div class="how-step-num">Step 03</div>
+      <div class="how-step-icon">📍</div>
+      <div class="how-step-title">We Come To You</div>
+      <p class="how-step-desc">Your detailer arrives fully equipped at your home, office, or any location.</p>
+    </div>
+    <div class="how-step fade-in">
+      <div class="how-step-num">Step 04</div>
+      <div class="how-step-icon">🚗</div>
+      <div class="how-step-title">Drive Away Clean</div>
+      <p class="how-step-desc">Pay the remaining balance on-site when the job is done to your satisfaction.</p>
     </div>
   </div>
 </section>
@@ -1967,6 +2323,52 @@
           <div class="author-vehicle">2023 Cadillac Escalade</div>
         </div>
       </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── FAQ ─── -->
+<section class="faq" id="faq">
+  <div class="fade-in" style="text-align:center">
+    <div class="section-label" style="justify-content:center">Questions</div>
+    <h2 class="section-title">Frequently Asked <em>Questions</em></h2>
+  </div>
+  <div class="faq-list">
+    <div class="faq-item">
+      <button class="faq-question" onclick="toggleFaq(this)">Do I need to be home during the service?<span class="faq-chevron">+</span></button>
+      <div class="faq-answer"><div class="faq-answer-inner">You just need to be reachable by phone. We'll call when we arrive and again when we're done. You don't need to be present the entire time.</div></div>
+    </div>
+    <div class="faq-item">
+      <button class="faq-question" onclick="toggleFaq(this)">What if it rains on my appointment day?<span class="faq-chevron">+</span></button>
+      <div class="faq-answer"><div class="faq-answer-inner">We monitor forecasts closely and will contact you at least 24 hours in advance if we need to reschedule. Your deposit is always fully protected and transfers to the new date.</div></div>
+    </div>
+    <div class="faq-item">
+      <button class="faq-question" onclick="toggleFaq(this)">How long does service take?<span class="faq-chevron">+</span></button>
+      <div class="faq-answer"><div class="faq-answer-inner">Small vehicles are approximately 90 minutes, Medium around 2 hours, and Large / SUV / Truck around 2.5–3 hours. Time may vary based on the condition of the vehicle.</div></div>
+    </div>
+    <div class="faq-item">
+      <button class="faq-question" onclick="toggleFaq(this)">What's the difference between packages and add-ons?<span class="faq-chevron">+</span></button>
+      <div class="faq-answer"><div class="faq-answer-inner">Packages cover a full interior and exterior detail sized for your vehicle. Add-ons are premium extras like steam cleaning, machine polishing, or leather treatment that are priced after inspection.</div></div>
+    </div>
+    <div class="faq-item">
+      <button class="faq-question" onclick="toggleFaq(this)">What areas do you serve?<span class="faq-chevron">+</span></button>
+      <div class="faq-answer"><div class="faq-answer-inner">We serve Montgomery, Prattville, Millbrook, Pike Road, Wetumpka, Elmore County, and surrounding areas. Call (334) 294-8228 to confirm your location.</div></div>
+    </div>
+    <div class="faq-item">
+      <button class="faq-question" onclick="toggleFaq(this)">Do you detail boats, RVs, or motorcycles?<span class="faq-chevron">+</span></button>
+      <div class="faq-answer"><div class="faq-answer-inner">Yes! Contact us for a custom quote at (334) 294-8228 or gentlemenstouch5@gmail.com and we'll work with you on specialty vehicles.</div></div>
+    </div>
+    <div class="faq-item">
+      <button class="faq-question" onclick="toggleFaq(this)">What products do you use?<span class="faq-chevron">+</span></button>
+      <div class="faq-answer"><div class="faq-answer-inner">We use professional-grade luxury products only — ceramic-infused waxes, pH-balanced interior cleaners, and professional dressings that are safe for all surfaces.</div></div>
+    </div>
+    <div class="faq-item">
+      <button class="faq-question" onclick="toggleFaq(this)">What is your cancellation policy?<span class="faq-chevron">+</span></button>
+      <div class="faq-answer"><div class="faq-answer-inner">Cancellations with 24+ hours notice receive a full deposit refund. Cancellations under 24 hours forfeit the deposit. Reschedules with 24+ hours notice carry the deposit forward to the new date.</div></div>
+    </div>
+    <div class="faq-item">
+      <button class="faq-question" onclick="toggleFaq(this)">What payment methods do you accept?<span class="faq-chevron">+</span></button>
+      <div class="faq-answer"><div class="faq-answer-inner">We accept Zelle, Cash App, Venmo, and cash. A 20% deposit is required at booking; the remaining balance is collected on-site when the service is complete.</div></div>
     </div>
   </div>
 </section>
@@ -2707,6 +3109,13 @@
 
   <!-- Section Header -->
   <div style="text-align:center;margin-bottom:60px" class="fade-in">
+    <div class="trust-badges">
+      <span class="trust-badge">🛡 Fully Insured</span>
+      <span class="trust-badge">⭐ 5.0 Star Rated</span>
+      <span class="trust-badge">✅ 100% Satisfaction</span>
+      <span class="trust-badge">⏱ On-Time Every Time</span>
+      <span class="trust-badge">🔒 Secure Booking</span>
+    </div>
     <div class="section-label" style="justify-content:center">Book Your Service</div>
     <h2 class="section-title">Schedule Your<br><em>Appointment</em></h2>
     <p style="font-size:13px;color:var(--white-muted);max-width:480px;margin:12px auto 0;line-height:1.8;font-weight:300">Four simple steps to get your vehicle looking immaculate. We come to you.</p>
@@ -2906,6 +3315,10 @@
       <p style="font-size:11px;color:var(--white-muted);font-weight:300;letter-spacing:1px">After selecting your time in the calendar above, click continue below.</p>
     </div>
 
+    <div style="margin-top:16px;padding:14px 20px;background:rgba(201,168,76,0.05);border:1px solid rgba(201,168,76,0.15);text-align:center">
+      <p style="font-size:11px;color:var(--white-muted);font-weight:300;line-height:1.7">⛅ If weather requires rescheduling, we'll reach out 24hrs in advance. Your deposit is always protected.</p>
+    </div>
+
     <div class="step-nav">
       <button class="btn-back" onclick="goToStep(1)">← Back</button>
       <button class="btn-next" onclick="goToStep(3)">Next: Sign Waiver →</button>
@@ -3044,6 +3457,39 @@
 
 </section>
 
+<!-- ─── SERVICE AREA ─── -->
+<section class="service-area" id="service-area">
+  <div class="fade-in">
+    <div class="section-label">Coverage</div>
+    <h2 class="section-title">Our Service <em>Area</em></h2>
+  </div>
+  <div class="service-area-layout">
+    <div class="service-area-list fade-in">
+      <ul>
+        <li><span class="area-check">✓</span> Montgomery</li>
+        <li><span class="area-check">✓</span> Prattville</li>
+        <li><span class="area-check">✓</span> Millbrook</li>
+        <li><span class="area-check">✓</span> Pike Road</li>
+        <li><span class="area-check">✓</span> Wetumpka</li>
+        <li><span class="area-check">✓</span> Elmore County</li>
+        <li><span class="area-check">✓</span> Surrounding areas — call to confirm</li>
+      </ul>
+    </div>
+    <div class="service-area-map fade-in">
+      <iframe
+        src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d107476.4!2d-86.2999!3d32.3668!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x888e82c1ff9c7a1d%3A0x9fb9de7a1a44aaad!2sMontgomery%2C%20AL!5e0!3m2!1sen!2sus!4v1!5m2!1sen!2sus"
+        width="100%"
+        height="350"
+        style="border:none;"
+        allowfullscreen=""
+        loading="lazy"
+        referrerpolicy="no-referrer-when-downgrade"
+        title="A Gentlemen's Touch service area — Montgomery AL region">
+      </iframe>
+    </div>
+  </div>
+</section>
+
 <!-- ─── CTA BANNER ─── -->
 <div class="cta-banner">
   <div>
@@ -3078,7 +3524,7 @@
         <li><a href="#portfolio">Portfolio</a></li>
         <li><a href="#packages">Pricing</a></li>
         <li><a href="#booking">Book Now</a></li>
-        <li><span>Waiver & Terms</span></li>
+        <li><a href="#waiver-modal" onclick="openWaiverModal();return false;">Waiver &amp; Terms</a></li>
       </ul>
     </div>
     <div class="footer-col">
@@ -3109,6 +3555,31 @@
     </div>
   </div>
 </footer>
+
+<!-- ─── WAIVER MODAL ─── -->
+<div id="waiver-modal" role="dialog" aria-modal="true" aria-label="Service Agreement & Waiver">
+  <div class="waiver-modal-card">
+    <button class="waiver-close" onclick="closeWaiverModal()" aria-label="Close waiver">×</button>
+    <h3>Service Agreement &amp; <em>Waiver</em></h3>
+    <p class="waiver-subtitle">A Gentlemen's Touch Mobile Detailing</p>
+    <ol class="waiver-clauses">
+      <li><span class="clause-num">1.</span>I authorize A Gentlemen's Touch to perform the selected detailing services on my vehicle.</li>
+      <li><span class="clause-num">2.</span>A Gentlemen's Touch is not liable for pre-existing damage. We will document the vehicle's condition before beginning service.</li>
+      <li><span class="clause-num">3.</span>A 20% deposit is required to secure your appointment. The deposit is non-refundable. The remaining balance is due upon service completion.</li>
+      <li><span class="clause-num">4.</span>Cancellations made less than 24 hours before the appointment forfeit the deposit. Reschedules with 24+ hours notice carry the deposit forward to the new date.</li>
+      <li><span class="clause-num">5.</span>In the event of weather requiring rescheduling, you will be notified at least 24 hours in advance. Your deposit is fully transferred to the rescheduled date.</li>
+      <li><span class="clause-num">6.</span>Please remove all personal valuables from your vehicle before service. A Gentlemen's Touch is not responsible for lost or missing items.</li>
+      <li><span class="clause-num">7.</span>We stand behind our work with a satisfaction guarantee. If you are not satisfied, contact us within 24 hours and we will make it right at no additional charge.</li>
+    </ol>
+    <button class="waiver-agree-btn" onclick="closeWaiverModal()">✦ I Agree &amp; Close ✦</button>
+  </div>
+</div>
+
+<!-- ─── MOBILE CTA BAR ─── -->
+<div id="mobile-cta-bar">
+  <a href="tel:3342948228" aria-label="Call us">📞 Call Now</a>
+  <a href="#booking" aria-label="Book appointment">📅 Book Now</a>
+</div>
 
 <!-- ─── SUCCESS MODAL ─── -->
 
@@ -3223,26 +3694,29 @@
         alert('Please select a package to continue.');
         return;
       }
-      // Validate required client & vehicle fields
+      // Validate required client & vehicle fields — inline errors
       const requiredIds = ['clientFirst','clientLast','clientEmail','clientPhone','clientAddress','clientCity','vYear','vMake','vModel','vColor'];
+      let firstInvalid = null;
       let valid = true;
       requiredIds.forEach(id => {
         const el = document.getElementById(id);
         if (!el.value.trim()) {
-          el.classList.add('error');
+          setFieldError(el, 'This field is required');
+          if (!firstInvalid) firstInvalid = el;
           valid = false;
         } else {
-          el.classList.remove('error');
+          clearFieldError(el);
         }
       });
       if (!booking.vCondition) {
         document.querySelectorAll('#conditionGrid .condition-pill').forEach(p => {
           p.style.borderColor = '#c0392b';
         });
+        if (!firstInvalid) firstInvalid = document.getElementById('conditionGrid');
         valid = false;
       }
       if (!valid) {
-        alert('Please fill in all required fields before continuing.');
+        if (firstInvalid) firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
         return;
       }
       // Capture field values into booking object
@@ -3286,11 +3760,6 @@
     // Scroll to booking section
     document.getElementById('booking').scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
-
-  // Remove error state on input
-  document.querySelectorAll('.v-field input, .v-field select').forEach(el => {
-    el.addEventListener('input', () => el.classList.remove('error'));
-  });
 
   function updateSummaryBars() {
     const addonsText = booking.addons.size > 0 ? [...booking.addons].join(', ') : 'None';
@@ -3356,6 +3825,64 @@
     // Hide progress bar on confirmation
     document.getElementById('progressBar').style.display = 'none';
   }
+
+  // ─── FIX 2: WAIVER MODAL ───
+  function openWaiverModal() {
+    document.getElementById('waiver-modal').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeWaiverModal() {
+    document.getElementById('waiver-modal').classList.remove('open');
+    document.body.style.overflow = '';
+  }
+  document.getElementById('waiver-modal').addEventListener('click', function(e) {
+    if (e.target === this) closeWaiverModal();
+  });
+
+  // ─── FIX 6: FAQ ACCORDION ───
+  function toggleFaq(btn) {
+    const item = btn.closest('.faq-item');
+    const isOpen = item.classList.contains('open');
+    document.querySelectorAll('.faq-item.open').forEach(i => i.classList.remove('open'));
+    if (!isOpen) item.classList.add('open');
+  }
+
+  // ─── FIX 7: MOBILE CTA BAR ───
+  document.body.classList.add('has-mobile-cta');
+
+  // ─── FIX 8: PORTFOLIO FILTER ───
+  function filterPortfolio(btn, category) {
+    document.querySelectorAll('.portfolio-filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('.portfolio-item').forEach(item => {
+      if (category === 'all' || item.dataset.category === category) {
+        item.classList.remove('hidden');
+      } else {
+        item.classList.add('hidden');
+      }
+    });
+  }
+
+  // ─── FIX 9C: INLINE FIELD ERRORS ───
+  function setFieldError(el, msg) {
+    el.classList.add('error');
+    let span = el.parentElement.querySelector('.field-error');
+    if (!span) {
+      span = document.createElement('span');
+      span.className = 'field-error';
+      el.parentElement.appendChild(span);
+    }
+    span.textContent = msg;
+  }
+  function clearFieldError(el) {
+    el.classList.remove('error');
+    const span = el.parentElement.querySelector('.field-error');
+    if (span) span.remove();
+  }
+  document.querySelectorAll('.v-field input, .v-field select, .v-field textarea').forEach(el => {
+    el.addEventListener('input', () => clearFieldError(el));
+  });
 </script>
+
 </body>
-</html>y
+</html>
