@@ -1521,6 +1521,86 @@
     margin: 0;
   }
 
+  /* ─────────────────────────────────────────
+     UI Refinement Enhancements
+     ───────────────────────────────────────── */
+
+  /* Hero — stronger title for clearer visual hierarchy */
+  .hero-title {
+    font-size: clamp(72px, 9.5vw, 132px);
+    font-weight: 400;
+  }
+
+  /* Service cards — flex column for equal heights, price pinned to bottom */
+  .service-card {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .service-card:hover {
+    box-shadow: 0 8px 40px rgba(0,0,0,0.4);
+  }
+
+  .service-price {
+    margin-top: auto;
+    padding-top: 20px;
+    border-top: 1px solid rgba(255,255,255,0.06);
+  }
+
+  /* Portfolio — image scale on hover, refined gap */
+  .portfolio-grid { gap: 8px; }
+
+  .portfolio-item img {
+    transition: transform 0.5s ease;
+  }
+
+  .portfolio-item:hover img {
+    transform: scale(1.05);
+  }
+
+  /* Testimonials — stronger name, refined stars, crisper hover */
+  .author-name { font-weight: 700; }
+
+  .stars {
+    font-size: 14px;
+    letter-spacing: 4px;
+    margin-bottom: 24px;
+  }
+
+  .testimonial-card:hover {
+    border-color: rgba(201,168,76,0.4);
+  }
+
+  /* Packages — "Starting at" note more legible */
+  .package-price-note {
+    color: rgba(201,168,76,0.65);
+    font-size: 11px;
+  }
+
+  /* Section titles — fractionally larger for stronger hierarchy */
+  .section-title {
+    font-size: clamp(44px, 5.5vw, 76px);
+    margin-bottom: 28px;
+  }
+
+  /* Addon cards — depth on hover */
+  .addon-card:hover {
+    box-shadow: 0 4px 24px rgba(0,0,0,0.3);
+  }
+
+  /* Small-screen improvements */
+  @media (max-width: 480px) {
+    section { padding: 60px 20px; }
+    .hero-content { padding: 0 20px; }
+    .hero-title { font-size: clamp(52px, 15vw, 80px); }
+    .booking-funnel { padding: 60px 20px; }
+    .stats-bar { padding: 28px 20px; }
+    footer { padding: 60px 20px 32px; }
+    .cta-banner { padding: 60px 20px; }
+    .packages-grid { gap: 16px; }
+    .testimonials-grid { gap: 16px; }
+  }
+
 </style>
 </head>
 <body>
