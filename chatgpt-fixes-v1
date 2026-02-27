@@ -1,0 +1,141 @@
+@workspace You are a senior front-end engineer improving an existing production website.
+
+IMPORTANT:
+This is NOT a redesign from scratch.
+You must PRESERVE the current structure, layout, file organization, and overall page flow.
+Make incremental UI/UX improvements only.
+Do NOT create entirely new pages.
+Do NOT replace large HTML blocks unless absolutely necessary.
+Modify and enhance what already exists.
+
+Stack constraint:
+HTML + CSS + Vanilla JS only.
+No frameworks.
+No external UI libraries.
+No structural rebuild.
+
+====================================================
+OBJECTIVE
+====================================================
+
+Elevate the current site into a more premium, conversion-focused, luxury mobile detailing experience while preserving all existing sections.
+
+Improve:
+- Visual hierarchy
+- Spacing
+- Typography scale
+- Button consistency
+- Section clarity
+- Mobile responsiveness
+- Conversion clarity
+
+Do NOT dramatically change the layout.
+Do NOT rearrange the order of sections unless necessary.
+Refine what exists.
+
+====================================================
+SECTION-BY-SECTION IMPROVEMENT RULES
+====================================================
+
+1️⃣ HERO SECTION
+- Keep the existing hero structure.
+- Improve headline typography (larger, stronger weight).
+- Improve spacing and vertical padding.
+- Add a subtle dark overlay if background contrast is weak.
+- Ensure primary CTA button is visually dominant.
+- Ensure mobile scaling is clean.
+
+Do NOT remove hero content.
+Enhance it.
+
+----------------------------------------------------
+
+2️⃣ SERVICES SECTION
+- Keep current service layout.
+- Improve card styling:
+  • consistent padding
+  • equal heights
+  • subtle shadow
+  • gold accent borders or hover state
+- Make “Starting at” pricing clearer visually.
+- Improve bullet spacing and readability.
+- Ensure CTA buttons are consistent site-wide.
+
+Do NOT change service content.
+Improve presentation only.
+
+----------------------------------------------------
+
+3️⃣ GALLERY / WORK SECTION
+- Keep current structure.
+- Improve spacing between images.
+- Add subtle hover effect (scale or overlay).
+- Ensure images are responsive and maintain aspect ratio.
+- Improve section heading hierarchy.
+
+----------------------------------------------------
+
+4️⃣ TESTIMONIALS (if present)
+- Improve card styling.
+- Add visual star icons (CSS only).
+- Improve spacing and contrast.
+- Make reviewer name slightly bold.
+
+If testimonials are missing, do NOT create a full new section.
+Only lightly improve existing content.
+
+----------------------------------------------------
+
+5️⃣ FAQ (if present)
+- Convert existing FAQ text into a simple accordion using minimal Vanilla JS.
+- If FAQ already uses JS, refine animation and spacing.
+- Do NOT build complex new components.
+
+----------------------------------------------------
+
+6️⃣ GLOBAL IMPROVEMENTS
+
+Improve across the entire site:
+
+- Standardize button class styles
+- Improve heading scale:
+  h1 larger
+  h2 clear separation
+  h3 consistent
+- Increase white space between sections
+- Ensure consistent max-width container
+- Improve mobile padding
+- Improve contrast ratios
+- Tighten font weights
+- Ensure consistent gold accent usage
+- Add smooth hover transitions (200–300ms max)
+
+Do NOT introduce dramatic stylistic changes.
+Keep brand identity intact.
+
+====================================================
+PERFORMANCE RULES
+====================================================
+
+- No heavy animations
+- No new dependencies
+- Keep JS minimal
+- Avoid layout shifts
+- Preserve existing CSS structure
+- Add new CSS at bottom or in clearly labeled block:
+  /* UI Refinement Enhancements */
+
+====================================================
+OUTPUT FORMAT
+====================================================
+
+1. Show only modified HTML sections (clearly labeled)
+2. Show CSS additions or edits (clearly labeled)
+3. Show any JS additions
+4. Brief explanation of improvements
+
+Do NOT regenerate entire files.
+Do NOT duplicate unchanged content.
+Only refine and enhance what already exists.
+
+Begin refinement.
