@@ -1499,6 +1499,32 @@
     .addons-grid { grid-template-columns: 1fr 1fr; }
     .portfolio-grid { grid-template-columns: 1fr; }
     .portfolio-item:first-child { grid-column: span 1; }
+    /* iPhone touch target sizes */
+    .btn-gold, .btn-outline, .btn-black, .btn-next, .btn-back, .btn-book, .btn-package, nav a { min-height: 44px; }
+    .hamburger { min-width: 44px; min-height: 44px; align-items: center; justify-content: center; }
+    .social-link { width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center; }
+    /* Section spacing */
+    section { padding: 60px 20px; }
+    .hero-content { padding: 0 20px; }
+    .hero-title { font-size: clamp(40px, 10vw, 64px); }
+    .section-title { font-size: clamp(28px, 8vw, 52px); }
+    /* Portfolio filters wrap */
+    .portfolio-filters { gap: 6px; }
+    .portfolio-filter-btn { padding: 10px 14px; font-size: 9px; }
+  }
+
+  @media (max-width: 430px) {
+    /* iPhone 11–17 Pro Max portrait — extra small adjustments */
+    .hero-title { font-size: 38px; }
+    .hero-sub { font-size: 12px; }
+    .stat-num { font-size: 32px; }
+    .trust-badge { font-size: 10px; padding: 7px 12px; }
+    .pick-card { padding: 24px 16px; }
+    .pick-card .card-price { font-size: 40px; }
+    .addon-pill { padding: 12px 8px; }
+    .how-step { padding: 28px 16px; }
+    .faq-question { font-size: 12px; }
+    .package-card { padding: 32px 20px; }
   }
 
   /* ─── FADE IN ANIMATIONS ─── */
@@ -3102,6 +3128,13 @@
     .vehicle-grid-wide { grid-template-columns: 1fr; }
     .client-info-grid { grid-template-columns: 1fr; }
     .condition-grid { grid-template-columns: repeat(2, 1fr); }
+    .package-picker { grid-template-columns: 1fr; }
+    .addon-picker { grid-template-columns: repeat(2, 1fr); }
+    .booking-funnel { padding: 80px 20px; }
+    .progress-connector { width: 32px; }
+    .progress-step .step-num { width: 38px; height: 38px; font-size: 12px; }
+    .progress-step .step-label { font-size: 8px; }
+    .progress-bar { top: 60px; }
   }
 </style>
 
@@ -3395,7 +3428,7 @@
           <div class="pm-icon">💚</div>
           <div>
             <div class="pm-name">Cash App</div>
-            <div class="pm-handle">$YOURHANDLE</div>
+            <div class="pm-handle">$[CashTag]</div>
           </div>
           <div class="pm-check">✓</div>
         </div>
@@ -3413,13 +3446,13 @@
           <div class="pm-icon">💙</div>
           <div>
             <div class="pm-name">Venmo</div>
-            <div class="pm-handle">@YOURHANDLE</div>
+            <div class="pm-handle">@[VenmoUser]</div>
           </div>
           <div class="pm-check"></div>
         </div>
 
         <div class="pay-instructions visible" id="payInstructions">
-          <p>Send <strong id="payAmtText">your deposit</strong> to <strong>$YOURHANDLE</strong> on Cash App.<br>
+          <p>Send <strong id="payAmtText">your deposit</strong> to <strong>$[CashTag]</strong> on Cash App.<br>
           Include your <strong>name + appointment date</strong> in the memo.<br><br>
           Once sent, click confirm below and we'll verify and send your calendar invite within 1 hour.</p>
         </div>
@@ -3476,16 +3509,11 @@
       </ul>
     </div>
     <div class="service-area-map fade-in">
-      <iframe
-        src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d107476.4!2d-86.2999!3d32.3668!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x888e82c1ff9c7a1d%3A0x9fb9de7a1a44aaad!2sMontgomery%2C%20AL!5e0!3m2!1sen!2sus!4v1!5m2!1sen!2sus"
-        width="100%"
-        height="350"
-        style="border:none;"
-        allowfullscreen=""
-        loading="lazy"
-        referrerpolicy="no-referrer-when-downgrade"
-        title="A Gentlemen's Touch service area — Montgomery AL region">
-      </iframe>
+      <div style="width:100%;height:350px;background:rgba(255,255,255,0.03);border:1px solid rgba(201,168,76,0.15);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px">
+        <div style="font-size:40px">📍</div>
+        <p style="font-size:11px;color:var(--gold);letter-spacing:2px;text-transform:uppercase;font-weight:600;text-align:center">Montgomery, AL Region</p>
+        <p style="font-size:11px;color:var(--white-muted);font-weight:300;text-align:center;max-width:200px;line-height:1.6">Map placeholder — location link coming soon</p>
+      </div>
     </div>
   </div>
 </section>
@@ -3532,7 +3560,7 @@
       <ul>
         <li><a href="tel:3342948228">(334) 294-8228</a></li>
         <li><a href="mailto:gentlemenstouch5@gmail.com">gentlemenstouch5@gmail.com</a></li>
-        <li><a href="https://www.google.com/maps/search/Montgomery+AL+area" target="_blank" rel="noopener noreferrer">Montgomery, AL Area</a></li>
+        <li><a href="#">Montgomery, AL Area</a></li>
         <li><span>Mon–Sat: 8AM–6PM</span></li>
       </ul>
     </div>
@@ -3540,16 +3568,16 @@
   <div class="footer-bottom">
     <p>© 2026 A Gentlemen's Touch Mobile Detailing. All rights reserved.</p>
     <div class="social-links">
-      <a href="https://www.facebook.com/people/A-Gentlemens-Touch/61575212980559/" target="_blank" rel="noopener noreferrer" class="social-link" title="Facebook">
+      <a href="#" class="social-link" title="Facebook — coming soon" aria-label="Facebook (coming soon)">
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
       </a>
-      <a href="https://www.instagram.com/agentlemenstouch_/" target="_blank" rel="noopener noreferrer" class="social-link" title="Instagram">
+      <a href="#" class="social-link" title="Instagram — coming soon" aria-label="Instagram (coming soon)">
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
       </a>
-      <a href="https://www.google.com/maps/search/A+Gentlemen%27s+Touch+Mobile+Detailing+Montgomery+AL" target="_blank" rel="noopener noreferrer" class="social-link" title="Google">
+      <a href="#" class="social-link" title="Google — coming soon" aria-label="Google (coming soon)">
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21.35 11.1H12v2.8h5.35c-.4 1.6-1.75 4.1-5.35 4.1-3.2 0-5.8-2.65-5.8-5.9s2.6-5.9 5.8-5.9c1.8 0 3.05.8 3.75 1.45l2.55-2.5A9.5 9.5 0 0 0 12 3C7.05 3 3 7.05 3 12s4.05 9 9 9c5.2 0 8.65-3.65 8.65-8.8 0-.6-.1-1.05-.3-1.1z"/></svg>
       </a>
-      <a href="https://www.tiktok.com/@agentlemenstouch_" target="_blank" rel="noopener noreferrer" class="social-link" title="TikTok">
+      <a href="#" class="social-link" title="TikTok — coming soon" aria-label="TikTok (coming soon)">
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.18 8.18 0 0 0 4.78 1.52V6.73a4.85 4.85 0 0 1-1.01-.04z"/></svg>
       </a>
     </div>
@@ -3804,9 +3832,9 @@
     instructions.classList.add('visible');
 
     const msgs = {
-      cashapp: `Send <strong>$${booking.deposit}</strong> to <strong>$YOURHANDLE</strong> on Cash App.<br>Include your <strong>name + appointment date</strong> in the memo.`,
+      cashapp: `Send <strong>$${booking.deposit}</strong> to <strong>$[CashTag]</strong> on Cash App.<br>Include your <strong>name + appointment date</strong> in the memo.`,
       zelle:   `Send <strong>$${booking.deposit}</strong> via Zelle to <strong>(334) 294-8228</strong>.<br>Include your <strong>name + appointment date</strong> in the memo.`,
-      venmo:   `Send <strong>$${booking.deposit}</strong> to <strong>@YOURHANDLE</strong> on Venmo.<br>Include your <strong>name + appointment date</strong> in the note.`
+      venmo:   `Send <strong>$${booking.deposit}</strong> to <strong>@[VenmoUser]</strong> on Venmo.<br>Include your <strong>name + appointment date</strong> in the note.`
     };
     instructions.querySelector('p').innerHTML = msgs[method] + '<br><br>Once sent, click the confirm button below and we\'ll verify and send your calendar invite within 1 hour.';
   }
