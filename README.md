@@ -1,90 +1,79 @@
 # A Gentlemen's Touch — AGT Mobile Detailing
 
-Luxury mobile car detailing site for **A Gentlemen's Touch (AGT)**. The repo has two distinct layers:
+Production-ready website for **A Gentlemen's Touch (AGT)**, a luxury mobile car detailing business.
+The repo has two distinct layers: a standalone static marketing + booking funnel (`index.html`) and
+a Wix Velo multi-page application connected to site ID `685cc33b-0e63-481d-9422-d4bafcc7f070`.
 
-| Layer | Path | What it is |
+**Design:** Deep black backgrounds (`#0a0a0a`), gold accents (`#C9A84C`), editorial luxury aesthetic.
+Fonts: Cormorant Garamond (display/serif), Bebas Neue (logo/headings), Montserrat (body/UI).
+Inspired by high-end automotive culture and white-glove service.
+
+---
+
+## Page Structure
+
+### Static Site (`index.html`)
+
+| Section | ID | Purpose |
 |---|---|---|
-| Static marketing site | `index.html` | Single-page HTML/CSS/JS site — no build step required |
-| Wix Velo app | `src/` | Multi-page Wix site (siteId `685cc33b-0e63-481d-9422-d4bafcc7f070`) |
+| Hero | `#home` | Full-screen hero with logo, tagline, and CTA |
+| Who We Are | `#about` | Brand story and service area |
+| What We Offer | `#services` | Service category overview |
+| Full Luxury Detail Packages | `#packages` | Package cards with pricing |
+| Add-On Services | `#addons` | À-la-carte add-on pills |
+| Before & After | `#portfolio` | Photo portfolio gallery |
+| Schedule Your Appointment | `#booking` | 4-step booking funnel |
+
+### Wix Velo App (`src/pages/`)
+
+| Page | File | Purpose |
+|---|---|---|
+| Home | `Home.cfspp.js` | Landing page |
+| Book Online | `Book Online.c5pg0.js` | Service listing / menu |
+| Service Page | `Service Page.zapqr.js` | Individual service detail + add-ons |
+| Cart Page | `Cart Page.u25lg.js` | Cart review + promo codes |
+| Booking Form | `Booking Form.vqyyp.js` | Step 1 — customer & vehicle info |
+| Booking Calendar | `Booking Calendar.s9swq.js` | Step 2 — date & time picker |
+| Checkout | `Checkout.s8k0z.js` | Step 3 — review & confirm |
+| Thank You Page | `Thank You Page.w5kt1.js` | Booking confirmation + tracker |
+| Side Cart | `Side Cart.o63p3.js` | Slide-in cart panel |
+| My Bookings | `My Bookings.dv8my.js` | Member bookings list |
+| Account Settings | `Account Settings.woh8q.js` | Member account |
 
 ---
 
-## Repository Layout
-
-```
-AGT-2026/
-├── index.html                           # Standalone marketing + booking funnel
-├── images/                              # Local image assets for index.html
-│   ├── photo-10.png                     # Logo / favicon
-│   ├── photo-9.jpeg                     # About section background
-│   ├── photo-1.jpeg … photo-5.jpeg      # Portfolio (Before & After) photos
-│   └── photo-6.jpeg … photo-8.jpeg, photo-11.png   # Additional assets
-├── src/
-│   ├── pages/                           # Wix Velo page code (one file per page)
-│   │   ├── masterPage.js                # Global — runs on every page
-│   │   ├── Home.cfspp.js                # Home page
-│   │   ├── Book Online.c5pg0.js         # Service listing / menu
-│   │   ├── Service Page.zapqr.js        # Individual service detail
-│   │   ├── Cart Page.u25lg.js           # Cart review + promo codes
-│   │   ├── Booking Form.vqyyp.js        # Step 1 — customer & vehicle info
-│   │   ├── Booking Calendar.s9swq.js    # Step 2 — date & time picker
-│   │   ├── Checkout.s8k0z.js            # Step 3 — review & confirm
-│   │   ├── Thank You Page.w5kt1.js      # Booking confirmation + tracker
-│   │   ├── Side Cart.o63p3.js           # Slide-in cart panel
-│   │   ├── My Bookings.dv8my.js         # Member bookings list
-│   │   ├── Account Settings.woh8q.js    # Member account
-│   │   ├── Privacy Policy.c1qxt.js      # Privacy policy
-│   │   ├── Refund Policy.nvn5b.js       # Refund policy
-│   │   ├── Terms & Conditions.j1vkb.js  # Terms & Conditions
-│   │   └── Accessibility Statement.d3989.js
-│   ├── public/
-│   │   └── cartManager.js               # Shared cart + booking-info helpers
-│   └── backend/
-│       ├── bookingUtils.jsw             # Web module: slots, submit, lookup
-│       └── permissions.json             # Web-method permission config
-├── package.json                         # Dev deps + npm scripts
-├── wix.config.json                      # Wix site ID + UI version
-├── .eslintrc.json                       # ESLint (Wix CLI recommended rules)
-└── wix.lock                             # Wix dependency lock file
-```
-
----
-
-## Stack
-
-| Concern | Technology |
-|---|---|
-| Wix site framework | [Wix Velo](https://dev.wix.com/docs/develop-websites/articles/wix-velo/frameworks-and-tools/about-velo) |
-| Static page | Vanilla HTML 5 / CSS 3 / ES2020 |
-| Backend data | Wix Data (`wix-data`) — `Bookings` collection |
-| Session state | `wix-storage` session module |
-| Scheduling embed | [Cal.com](https://cal.com) — namespace `mobile-detail-appointment`, `month_view` layout |
-| Fonts | Google Fonts — Cormorant Garamond, Bebas Neue, Montserrat |
-| Linting | ESLint 8 + `@wix/eslint-plugin-cli` |
-| CLI | `@wix/cli` |
-
----
-
-## Local Development (Wix Velo)
-
-**Prerequisites:** Git, Node ≥ 14.8, npm, SSH key added to GitHub.
+## Running Locally
 
 ```bash
+# Option 1 — Static site only (no build step)
+open index.html        # macOS
+start index.html       # Windows
+
+# Option 2 — Wix Velo local development
 git clone <your-repository-url>
 cd AGT-2026
-npm install        # also runs `wix sync-types` via postinstall
-npm run dev        # alias for `wix dev` — opens the Local Editor
-```
+npm install            # also runs `wix sync-types` via postinstall
+npm run dev            # alias for `wix dev` — opens the Local Editor
 
-### Lint
-
-```bash
-npm run lint       # eslint .
+# Lint
+npm run lint           # eslint .
 ```
 
 ---
 
-## Deploy / Publish
+## Publishing
+
+### Static Site (`index.html`)
+
+1. Push this repository to GitHub.
+2. Go to **Settings → Pages** in your repository.
+3. Under **Branch**, select `main` and the root folder `/`.
+4. Click **Save**.
+5. GitHub will provide a URL like `https://yourusername.github.io/AGT-2026/` within a minute or two.
+
+> **Tip:** Make sure `index.html` is in the root of the repository (it is, by default).
+
+### Wix Velo App
 
 ```bash
 wix release        # build and publish a preview release
@@ -94,37 +83,9 @@ Pushing to the default branch automatically syncs code changes to the connected 
 
 ---
 
-## `index.html` — Static Site
+## Asset Setup
 
-`index.html` is a **self-contained** single-page site. Open it directly in a browser or deploy to any static host — no build step required.
-
-### Sections
-
-| Section ID | Heading |
-|---|---|
-| `#home` | Hero |
-| `#about` | Who We Are |
-| `#services` | What We Offer |
-| `#packages` | Full Luxury Detail Packages |
-| `#addons` | Add-On Services |
-| `#portfolio` | Before & After |
-| `#booking` | Schedule Your Appointment |
-
-### JS Behaviors (inline `<script>`)
-
-- **Sticky nav** — `scroll` listener adds `.scrolled` to `#mainNav` after 60 px; reveals `#navPhone`
-- **Mobile menu toggle** — `toggleMenu()` shows/hides `.nav-links`
-- **Scroll animations** — `IntersectionObserver` adds `.visible` for fade-in on section entry
-- **Booking funnel** — 4-step state machine via `goToStep(n)` with field validation
-- **Package selection** — `selectPkg()` (funnel cards) / `selectPackage()` (packages section shortcut)
-- **Add-on toggle** — `toggleAddonPill()` / `toggleAddon()`
-- **Vehicle condition** — `selectCondition()`
-- **Payment method** — `selectPayMethod()` (Cash App, Zelle, Venmo) with per-method instructions
-- **Booking confirm** — `confirmBooking()` → reveals `#stepConfirm` panel; hides progress bar
-- **Record ID** — auto-generated `AGT-<timestamp36>-<rand4>` on page load (stored in `booking.recordId`)
-- **Cal.com embed** — `mobile-detail-appointment` namespace, `month_view` layout (Step 2 of funnel)
-
-### Asset Map
+All images used by the static site live in the `images/` folder.
 
 | File | Used in |
 |---|---|
@@ -135,6 +96,67 @@ Pushing to the default branch automatically syncs code changes to the connected 
 | `images/photo-3.jpeg` | Portfolio — Exterior Polish and Shine |
 | `images/photo-4.jpeg` | Portfolio — Wheel and Tire Detail |
 | `images/photo-5.jpeg` | Portfolio — Engine Bay Clean |
+
+### Replacing the Logo
+
+To swap out the logo, drop your new PNG into `images/` and update the corresponding `src` attributes in `index.html`:
+
+```html
+<!-- Nav logo -->
+<img src="images/photo-10.png" style="height:48px;" alt="AGT Logo" />
+
+<!-- Hero logo -->
+<img src="images/photo-10.png" style="width:180px;" alt="AGT" />
+```
+
+---
+
+## Updating Payment Handles
+
+The payment instructions in `index.html` Step 4 use placeholder handles.
+Search `index.html` for these values and replace both occurrences of each:
+
+| Placeholder | Replace with |
+|---|---|
+| `$YOURHANDLE` | Your Cash App cashtag |
+| `@YOURHANDLE` | Your Venmo username |
+| `(334) 294-8228` | Your Zelle phone number (already set — update if needed) |
+
+---
+
+## Adding or Updating Services
+
+### Static Site
+
+Package cards and add-ons are written directly in `index.html` inside `#packages` and `#addons`.
+To add a new package card:
+
+```html
+<div class="pkg-card" onclick="selectPkg('Your Package Name', 00)">
+  <h3>Your Package Name</h3>
+  <div class="pkg-price">$00</div>
+  <p>Short description of what's included.</p>
+</div>
+```
+
+### Wix Velo App
+
+Edit the `ALL_SERVICES` array in `src/pages/Book Online.c5pg0.js`. Each entry requires:
+
+```js
+{
+  id: 'unique-id',
+  category: 'Category Name',
+  name: 'Service Name',
+  description: 'Short description.',
+  price: 00,        // dollars — not cents
+  duration: 60,     // minutes
+  image: 'https://…'
+}
+```
+
+To add a new service add-on, edit the `ADD_ONS` array in `src/pages/Service Page.zapqr.js`.
+To add a new promo code, edit the `PROMO_CODES` object in `src/pages/Cart Page.u25lg.js`.
 
 ---
 
@@ -153,7 +175,20 @@ Book Online → (Service Page) → Cart Page → Booking Form → Booking Calend
 | `agt_selected_date` | ISO date string, e.g. `"2026-03-15"` |
 | `agt_selected_time` | 24-hour time string, e.g. `"10:00"` |
 
-**Prices** are stored and calculated as dollar amounts (not cents).
+Prices are stored and calculated as dollar amounts (not cents).
+
+---
+
+## Tech Stack
+
+- **Wix Velo** — proprietary Wix JavaScript runtime for the multi-page app (`src/`)
+- **HTML5 / CSS3 / ES2020** — zero-dependency static site (`index.html`)
+- **Wix Data** (`wix-data`) — backend database, primary `Bookings` collection
+- **`wix-storage` session** — cart and booking state scoped to the browser tab
+- **[Cal.com](https://cal.com)** — scheduling embed (`mobile-detail-appointment`, `month_view` layout)
+- **Google Fonts** — Cormorant Garamond, Bebas Neue, Montserrat
+- **ESLint 8** + `@wix/eslint-plugin-cli` — linting
+- No external frameworks, no bundler required for `index.html`
 
 ---
 
@@ -161,4 +196,10 @@ Book Online → (Service Page) → Cart Page → Booking Form → Booking Calend
 
 - [ ] `src/pages/Home.cfspp.js` has an unresolved git merge conflict — resolve before deploying
 - [ ] `src/backend/permissions.json` grants anonymous invoke access to all web methods — tighten for production
-- [ ] Payment handles (`$YOURHANDLE`, `@YOURHANDLE`) in `index.html` Step 4 need to be replaced with real Cash App / Venmo / Zelle handles
+- [ ] Payment handles (`$YOURHANDLE`, `@YOURHANDLE`) in `index.html` Step 4 need to be replaced with real Cash App / Venmo handles
+
+---
+
+## Contact
+
+Questions or updates? Reach out at **agentlemenstouch@gmail.com**
