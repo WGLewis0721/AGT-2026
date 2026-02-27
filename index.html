@@ -1628,6 +1628,26 @@
     .testimonials-grid { gap: 16px; }
   }
 
+  /* Max-width container — caps content on ultrawide screens (≥1560px).
+     Only padding-left/right are overridden so vertical padding from
+     each element's own rule is preserved. Does not overlap with any
+     max-width breakpoints used elsewhere (1024px, 768px, 480px). */
+  @media (min-width: 1560px) {
+    section,
+    nav,
+    nav.scrolled,
+    .booking-funnel,
+    .how-it-works,
+    .faq,
+    .service-area,
+    .stats-bar,
+    .cta-banner,
+    footer {
+      padding-left: calc((100% - 1440px) / 2);
+      padding-right: calc((100% - 1440px) / 2);
+    }
+  }
+
   /* ─── FIX 2: WAIVER MODAL ─── */
   #waiver-modal {
     display: none;
