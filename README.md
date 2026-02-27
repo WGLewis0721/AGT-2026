@@ -1,45 +1,164 @@
-# Git Integration & Wix CLI <img align="left" src="https://user-images.githubusercontent.com/89579857/185785022-cab37bf5-26be-4f11-85f0-1fac63c07d3b.png">
+# A Gentlemen's Touch — AGT Mobile Detailing
 
-This repo is part of Git Integration & Wix CLI, a set of tools that allows you to write, test, and publish code for your Wix site locally on your computer. 
+Luxury mobile car detailing site for **A Gentlemen's Touch (AGT)**. The repo has two distinct layers:
 
-Connect your site to GitHub, develop in your favorite IDE, test your code in real time, and publish your site from the command line.
+| Layer | Path | What it is |
+|---|---|---|
+| Static marketing site | `index.html` | Single-page HTML/CSS/JS site — no build step required |
+| Wix Velo app | `src/` | Multi-page Wix site (siteId `685cc33b-0e63-481d-9422-d4bafcc7f070`) |
 
-## Set up this repository in your IDE
-This repo is connected to a Wix site. That site tracks this repo's default branch. Any code committed and pushed to that branch from your local IDE appears on the site.
+---
 
-Before getting started, make sure you have the following things installed:
-* [Git](https://git-scm.com/download)
-* [Node](https://nodejs.org/en/download/), version 14.8 or later.
-* [npm](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm) or [yarn](https://yarnpkg.com/getting-started/install)
-* An SSH key [added to your GitHub account](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/adding-a-new-ssh-key-to-your-github-account).
+## Repository Layout
 
-To set up your local environment and start coding locally, do the following:
+```
+AGT-2026/
+├── index.html                           # Standalone marketing + booking funnel
+├── images/                              # Local image assets for index.html
+│   ├── photo-10.png                     # Logo / favicon
+│   ├── photo-9.jpeg                     # About section background
+│   ├── photo-1.jpeg … photo-5.jpeg      # Portfolio (Before & After) photos
+│   └── photo-6.jpeg … photo-8.jpeg, photo-11.png   # Additional assets
+├── src/
+│   ├── pages/                           # Wix Velo page code (one file per page)
+│   │   ├── masterPage.js                # Global — runs on every page
+│   │   ├── Home.cfspp.js                # Home page
+│   │   ├── Book Online.c5pg0.js         # Service listing / menu
+│   │   ├── Service Page.zapqr.js        # Individual service detail
+│   │   ├── Cart Page.u25lg.js           # Cart review + promo codes
+│   │   ├── Booking Form.vqyyp.js        # Step 1 — customer & vehicle info
+│   │   ├── Booking Calendar.s9swq.js    # Step 2 — date & time picker
+│   │   ├── Checkout.s8k0z.js            # Step 3 — review & confirm
+│   │   ├── Thank You Page.w5kt1.js      # Booking confirmation + tracker
+│   │   ├── Side Cart.o63p3.js           # Slide-in cart panel
+│   │   ├── My Bookings.dv8my.js         # Member bookings list
+│   │   ├── Account Settings.woh8q.js    # Member account
+│   │   ├── Privacy Policy.c1qxt.js      # Privacy policy
+│   │   ├── Refund Policy.nvn5b.js       # Refund policy
+│   │   ├── Terms & Conditions.j1vkb.js  # Terms & Conditions
+│   │   └── Accessibility Statement.d3989.js
+│   ├── public/
+│   │   └── cartManager.js               # Shared cart + booking-info helpers
+│   └── backend/
+│       ├── bookingUtils.jsw             # Web module: slots, submit, lookup
+│       └── permissions.json             # Web-method permission config
+├── package.json                         # Dev deps + npm scripts
+├── wix.config.json                      # Wix site ID + UI version
+├── .eslintrc.json                       # ESLint (Wix CLI recommended rules)
+└── wix.lock                             # Wix dependency lock file
+```
 
-1. Open your terminal and navigate to where you want to store the repo.
-1. Clone the repo by running `git clone <your-repository-url>`.
-1. Navigate to the repo's directory by running `cd <directory-name>`.
-1. Install the repo's dependencies by running `npm install` or `yarn install`.
-1. Install the Wix CLI by running `npm install -g @wix/cli` or `yarn global add @wix/cli`.  
-   Once you've installed the CLI globally, you can use it with any Wix site's repo.
+---
 
-For more information, see [Setting up Git Integration & Wix CLI](https://support.wix.com/en/article/velo-setting-up-git-integration-wix-cli-beta).
+## Stack
 
-## Write Velo code in your IDE
-Once your repo is set up, you can write code in it as you would in any other non-Wix project. The repo's file structure matches the [public](https://support.wix.com/en/article/velo-working-with-the-velo-sidebar#public), [backend](https://support.wix.com/en/article/velo-working-with-the-velo-sidebar#backend), and [page code](https://support.wix.com/en/article/velo-working-with-the-velo-sidebar#page-code) sections in Editor X.
+| Concern | Technology |
+|---|---|
+| Wix site framework | [Wix Velo](https://dev.wix.com/docs/develop-websites/articles/wix-velo/frameworks-and-tools/about-velo) |
+| Static page | Vanilla HTML 5 / CSS 3 / ES2020 |
+| Backend data | Wix Data (`wix-data`) — `Bookings` collection |
+| Session state | `wix-storage` session module |
+| Scheduling embed | [Cal.com](https://cal.com) — namespace `mobile-detail-appointment`, `month_view` layout |
+| Fonts | Google Fonts — Cormorant Garamond, Bebas Neue, Montserrat |
+| Linting | ESLint 8 + `@wix/eslint-plugin-cli` |
+| CLI | `@wix/cli` |
 
-Learn more about [this repo's file structure](https://support.wix.com/en/article/velo-understanding-your-sites-github-repository-beta).
+---
 
-## Test your code with the Local Editor
-The Local Editor allows you test changes made to your site in real time. The code in your local IDE is synced with the Local Editor, so you can test your changes before committing them to your repo. You can also change the site design in the Local Editor and sync it with your IDE.
+## Local Development (Wix Velo)
 
-Start the Local Editor by navigating to this repo's directory in your terminal and running `wix dev`.
+**Prerequisites:** Git, Node ≥ 14.8, npm, SSH key added to GitHub.
 
-For more information, see [Working with the Local Editor](https://support.wix.com/en/article/velo-working-with-the-local-editor-beta).
+```bash
+git clone <your-repository-url>
+cd AGT-2026
+npm install        # also runs `wix sync-types` via postinstall
+npm run dev        # alias for `wix dev` — opens the Local Editor
+```
 
-## Preview and publish with the Wix CLI
-The Wix CLI is a tool that allows you to work with your site locally from your computer's terminal. You can use it to build a preview version of your site and publish it. You can also use the CLI to install [approved npm packages](https://support.wix.com/en/article/velo-working-with-npm-packages) to your site.
+### Lint
 
-Learn more about [working with the Wix CLI](https://support.wix.com/en/article/velo-working-with-the-wix-cli-beta).
+```bash
+npm run lint       # eslint .
+```
 
-## Invite contributors to work with you
-Git Integration & Wix CLI extends Editor X's [concurrent editing](https://support.wix.com/en/article/editor-x-about-concurrent-editing) capabilities. Invite other developers as collaborators on your [site](https://support.wix.com/en/article/inviting-people-to-contribute-to-your-site) and your [GitHub repo](https://docs.github.com/en/account-and-profile/setting-up-and-managing-your-personal-account-on-github/managing-access-to-your-personal-repositories/inviting-collaborators-to-a-personal-repository). Multiple developers can work on a site's code at once.
+---
+
+## Deploy / Publish
+
+```bash
+wix release        # build and publish a preview release
+```
+
+Pushing to the default branch automatically syncs code changes to the connected Wix site.
+
+---
+
+## `index.html` — Static Site
+
+`index.html` is a **self-contained** single-page site. Open it directly in a browser or deploy to any static host — no build step required.
+
+### Sections
+
+| Section ID | Heading |
+|---|---|
+| `#home` | Hero |
+| `#about` | Who We Are |
+| `#services` | What We Offer |
+| `#packages` | Full Luxury Detail Packages |
+| `#addons` | Add-On Services |
+| `#portfolio` | Before & After |
+| `#booking` | Schedule Your Appointment |
+
+### JS Behaviors (inline `<script>`)
+
+- **Sticky nav** — `scroll` listener adds `.scrolled` to `#mainNav` after 60 px; reveals `#navPhone`
+- **Mobile menu toggle** — `toggleMenu()` shows/hides `.nav-links`
+- **Scroll animations** — `IntersectionObserver` adds `.visible` for fade-in on section entry
+- **Booking funnel** — 4-step state machine via `goToStep(n)` with field validation
+- **Package selection** — `selectPkg()` (funnel cards) / `selectPackage()` (packages section shortcut)
+- **Add-on toggle** — `toggleAddonPill()` / `toggleAddon()`
+- **Vehicle condition** — `selectCondition()`
+- **Payment method** — `selectPayMethod()` (Cash App, Zelle, Venmo) with per-method instructions
+- **Booking confirm** — `confirmBooking()` → reveals `#stepConfirm` panel; hides progress bar
+- **Record ID** — auto-generated `AGT-<timestamp36>-<rand4>` on page load (stored in `booking.recordId`)
+- **Cal.com embed** — `mobile-detail-appointment` namespace, `month_view` layout (Step 2 of funnel)
+
+### Asset Map
+
+| File | Used in |
+|---|---|
+| `images/photo-10.png` | Favicon, nav logo, hero logo |
+| `images/photo-9.jpeg` | About section background |
+| `images/photo-1.jpeg` | Portfolio — Before & After Full Detail |
+| `images/photo-2.jpeg` | Portfolio — Interior Deep Clean |
+| `images/photo-3.jpeg` | Portfolio — Exterior Polish and Shine |
+| `images/photo-4.jpeg` | Portfolio — Wheel and Tire Detail |
+| `images/photo-5.jpeg` | Portfolio — Engine Bay Clean |
+
+---
+
+## Wix Velo — Booking Flow
+
+```
+Book Online → (Service Page) → Cart Page → Booking Form → Booking Calendar → Checkout → Thank You Page
+```
+
+**Session storage keys** (`wix-storage` session):
+
+| Key | Value |
+|---|---|
+| `agt_cart` | JSON array of cart items |
+| `agt_booking_info` | JSON object — address, vehicle, contact |
+| `agt_selected_date` | ISO date string, e.g. `"2026-03-15"` |
+| `agt_selected_time` | 24-hour time string, e.g. `"10:00"` |
+
+**Prices** are stored and calculated as dollar amounts (not cents).
+
+---
+
+## Known Issues / TODO
+
+- [ ] `src/pages/Home.cfspp.js` has an unresolved git merge conflict — resolve before deploying
+- [ ] `src/backend/permissions.json` grants anonymous invoke access to all web methods — tighten for production
+- [ ] Payment handles (`$YOURHANDLE`, `@YOURHANDLE`) in `index.html` Step 4 need to be replaced with real Cash App / Venmo / Zelle handles
