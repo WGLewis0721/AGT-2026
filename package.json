@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "stripe": "^21.0.1",
+    "stripe-cli": "^0.1.0"
+  }
+}
