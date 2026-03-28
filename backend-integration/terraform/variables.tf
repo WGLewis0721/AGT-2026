@@ -1,10 +1,10 @@
 variable "client_name" {
-  description = "Client name used in resource naming."
+  description = "Client slug used in resource naming."
   type        = string
 }
 
 variable "environment" {
-  description = "Deployment environment: dev or prod"
+  description = "Deployment environment: dev or prod."
   type        = string
   default     = "prod"
 
@@ -27,7 +27,7 @@ variable "stripe_webhook_secret" {
 }
 
 variable "textbelt_api_key" {
-  description = "Textbelt API key for SMS delivery"
+  description = "Textbelt API key for SMS delivery."
   type        = string
   sensitive   = true
 }
@@ -59,4 +59,10 @@ variable "lambda_memory" {
   description = "Lambda memory size in MB."
   type        = number
   default     = 128
+}
+
+variable "log_retention" {
+  description = "CloudWatch log retention in days."
+  type        = number
+  default     = 14
 }

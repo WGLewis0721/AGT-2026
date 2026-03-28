@@ -7,7 +7,7 @@ import stripe
 
 # ─────────────────────────────────────────────────────────────
 # CloudWatch Logs Insights — AWS Console → CloudWatch → Logs Insights
-# Log group: /aws/lambda/rosie-gentlemens-touch-{environment}-booking-webhook
+# Log group: /aws/lambda/tra3-gentlemens-touch-{environment}-booking-webhook
 #
 # All processed bookings (last 7 days):
 # fields @timestamp, @message

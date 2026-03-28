@@ -3,7 +3,9 @@ param(
     [string]$Client,
     [Parameter(Mandatory = $false)]
     [ValidateSet("dev", "prod")]
-    [string]$Environment = "prod"
+    [string]$Environment = "prod",
+    [Parameter(Mandatory = $false)]
+    [switch]$Force
 )
 
 $ErrorActionPreference = "Stop"
@@ -20,35 +22,11 @@ function Assert-LastExitCode {
 
 function Remove-PathIfExists {
     param(
-        [string]$Path,
-        [switch]$Recurse
+        [string]$Path
     )
 
-    if (-not (Test-Path -LiteralPath $Path)) {
-        return
-    }
-
-    for ($attempt = 1; $attempt -le 3; $attempt++) {
-        try {
-            if ($Recurse) {
-                Remove-Item -LiteralPath $Path -Recurse -Force -ErrorAction Stop
-            }
-            else {
-                Remove-Item -LiteralPath $Path -Force -ErrorAction Stop
-            }
-            return
-        }
-        catch {
-            if (-not (Test-Path -LiteralPath $Path)) {
-                return
-            }
-
-            if ($attempt -eq 3) {
-                throw
-            }
-
-            Start-Sleep -Seconds 1
-        }
+    if (Test-Path -LiteralPath $Path) {
+        Remove-Item -LiteralPath $Path -Force
     }
 }
 
@@ -56,12 +34,12 @@ $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $backendDir = Split-Path -Parent $scriptDir
 $repoRoot = Split-Path -Parent $backendDir
 $lambdaDir = Join-Path $backendDir "lambda"
-$buildDir = Join-Path $lambdaDir "build"
-$zipPath = Join-Path $lambdaDir "booking-lambda.zip"
+$zipPath = Join-Path $lambdaDir "lambda_function.zip"
 $terraformDir = Join-Path $backendDir "terraform"
 $varsFile = Join-Path $backendDir "clients/$Client/$Environment.tfvars"
 $lambdaSource = Join-Path $lambdaDir "lambda_function.py"
 $workspaceName = if ($Environment -eq "prod") { "default" } else { $Environment }
+$backendKey = "terraform-state/$Client/terraform.tfstate"
 
 if (-not (Test-Path -LiteralPath $varsFile)) {
     Write-Host "Missing client tfvars file: $varsFile" -ForegroundColor Red
@@ -71,45 +49,37 @@ if (-not (Test-Path -LiteralPath $varsFile)) {
 Set-Location $backendDir
 
 try {
-    Write-Host "━━━ TRA3 Deploy - $Client ($Environment) ━━━" -ForegroundColor Cyan
+    Write-Host "=== TRA3 Deploy: $Client ($Environment) ===" -ForegroundColor Cyan
+
+    Write-Host "Step 0 - Preflight" -ForegroundColor Cyan
+    $accountId = ((@(& aws sts get-caller-identity --query Account --output text)) -join "").Trim()
+    Assert-LastExitCode "aws sts get-caller-identity"
+    $s3Bucket = "tra3-$accountId-deployments"
+    $s3FunctionKey = "functions/$Client/$Environment/lambda_function.zip"
+
+    $layerKey = ((@(& aws s3api list-objects-v2 --bucket $s3Bucket --prefix "layers/dependencies/layer.zip" --query "Contents[?Key=='layers/dependencies/layer.zip'].Key" --output text)) -join "").Trim()
+    Assert-LastExitCode "aws s3api list-objects-v2"
+    if (-not $layerKey) {
+        throw "Dependency layer not found in s3://$s3Bucket/layers/dependencies/layer.zip. Run .\\backend-integration\\scripts\\bootstrap-layer.ps1 first."
+    }
+
     Write-Host "Step 1 - Package Lambda" -ForegroundColor Cyan
-
-    Remove-PathIfExists -Path $buildDir -Recurse
     Remove-PathIfExists -Path $zipPath
-
-    New-Item -ItemType Directory -Path $buildDir -Force | Out-Null
-    Copy-Item -LiteralPath $lambdaSource -Destination $buildDir -Force
-
-    if (Get-Command pip -ErrorAction SilentlyContinue) {
-        & pip install stripe requests -t $buildDir --quiet
-    }
-    elseif (Get-Command python -ErrorAction SilentlyContinue) {
-        & python -m pip install stripe requests -t $buildDir --quiet
-    }
-    else {
-        throw "pip was not found. Install Python 3.11+ with pip before deploying."
-    }
-
-    Assert-LastExitCode "pip install stripe requests"
-
-    Compress-Archive -Path (Join-Path $buildDir "*") -DestinationPath $zipPath -Force
-    Remove-PathIfExists -Path $buildDir -Recurse
-
+    Compress-Archive -Path $lambdaSource -DestinationPath $zipPath -Force
     Write-Host "Lambda package created: $zipPath" -ForegroundColor Green
 
-    Write-Host "Step 2 - Terraform init" -ForegroundColor Cyan
+    Write-Host "Step 2 - Upload Lambda package" -ForegroundColor Cyan
+    & aws s3 cp $zipPath "s3://$s3Bucket/$s3FunctionKey"
+    Assert-LastExitCode "aws s3 cp lambda_function.zip"
+    Write-Host "Lambda package uploaded: s3://$s3Bucket/$s3FunctionKey" -ForegroundColor Green
+
+    Write-Host "Step 3 - Terraform init" -ForegroundColor Cyan
     Set-Location $terraformDir
+    & terraform init -reconfigure "-backend-config=bucket=$s3Bucket" "-backend-config=key=$backendKey" "-backend-config=region=us-east-1" "-backend-config=encrypt=true"
+    Assert-LastExitCode "terraform init"
+    Write-Host "Terraform initialized." -ForegroundColor Green
 
-    if (-not (Test-Path -LiteralPath ".terraform")) {
-        & terraform init
-        Assert-LastExitCode "terraform init"
-        Write-Host "Terraform initialized." -ForegroundColor Green
-    }
-    else {
-        Write-Host "Terraform already initialized." -ForegroundColor Green
-    }
-
-    Write-Host "Step 3 - Terraform workspace" -ForegroundColor Cyan
+    Write-Host "Step 4 - Terraform workspace" -ForegroundColor Cyan
     $workspaceNames = & terraform workspace list
     Assert-LastExitCode "terraform workspace list"
     $workspaceExists = $false
@@ -131,8 +101,8 @@ try {
         Write-Host "Terraform workspace created: $workspaceName" -ForegroundColor Green
     }
 
-    Write-Host "Step 4 - Terraform apply" -ForegroundColor Cyan
-    & terraform apply "-var-file=../clients/$Client/$Environment.tfvars" -auto-approve
+    Write-Host "Step 5 - Terraform apply" -ForegroundColor Cyan
+    & terraform apply -auto-approve "-var=client_name=$Client" "-var=environment=$Environment" "-var-file=../clients/$Client/$Environment.tfvars"
     Assert-LastExitCode "terraform apply"
 
     Write-Host "Deployment finished successfully." -ForegroundColor Green
@@ -147,9 +117,8 @@ try {
     }
     Write-Host "3. Set the event to: checkout.session.completed" -ForegroundColor White
     Write-Host "4. Copy the signing secret back into $Environment.tfvars as stripe_webhook_secret." -ForegroundColor White
-    Write-Host "5. Re-run .\scripts\deploy.ps1 -Client $Client -Environment $Environment to apply the secret." -ForegroundColor White
+    Write-Host "5. Re-run .\\scripts\\deploy.ps1 -Client $Client -Environment $Environment to apply the secret." -ForegroundColor White
 }
 finally {
-    Remove-PathIfExists -Path $buildDir -Recurse
     Set-Location $repoRoot
 }
