@@ -1,65 +1,91 @@
-Updated the AGT backend to support isolated `prod` and `dev` environments and tested whether the proposed TinyURL change would actually bypass the Textbelt blocker.
+Updated the AGT backend to the current balance-only SMS flow and merged the finished backend branch into `main`.
 
-What changed
-- Added `environment` to Terraform variables and updated resource naming to include the environment:
-  - `rosie-{client}-{environment}-booking-webhook`
-  - `rosie-{client}-{environment}-api`
-  - `rosie-{client}-{environment}-lambda-role`
-  - `/aws/lambda/rosie-{client}-{environment}-booking-webhook`
-- Added explicit CloudWatch log group management and environment tagging in Terraform.
-- Updated `deploy.ps1` to accept `-Environment dev|prod`, use `clients/{client}/{environment}.tfvars`, print the active environment, and isolate Terraform state by workspace:
-  - `prod` uses the default workspace to preserve the existing live stack
-  - `dev` uses the `dev` workspace so it does not overwrite `prod`
-- Replaced the old example client config with:
-  - `backend-integration/clients/example-client/prod.tfvars`
-  - `backend-integration/clients/example-client/dev.tfvars`
-- Added `backend-integration/.github/copilot-instructions.md`
-- Updated `backend-integration/README.md` with environment setup, troubleshooting, and environment-specific teardown instructions.
-- Updated `.gitignore` so the new example `dev.tfvars` and `prod.tfvars` remain tracked while real client tfvars stay ignored.
+Current backend behavior
+- Stripe sends `checkout.session.completed` to API Gateway.
+- Lambda verifies the webhook signature.
+- Lambda calculates the deposit paid and remaining balance due.
+- Lambda sends:
+  - a detailer SMS with booking details, deposit, and balance
+  - a customer confirmation SMS with deposit confirmation and balance guidance
+- No payment links are sent by SMS.
 
-Lambda changes
-- Added `urllib.parse` import.
-- Added `shorten_url()` using TinyURL.
-- Kept the structured Stripe/Textbelt logging and balance calculation from the prior iteration.
-- Added `format_sms_link()` so the final SMS uses an SMS-safe link format.
-- The Lambda now shortens the pay link first, then sends it in the format:
-  - `tinyurl dot com/<code>`
-- Both detailer and customer SMS bodies use the formatted shortened link.
+Lambda fixes
+- Removed all pay-link logic from `backend-integration/lambda/lambda_function.py`.
+- Removed:
+  - `BALANCE_PAYMENT_LINK`
+  - `shorten_url()`
+  - `format_sms_link()`
+  - `urllib.parse`
+  - all `pay_link` references
+- Kept:
+  - `SERVICE_PRICES`
+  - balance calculation logic
+  - Stripe signature verification
+  - structured CloudWatch logging
+  - Textbelt SMS delivery
+  - dev/prod environment separation
 
-Important analysis result
-- The prompt as written did not fully bypass blocker #2.
-- TinyURL alone was not enough: Textbelt still rejected:
-  - `https://tinyurl.com/...`
-  - `tinyurl.com/...`
-  - `www.tinyurl.com/...`
-- Direct Textbelt testing showed it accepts obfuscated URL text such as:
-  - `tinyurl dot com/...`
-  - `tinyurl com/...`
-- I changed the Lambda accordingly so the shortened link remains readable and deliverable.
+Current SMS behavior
+- Detailer SMS now contains:
+  - customer name, phone, email
+  - service, date, location
+  - deposit amount
+  - balance amount when the service matches the price map
+- Customer SMS now contains:
+  - booking confirmation
+  - service, date, location
+  - deposit received
+  - balance due after service when known
+  - fallback text when the balance is not mapped yet
+- No URLs appear in either SMS.
 
-Deploy and validation
-- Prod deploy succeeded:
-  - Lambda: `rosie-gentlemens-touch-prod-booking-webhook`
-  - Status: `Active`
-  - LastUpdateStatus: `Successful`
-- Dev deploy succeeded:
-  - Lambda: `rosie-gentlemens-touch-dev-booking-webhook`
-  - Status: `Active`
-  - LastUpdateStatus: `Successful`
-- Created a Stripe test-mode webhook endpoint for the dev API Gateway URL and saved the returned signing secret into `backend-integration/clients/gentlemens-touch/dev.tfvars`.
-- Re-ran the dev deploy so the Lambda picked up the real test webhook secret.
+Docs and instructions updated
+- Updated `backend-integration/.github/copilot-instructions.md`
+  - removed all TinyURL and pay-link guidance
+  - replaced it with balance collection instructions through Stripe Invoices
+- Updated `backend-integration/README.md`
+  - removed pay-link and TinyURL references
+  - added a `Balance Collection` section explaining:
+    - Stripe app -> Invoices -> Create -> enter customer email + amount -> Send
+
+Infrastructure and deploy fixes kept
+- Terraform still supports isolated `dev` and `prod` environments.
+- Resource names include environment, for example:
+  - `rosie-gentlemens-touch-dev-booking-webhook`
+  - `rosie-gentlemens-touch-prod-booking-webhook`
+- `deploy.ps1` still accepts:
+  - `-Client`
+  - `-Environment dev|prod`
+- Terraform workspaces still isolate state:
+  - `prod` -> `default`
+  - `dev` -> `dev`
+
+Validation completed
+- Rebuilt `backend-integration/lambda/booking-lambda.zip`
+- Deployed `dev`
 - Ran:
   - `stripe trigger checkout.session.completed`
-- Result:
-  - Trigger succeeded against `dev`
-  - CloudWatch log group `/aws/lambda/rosie-gentlemens-touch-dev-booking-webhook` showed the full success path:
-    - `stripe_webhook_received`
-    - `url_shortened`
-    - `balance_calculated`
-    - `detailer_sms_sent`
-    - `customer_sms_skipped`
-    - `booking_processed`
+- Verified dev CloudWatch showed the clean success path:
+  - `stripe_webhook_received`
+  - `balance_calculated`
+  - `detailer_sms_sent`
+  - `customer_sms_skipped`
+  - `booking_processed`
+- Confirmed there were no `pay_link`, `shorten_url`, `TinyURL`, or URL-related log lines in the dev test run.
+- Deployed `prod`
+- Verified both Lambdas are:
+  - `Active`
+  - `LastUpdateStatus: Successful`
 
-Conclusion
-- Blocker #1 is solved by the isolated `dev` environment with test Stripe credentials and its own webhook endpoint.
-- Blocker #2 is solved only after converting the shortened TinyURL into an SMS-safe text format. A raw clickable TinyURL did not work with this Textbelt key.
+Git and merge result
+- Merged the backend branch into local `main`.
+- Synced local `main` with `origin/main`.
+- Resolved backend conflicts in favor of the working env-aware Textbelt implementation.
+- Pushed merged `main` to GitHub successfully.
+- Merge commit:
+  - `ac2fbd6`
+
+Important note
+- One unrelated repo issue still exists outside this backend work:
+  - `wix/src/pages/Home.cfspp.js` contains old conflict markers.
+  - It was not part of the backend merge and was not changed here.
