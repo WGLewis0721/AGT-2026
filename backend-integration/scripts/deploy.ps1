@@ -93,7 +93,7 @@ try {
     Assert-LastExitCode "pip install stripe requests"
 
     Compress-Archive -Path (Join-Path $buildDir "*") -DestinationPath $zipPath -Force
-    Remove-Item -LiteralPath $buildDir -Recurse -Force
+    Remove-PathIfExists -Path $buildDir -Recurse
 
     Write-Host "Lambda package created: $zipPath" -ForegroundColor Green
 
@@ -151,6 +151,5 @@ try {
 }
 finally {
     Remove-PathIfExists -Path $buildDir -Recurse
-
     Set-Location $repoRoot
 }

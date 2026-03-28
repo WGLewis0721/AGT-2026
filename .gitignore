@@ -7,12 +7,22 @@ jsconfig.json
 .tools/
 **/__pycache__/
 *.pyc
+
+# Terraform state and working directories
 **/.terraform/
 *.tfstate
 *.tfstate.backup
+*.tfstate.lock.info
 .terraform.lock.hcl
+
+# Lambda and layer build artifacts
 backend-integration/lambda/build/
 backend-integration/lambda/booking-lambda.zip
+backend-integration/lambda/lambda_function.zip
+backend-integration/layer/layer-build/
+backend-integration/layer/layer.zip
+
+# Client credentials
 *.tfvars
 !backend-integration/clients/example-client/dev.tfvars
 !backend-integration/clients/example-client/prod.tfvars
