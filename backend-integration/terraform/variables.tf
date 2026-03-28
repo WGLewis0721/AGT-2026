@@ -1,0 +1,51 @@
+variable "client_name" {
+  description = "Client name used in resource naming."
+  type        = string
+}
+
+variable "stripe_secret_key" {
+  description = "Stripe secret key for API access."
+  type        = string
+  sensitive   = true
+}
+
+variable "stripe_webhook_secret" {
+  description = "Stripe webhook signing secret."
+  type        = string
+  sensitive   = true
+}
+
+variable "textbelt_api_key" {
+  description = "Textbelt API key for SMS delivery"
+  type        = string
+  sensitive   = true
+}
+
+variable "detailer_phone_number" {
+  description = "Business owner phone number in E.164 format."
+  type        = string
+}
+
+variable "aws_region" {
+  description = "AWS region for infrastructure."
+  type        = string
+  default     = "us-east-1"
+}
+
+variable "lambda_runtime" {
+  description = "Lambda runtime."
+  type        = string
+  default     = "python3.11"
+}
+
+variable "lambda_timeout" {
+  description = "Lambda timeout in seconds."
+  type        = number
+  default     = 30
+}
+
+variable "lambda_memory" {
+  description = "Lambda memory size in MB."
+  type        = number
+  default     = 128
+}

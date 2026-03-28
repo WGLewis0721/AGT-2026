@@ -107,18 +107,11 @@ To add a new package card:
 - **[Cal.com](https://cal.com)** — scheduling embed (`mobile-detail-appointment`, `month_view` layout)
 - **Google Fonts** — Cormorant Garamond, Bebas Neue, Montserrat
 
-## Booking Backend Automation (Cal.com → Airtable → Notifications)
+## Backend Infrastructure
 
-Production-ready integration scaffolding is included in [`backend-integration/`](./backend-integration/):
+AWS Lambda + API Gateway handles booking webhooks and SMS notifications.
 
-- Cloudflare Worker webhook receiver for Cal.com events
-- Airtable record creation for each booking
-- SMS notification support (Twilio)
-- Email notification support (Resend)
-
-See [`backend-integration/README.md`](./backend-integration/README.md) for setup and deployment.
-
----
+See [`backend-integration/README.md`](./backend-integration/README.md) for setup instructions.
 
 ## Known Issues / TODO
 

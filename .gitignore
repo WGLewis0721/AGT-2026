@@ -4,3 +4,14 @@ node_modules/
 .idea/
 .wix/
 jsconfig.json
+.tools/
+**/__pycache__/
+*.pyc
+**/.terraform/
+*.tfstate
+*.tfstate.backup
+.terraform.lock.hcl
+backend-integration/lambda/build/
+backend-integration/lambda/booking-lambda.zip
+*.tfvars
+!backend-integration/clients/example-client/terraform.tfvars

@@ -1,0 +1,108 @@
+AGT-2026 Infrastructure Update Summary
+
+Date: 2026-03-27
+
+Overview
+Replaced the legacy backend notes in backend-integration/ with a new AWS-based webhook infrastructure for Stripe Payment Links. The new flow is:
+Stripe Payment Link payment -> Stripe webhook -> API Gateway HTTP API -> Lambda -> Twilio SMS to the business owner.
+
+Changes Made
+- Rebuilt backend-integration/ to use the requested structure:
+  - terraform/
+  - lambda/
+  - scripts/
+  - clients/
+  - README.md
+- Removed the old backend reference files:
+  - backend-integration/GO-LIVE-STEPS.md
+  - backend-integration/worker.js
+
+Terraform
+- Added backend-integration/terraform/providers.tf with:
+  - Terraform version constraint >= 1.5.0
+  - AWS provider ~> 5.0
+  - Region sourced from var.aws_region
+- Added backend-integration/terraform/variables.tf with all required and optional variables, including sensitive flags on secret values.
+- Added backend-integration/terraform/main.tf with:
+  - IAM role for Lambda
+  - AWSLambdaBasicExecutionRole attachment
+  - Lambda function definition using ../lambda/booking-lambda.zip
+  - API Gateway HTTP API
+  - $default stage with auto deploy
+  - Lambda proxy integration using payload format 2.0
+  - POST /webhook route
+  - Lambda permission for API Gateway invocation
+  - Project/Client tags on supported resources
+- Added backend-integration/terraform/outputs.tf with:
+  - webhook_url
+  - lambda_function_name
+  - lambda_function_arn
+
+Lambda
+- Added backend-integration/lambda/lambda_function.py with:
+  - Stripe signature verification using stripe.Webhook.construct_event
+  - 400 responses for invalid signatures and malformed webhook payloads
+  - Ignore behavior for non-checkout.session.completed events
+  - Extraction of:
+    - customer_details.name
+    - customer_details.email
+    - customer_details.phone
+    - amount_total converted to dollars
+  - Parsing of custom_fields keys:
+    - service
+    - date
+    - location
+  - SMS body formatted to the requested booking notification layout
+  - Twilio SMS delivery using environment variables only
+  - JSON API Gateway responses through helper function _response
+
+Deployment Script
+- Added backend-integration/scripts/deploy.ps1 with:
+  - Mandatory -Client parameter
+  - tfvars existence validation
+  - Lambda packaging flow for stripe and twilio dependencies
+  - Conditional terraform init
+  - terraform apply using ../clients/{Client}/terraform.tfvars
+  - Post-deploy instructions for Stripe webhook setup
+  - Return to repo root in finally block
+
+Client Templates
+- Added backend-integration/clients/gentlemens-touch/terraform.tfvars
+- Added backend-integration/clients/example-client/terraform.tfvars
+- Used placeholders only; no real credentials were added
+
+Documentation
+- Rewrote backend-integration/README.md with:
+  - backend purpose
+  - prerequisites
+  - first deploy steps
+  - Stripe Payment Link custom fields table
+  - example SMS output
+  - teardown command
+- Updated root README.md by adding a new "Backend Infrastructure" section after "Tech Stack"
+- Removed the outdated root README section describing the previous Cloudflare/Airtable backend so the docs match the current AWS implementation
+
+Git Ignore
+- Updated .gitignore to cover:
+  - Terraform working directories and state files
+  - lambda build artifacts
+  - tfvars files
+  - exception for backend-integration/clients/example-client/terraform.tfvars
+
+Validation Completed
+- Verified lambda_function.py compiles with python -m py_compile
+- Verified deploy.ps1 parses in PowerShell
+- Verified deploy.ps1 returns the expected error when the client tfvars file is missing
+- Ran terraform fmt
+- Ran terraform init -backend=false
+- Ran terraform validate successfully
+- Cleaned temporary validation artifacts after verification
+
+Scope Protection
+- No changes were made to:
+  - index.html
+  - images/
+  - wix/
+
+Current Result
+The repository now contains a clean AWS backend scaffold ready for deployment once real Stripe, Twilio, and AWS values are added to the client tfvars file.
