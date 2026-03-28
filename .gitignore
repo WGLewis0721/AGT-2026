@@ -4,3 +4,22 @@ node_modules/
 .idea/
 .wix/
 jsconfig.json
+
+# ─── TRA3 Infrastructure ───────────────────────────────────
+
+# Terraform state and working directories
+**/.terraform/
+*.tfstate
+*.tfstate.backup
+*.tfstate.lock.info
+.terraform.lock.hcl
+
+# Lambda build artifacts
+backend-integration/lambda/lambda_function.zip
+backend-integration/layer/layer-build/
+backend-integration/layer/layer.zip
+
+# Client credentials — NEVER commit real credentials
+backend-integration/clients/*/prod.tfvars
+backend-integration/clients/*/dev.tfvars
+!backend-integration/clients/example-client/dev.tfvars
