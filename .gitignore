@@ -14,4 +14,5 @@ jsconfig.json
 backend-integration/lambda/build/
 backend-integration/lambda/booking-lambda.zip
 *.tfvars
-!backend-integration/clients/example-client/terraform.tfvars
+!backend-integration/clients/example-client/dev.tfvars
+!backend-integration/clients/example-client/prod.tfvars

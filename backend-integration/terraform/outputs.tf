@@ -9,5 +9,6 @@ output "lambda_function_name" {
 }
 
 output "lambda_function_arn" {
-  value = aws_lambda_function.booking_webhook.arn
+  description = "Lambda function ARN"
+  value       = aws_lambda_function.booking_webhook.arn
 }

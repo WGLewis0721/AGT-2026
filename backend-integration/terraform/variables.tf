@@ -3,6 +3,17 @@ variable "client_name" {
   type        = string
 }
 
+variable "environment" {
+  description = "Deployment environment: dev or prod"
+  type        = string
+  default     = "prod"
+
+  validation {
+    condition     = contains(["dev", "prod"], var.environment)
+    error_message = "environment must be either dev or prod."
+  }
+}
+
 variable "stripe_secret_key" {
   description = "Stripe secret key for API access."
   type        = string

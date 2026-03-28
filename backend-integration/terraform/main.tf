@@ -1,12 +1,15 @@
 locals {
+  lambda_function_name = "rosie-${var.client_name}-${var.environment}-booking-webhook"
+
   common_tags = {
-    Project = "rosie"
-    Client  = var.client_name
+    Project     = "rosie"
+    Client      = var.client_name
+    Environment = var.environment
   }
 }
 
 resource "aws_iam_role" "lambda_role" {
-  name = "rosie-${var.client_name}-lambda-role"
+  name = "rosie-${var.client_name}-${var.environment}-lambda-role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -29,8 +32,15 @@ resource "aws_iam_role_policy_attachment" "lambda_basic_execution" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 }
 
+resource "aws_cloudwatch_log_group" "lambda" {
+  name              = "/aws/lambda/${local.lambda_function_name}"
+  retention_in_days = 14
+
+  tags = local.common_tags
+}
+
 resource "aws_lambda_function" "booking_webhook" {
-  function_name = "rosie-${var.client_name}-booking-webhook"
+  function_name = local.lambda_function_name
   role          = aws_iam_role.lambda_role.arn
   runtime       = var.lambda_runtime
   handler       = "lambda_function.lambda_handler"
@@ -51,11 +61,14 @@ resource "aws_lambda_function" "booking_webhook" {
 
   tags = local.common_tags
 
-  depends_on = [aws_iam_role_policy_attachment.lambda_basic_execution]
+  depends_on = [
+    aws_cloudwatch_log_group.lambda,
+    aws_iam_role_policy_attachment.lambda_basic_execution,
+  ]
 }
 
 resource "aws_apigatewayv2_api" "booking_api" {
-  name          = "rosie-${var.client_name}-api"
+  name          = "rosie-${var.client_name}-${var.environment}-api"
   protocol_type = "HTTP"
 
   tags = local.common_tags
