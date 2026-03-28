@@ -106,12 +106,18 @@ To add a new package card:
 - **HTML5 / CSS3 / ES2020** — zero-dependency static site; no build step, no framework
 - **[Cal.com](https://cal.com)** — scheduling embed (`mobile-detail-appointment`, `month_view` layout)
 - **Google Fonts** — Cormorant Garamond, Bebas Neue, Montserrat
+- **Infrastructure** — AWS Lambda, API Gateway, S3, CloudWatch · Terraform IaC · TRA3 booking automation
 
-## Backend Infrastructure
+## Booking Backend Automation (TRA3)
 
-AWS Lambda + API Gateway handles booking webhooks and SMS notifications.
+Production-ready AWS serverless infrastructure in [`backend-integration/`](./backend-integration):
 
-See [`backend-integration/README.md`](./backend-integration/README.md) for setup instructions.
+- **Stripe** — collects deposit at Cal.com booking time
+- **AWS Lambda** — processes Stripe webhooks, calculates balance due
+- **Textbelt** — sends SMS to detailer and customer on every booking
+- **Terraform** — all infrastructure as code, dev/prod environments
+
+See [`backend-integration/README.md`](./backend-integration/README.md) for setup and deployment.
 
 ## Known Issues / TODO
 

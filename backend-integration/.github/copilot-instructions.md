@@ -1,97 +1,109 @@
-# TRA3 - Copilot Instructions
-# backend-integration/ context for A Gentlemen's Touch (AGT)
+# TRA3 — Copilot Instructions
+# A Gentlemen's Touch Mobile Detailing (AGT)
+# Last updated: 2026-03-28
 
 ## What This Is
 AWS serverless booking + payment + SMS automation for a mobile detailing business.
-Stripe collects deposits -> Lambda processes webhooks -> Textbelt sends SMS notifications.
+Stripe collects deposits at Cal.com booking → Lambda processes webhooks
+→ Textbelt sends SMS to detailer and customer.
+No manual steps. No URLs in SMS. Balance collected via Stripe invoices.
+
+## Project Name
+TRA3. Never use "Rosie" — that name is retired. Search and replace if found.
+
+## Repo
+WGLewis0721/AGT-2026
+backend-integration/ — all infrastructure lives here
+DO NOT touch: index.html, images/, wix/
 
 ## Environments
-Ask which environment is being changed before deploying.
-Default to `dev` unless the user explicitly says `prod`.
+Default to dev. Always confirm before deploying prod.
 
-`dev` uses `clients/gentlemens-touch/dev.tfvars`.
-`prod` uses `clients/gentlemens-touch/prod.tfvars`.
+| Env  | Stripe mode | tfvars file |
+|------|-------------|-------------|
+| dev  | Test        | clients/{client}/dev.tfvars |
+| prod | Live        | clients/{client}/prod.tfvars |
 
 Deploy commands:
   .\scripts\deploy.ps1 -Client gentlemens-touch -Environment dev
   .\scripts\deploy.ps1 -Client gentlemens-touch -Environment prod
 
-Use the deploy script so Terraform selects the correct workspace automatically.
-`prod` is stored in the default workspace to preserve the existing stack.
-`dev` is stored in the `dev` workspace.
+## AWS Resource Naming
+Pattern: tra3-{client}-{environment}-{resource}
+S3 bucket: tra3-{account_id}-deployments (shared, no env suffix)
+NEVER use "rosie" in any resource name, variable, tag, or comment.
 
-## Lambda Function
-File: `backend-integration/lambda/lambda_function.py`
-Runtime: Python 3.11
-Dependencies: `stripe`, `requests`
-Package: `backend-integration/lambda/booking-lambda.zip`
+## Lambda Architecture
+Layer: stripe + requests (built by bootstrap-layer.ps1, uploaded to S3)
+Function zip: lambda_function.py ONLY (~3KB)
+S3 paths:
+  layers/dependencies/layer.zip
+  functions/{client}/{env}/lambda_function.zip
 
-After any change to `lambda_function.py`:
-  1. Delete `booking-lambda.zip`
-  2. Create `build\`
-  3. Copy `lambda_function.py` into `build\`
-  4. Run `pip install stripe requests -t build\`
-  5. Compress `build\*` into `booking-lambda.zip`
-  6. Delete `build\`
-  7. Run Terraform with the correct environment
+After ANY change to lambda_function.py:
+  Compress-Archive lambda_function.py → lambda_function.zip
+  deploy.ps1 uploads it automatically
 
-## SMS
-Outbound SMS uses Textbelt, not Twilio.
-API key is stored in the Lambda env var `TEXTBELT_API_KEY`.
+After ANY change to layer/requirements.txt:
+  Run bootstrap-layer.ps1
 
-Send two SMS messages per booking:
-  1. Detailer SMS with booking details and balance due
-  2. Customer confirmation SMS with deposit received and remaining balance guidance
-
-Skip the customer SMS gracefully if there is no phone on file.
-Only return `500` if the detailer SMS fails.
+## SMS Rules
+Provider: Textbelt (outbound only)
+NEVER put URLs in SMS — Textbelt blocks them
+Two SMS per booking:
+  1. Detailer: booking details + deposit + balance due
+  2. Customer: confirmation + balance due
+Skip customer SMS gracefully if no phone on file.
+Customer SMS failure = log + continue (return 200)
+Detailer SMS failure = return 500
 
 ## Balance Collection
-The detailer collects the remaining balance after service via Stripe dashboard.
-Open the Stripe app -> Invoices -> Create Invoice -> enter customer email and balance amount -> Send.
-Stripe emails the customer a professional invoice.
-
-Lambda SMS shows the balance amount due so the detailer knows what to invoice.
-Lambda does not send payment links via SMS.
+Detailer uses Stripe app after service:
+  Stripe → Invoices → Create → email + amount → Send
+Lambda shows balance amount in SMS. No links. No automation needed.
 
 ## Service Prices
-`SM Detail` = `$100`
-`MD Detail` = `$150`
-`LG Detail` = `$200`
+SM Detail / Small  = $100
+MD Detail / Medium = $150
+LG Detail / Large  = $200
+Dict: SERVICE_PRICES in lambda_function.py
+Balance = max(full_price - deposit_paid, 0)
 
-Store prices in `SERVICE_PRICES`.
-Balance is `full_price - deposit_paid`, never below zero.
+## Stripe Fields
+Custom fields from Payment Link:
+  service  = what was booked
+  date     = requested date
+  location = service address
+Use .get() with "Not specified" fallback — test events won't have these.
 
-## Terraform
-Tag all resources with `Project`, `Client`, and `Environment`.
-Resource naming pattern:
-  `rosie-{client}-{environment}-{resource}`
+## Client: A Gentlemen's Touch
+Slug:        gentlemens-touch
+City:        Montgomery, Alabama
+Phone:       (334) 294-8228
+Email:       gentlemenstouch5@gmail.com
+Test phone:  +13346522601
 
-Do not hardcode credentials in tracked Terraform files.
-Do not commit `prod.tfvars` or `dev.tfvars`.
-Do not modify `index.html`, `images/`, or `wix/` while working in `backend-integration/`.
-
-## CloudWatch
-Log group pattern:
-  `/aws/lambda/rosie-{client}-{environment}-booking-webhook`
-
-Keep logs structured JSON with `level` and `event`.
-Logs Insights queries live at the top of `lambda_function.py`.
+Cal.com booking links:
+  SM: https://cal.com/william-g.-lewis-ai51kb/mobile-detail-appointment-service-1
+  MD: https://cal.com/william-g.-lewis-ai51kb/mobile-detail-appointment-service-2
+  LG: https://cal.com/william-g.-lewis-ai51kb/mobile-detail-appointment-service-3
 
 ## Testing
-Use Stripe CLI only against the `dev` environment with test mode keys.
-Real Payment Link bookings always hit `prod`.
+Test only against dev. Never trigger against prod.
+  stripe trigger checkout.session.completed  →  hits dev Lambda
 
-After every deploy:
-  1. Run `stripe trigger checkout.session.completed` against `dev`
-  2. Check CloudWatch for `stripe_webhook_received`
-  3. Check CloudWatch for `balance_calculated`
-  4. Check CloudWatch for `detailer_sms_sent`
-  5. Check CloudWatch for `booking_processed`
+After every deploy confirm CloudWatch shows:
+  stripe_webhook_received → balance_calculated →
+  detailer_sms_sent → customer_sms_skipped/sent → booking_processed
 
-## Client Info
-Client: A Gentlemen's Touch Mobile Detailing
-Location: Montgomery, Alabama
-Detailer phone (test): +13346522601
-Business phone: (334) 294-8228
-Business email: gentlemenstouch5@gmail.com
+## CloudWatch Log Groups
+  dev:  /aws/lambda/tra3-gentlemens-touch-dev-booking-webhook
+  prod: /aws/lambda/tra3-gentlemens-touch-prod-booking-webhook
+
+## Common Mistakes to Avoid
+- Never bundle stripe/requests in Lambda zip — layers only
+- Never put URLs in SMS
+- Never commit prod.tfvars or dev.tfvars
+- Never use "rosie" in any name
+- Never deploy prod without testing dev first
+- Never run stripe trigger without --api-key for live mode (don't — use dev)

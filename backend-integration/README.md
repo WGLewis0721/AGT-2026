@@ -1,113 +1,266 @@
-# Backend Integration
+# TRA3 Backend Integration — Operator Reference
 
-This backend provisions an AWS webhook pipeline for Stripe Payment Links. When a customer completes payment, Stripe sends a `checkout.session.completed` webhook to API Gateway, Lambda verifies the signature, calculates the remaining balance, and Textbelt sends SMS notifications to the detailer and customer. There is no database in this setup.
+## 1. What This Is
 
-## Prerequisites
+AWS serverless pipeline: Stripe Payment Link deposits → Lambda (Python 3.11) → Textbelt SMS.
+No database. No manual steps. Fires on every `checkout.session.completed` webhook.
 
-- Terraform >= 1.5.0
+---
+
+## 2. Architecture
+
+```
+Cal.com booking → customer pays deposit via Stripe Payment Link
+    ↓
+Stripe fires checkout.session.completed webhook
+    ↓
+AWS API Gateway (HTTP) → Lambda (Python 3.11)
+    ↓
+Textbelt SMS → detailer (booking details + balance due)
+Textbelt SMS → customer (confirmation + balance due)
+```
+
+**S3 bucket layout** (`tra3-{account_id}-deployments`):
+
+```
+tra3-{account_id}-deployments/
+├── layers/dependencies/layer.zip          ← stripe + requests (built once)
+├── functions/{client}/{env}/lambda_function.zip  ← 3KB code only
+└── terraform-state/{client}/{env}/terraform.tfstate
+```
+
+**AWS resources per environment:**
+
+```
+tra3-{client}-{env}-booking-webhook              Lambda function
+tra3-{client}-{env}-api                          API Gateway (HTTP)
+tra3-{client}-{env}-lambda-role                  IAM role
+/aws/lambda/tra3-{client}-{env}-booking-webhook  CloudWatch log group
+```
+
+---
+
+## 3. Environments
+
+| Environment | Stripe Mode | Purpose |
+|-------------|-------------|---------|
+| dev | Test | Stripe CLI testing, code changes |
+| prod | Live | Real customer bookings |
+
+Always test against dev. Never run `stripe trigger` against prod.
+
+---
+
+## 4. Prerequisites
+
+- Terraform >= 1.6.0
 - AWS CLI configured
-- Python 3.11+ with pip
-- Stripe account (test mode)
-- Textbelt account
+- Python 3.11+ with pip (layer bootstrap only)
+- Stripe account (test + live)
+- Textbelt API key
 
-## First-Time Setup
+---
 
-1. Copy `clients/example-client/` to `clients/your-client-name/`.
-2. Fill in `clients/your-client-name/prod.tfvars`.
-3. Run `.\scripts\deploy.ps1 -Client your-client-name`.
-4. Copy the prod `webhook_url` output into Stripe Live mode Webhooks.
-5. Add `stripe_webhook_secret` to `prod.tfvars`.
-6. Re-run `.\scripts\deploy.ps1 -Client your-client-name`.
-7. Fill in `clients/your-client-name/dev.tfvars`.
-8. Run `.\scripts\deploy.ps1 -Client your-client-name -Environment dev`.
-9. Copy the dev `webhook_url` output into Stripe Test mode Webhooks.
-10. Add `stripe_webhook_secret` to `dev.tfvars`.
-11. Re-run `.\scripts\deploy.ps1 -Client your-client-name -Environment dev`.
+## 5. First-Time Setup
 
-## Environments
+1. Bootstrap S3 and layer (once per AWS account):
+   ```powershell
+   .\backend-integration\scripts\bootstrap-layer.ps1
+   ```
 
-Two Lambda environments exist per client: `dev` and `prod`. They are completely isolated with separate Lambda functions, separate API Gateways, separate Stripe webhook endpoints, and separate CloudWatch log groups. The deploy script also isolates Terraform state by workspace so `dev` does not overwrite `prod`.
+2. Fill credentials in dev.tfvars:
+   ```
+   backend-integration\clients\gentlemens-touch\dev.tfvars
+   ```
 
-| Environment | Stripe Mode | Use For |
-|---|---|---|
-| `prod` | Live | Real customer bookings |
-| `dev` | Test | Stripe CLI testing, code changes |
+3. Deploy dev:
+   ```powershell
+   .\backend-integration\scripts\deploy.ps1 -Client gentlemens-touch -Environment dev
+   ```
 
-**Deploy prod (default):**
-`.\scripts\deploy.ps1 -Client gentlemens-touch`
+4. Register dev webhook in Stripe **TEST mode**:
+   - Stripe → TEST mode → Developers → Webhooks → Add endpoint
+   - URL: (from terraform output)
+   - Event: `checkout.session.completed`
+   - Copy signing secret → update `dev.tfvars` → `stripe_webhook_secret`
 
-**Deploy dev:**
-`.\scripts\deploy.ps1 -Client gentlemens-touch -Environment dev`
+5. Redeploy dev with webhook secret:
+   ```powershell
+   .\backend-integration\scripts\deploy.ps1 -Client gentlemens-touch -Environment dev
+   ```
 
-Always test against `dev` before touching `prod`.
-The Stripe CLI only works against `dev` with test mode keys.
-Real Payment Link bookings always hit `prod`.
+6. Test:
+   ```powershell
+   stripe trigger checkout.session.completed
+   ```
+   Verify CloudWatch + SMS on +13346522601.
 
-### Credentials files
+7. Repeat steps 2–5 for prod using `prod.tfvars` and Stripe **LIVE mode**.
 
-- `clients/{client}/prod.tfvars` -> live Stripe keys, real phone numbers
-- `clients/{client}/dev.tfvars` -> test Stripe keys, test phone numbers
-- Both files are gitignored. Never commit real credentials.
+---
 
-### CloudWatch log groups
+## 6. Adding a New Client
 
-- `prod`: `/aws/lambda/rosie-{client}-prod-booking-webhook`
-- `dev`: `/aws/lambda/rosie-{client}-dev-booking-webhook`
+1. Copy example client folder:
+   ```powershell
+   Copy-Item -Recurse backend-integration\clients\example-client backend-integration\clients\new-client-slug
+   ```
+2. Fill credentials in `dev.tfvars` and `prod.tfvars`
+3. Run `bootstrap-layer.ps1` (if first client on this AWS account)
+4. Deploy:
+   ```powershell
+   .\backend-integration\scripts\deploy.ps1 -Client new-client-slug -Environment dev
+   .\backend-integration\scripts\deploy.ps1 -Client new-client-slug -Environment prod
+   ```
 
-### Stripe webhook endpoints
+---
 
-- `prod`: register in Stripe Dashboard -> Live mode -> Webhooks
-- `dev`: register in Stripe Dashboard -> Test mode -> Webhooks
-- Each environment has its own signing secret. Never mix them.
+## 7. Routine Deploy (Code Change)
 
-## Stripe Payment Link Custom Fields
+```powershell
+# Always dev first
+.\backend-integration\scripts\deploy.ps1 -Client gentlemens-touch -Environment dev
+# Verify, then prod
+.\backend-integration\scripts\deploy.ps1 -Client gentlemens-touch -Environment prod
+```
 
-| Label | Key | Type |
-|---|---|---|
-| Service | `service` | Text |
-| Date | `date` | Text |
-| Location | `location` | Text |
+---
 
-## Example SMS Output
+## 8. Updating the Layer
 
-```text
+When `stripe` or `requests` versions change:
+
+1. Update `backend-integration\layer\requirements.txt`
+2. Run `bootstrap-layer.ps1`
+3. Deploy both environments
+
+---
+
+## 9. SMS Format
+
+**Detailer SMS:**
+```
 🚗 NEW DETAIL BOOKING
 ──────────────────────
-Name:     Jane Doe
-Phone:    +15551234567
-Email:    jane@example.com
+Name:     Marcus Johnson
+Phone:    +13346522601
+Email:    marcus@gmail.com
 ──────────────────────
-Service:  Full Detail
-Date:     2026-04-02
-Location: Downtown Birmingham
+Service:  MD Detail
+Date:     04-05-2026
+Location: 131 Kentucky Oaks St
 ──────────────────────
 Deposit:  $30.00
 Balance:  $120.00
 ```
 
-## Balance Collection
+**Customer SMS:**
+```
+🚗 Booking Confirmed!
+A Gentlemen's Touch
+──────────────────────
+Hi Marcus! Your detail is booked.
+──────────────────────
+Service:  MD Detail
+Date:     04-05-2026
+Location: 131 Kentucky Oaks St
+──────────────────────
+Deposit:  $30.00 received
+Balance:  $120.00 due after service
+──────────────────────
+Questions? Call (334) 294-8228
+```
 
-After service completion, the detailer sends the customer a Stripe invoice for the remaining balance directly from the Stripe mobile app or dashboard.
+> **No URLs in any SMS.** Textbelt blocks them.
 
-`Stripe app -> Invoices -> Create -> enter customer email + amount -> Send`
+---
 
-The booking SMS sent to the detailer includes the balance amount due so the detailer always knows the correct amount to invoice.
-No custom infrastructure is required for balance collection.
+## 10. Balance Collection
 
-## Troubleshooting
+After service, detailer sends customer a Stripe invoice:
 
-- Wrong environment receiving webhooks -> check the Stripe Dashboard mode toggle. Live mode webhooks go to the `prod` endpoint only. Test mode webhooks go to the `dev` endpoint only.
-- Stripe CLI trigger failing with `Invalid token` -> you are using a live key. Run Stripe CLI against the `dev` environment only.
-- Terraform wants to replace the other environment -> use `.\scripts\deploy.ps1` so the correct Terraform workspace is selected automatically.
+```
+Stripe app → Invoices → Create → customer email + amount → Send
+```
 
-## Teardown
+Lambda SMS shows balance amount. No payment links in SMS.
 
-From `backend-integration/terraform`, run:
+---
+
+## 11. Service Prices
+
+| Cal.com Event | Service Label | Full Price | Deposit (20%) |
+|---------------|---------------|------------|---------------|
+| service-1 | SM Detail | $100 | $20 |
+| service-2 | MD Detail | $150 | $30 |
+| service-3 | LG Detail | $200 | $40 |
+
+Cal.com booking links:
+- SM: https://cal.com/william-g.-lewis-ai51kb/mobile-detail-appointment-service-1
+- MD: https://cal.com/william-g.-lewis-ai51kb/mobile-detail-appointment-service-2
+- LG: https://cal.com/william-g.-lewis-ai51kb/mobile-detail-appointment-service-3
+
+---
+
+## 12. Stripe Payment Link Custom Fields
+
+| Label | Key | Type |
+|-------|-----|------|
+| Service | service | Text |
+| Date | date | Text |
+| Location | location | Text |
+
+---
+
+## 13. CloudWatch Queries
+
+Copy into **AWS Console → CloudWatch → Logs Insights**.
+Log group: `/aws/lambda/tra3-gentlemens-touch-{env}-booking-webhook`
+
+**All processed bookings:**
+```
+fields @timestamp, @message
+| filter @message like /booking_processed/
+| sort @timestamp desc
+| limit 50
+```
+
+**Failed SMS:**
+```
+fields @timestamp, @message
+| filter @message like /sms_failed/
+| sort @timestamp desc
+```
+
+**All Stripe events:**
+```
+fields @timestamp, @message
+| filter @message like /stripe_webhook_received/
+| sort @timestamp desc
+```
+
+---
+
+## 14. Troubleshooting
+
+| Symptom | Likely cause | Fix |
+|---------|-------------|-----|
+| Lambda not invoked | Webhook not registered | Register in Stripe Dashboard |
+| Signature verification failed | Wrong webhook secret | Update tfvars, redeploy |
+| SMS not received | Textbelt key issue | Check CloudWatch for `sms_failed` |
+| Balance shows None | Service name not in `SERVICE_PRICES` | Add key to `SERVICE_PRICES` dict |
+| Wrong env receiving events | Stripe mode mismatch | Check live/test toggle in Stripe |
+| `stripe trigger` fails | Running against prod | Always trigger against dev |
+
+---
+
+## 15. Teardown
 
 ```powershell
+cd backend-integration\terraform
+terraform destroy -var-file="..\clients\gentlemens-touch\prod.tfvars" -auto-approve
 terraform workspace select dev
-terraform destroy -var-file="../clients/your-client-name/dev.tfvars"
-
-terraform workspace select default
-terraform destroy -var-file="../clients/your-client-name/prod.tfvars"
+terraform destroy -var-file="..\clients\gentlemens-touch\dev.tfvars" -auto-approve
 ```
+
+> **Note:** S3 bucket has `prevent_destroy = true`. Remove that lifecycle block before destroying the bucket.
