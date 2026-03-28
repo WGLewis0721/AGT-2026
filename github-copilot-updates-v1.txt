@@ -1,0 +1,298 @@
+================================================================================
+  GitHub Copilot Updates — v1
+  Repo:    WGLewis0721/AGT-2026
+  Branch:  copilot/add-terraform-files
+  Date:    2026-03-28
+  Prompts: 01 · 02 · 03 · 04
+================================================================================
+
+────────────────────────────────────────────────────────────────────────────────
+OVERVIEW
+────────────────────────────────────────────────────────────────────────────────
+Bootstrapped the full TRA3 platform backend for A Gentlemen's Touch (AGT).
+All changes are under backend-integration/ and the root .gitignore.
+No existing files were modified except .gitignore (TRA3 section appended).
+No AWS calls were made — all work is file-writing only.
+
+Naming convention used throughout:
+  tra3-{client_name}-{environment}-{resource}
+  e.g.  tra3-gentlemens-touch-prod-booking-webhook  (Lambda)
+        tra3-gentlemens-touch-dev-api               (API Gateway)
+        tra3-{account_id}-deployments               (S3 — shared, no env suffix)
+
+────────────────────────────────────────────────────────────────────────────────
+PROMPT 01 — TERRAFORM FILES
+Path: backend-integration/terraform/
+────────────────────────────────────────────────────────────────────────────────
+Files created (9):
+
+  providers.tf
+    · Requires Terraform >= 1.6.0 and AWS provider ~> 5.0
+    · S3 remote backend — all config injected at init time via deploy.ps1
+      (bucket, key, region never hardcoded here)
+    · Default tags applied to every resource: Project, Client, ManagedBy,
+      Environment
+    · Data sources: aws_caller_identity, aws_region
+
+  variables.tf
+    · Input variables: client_name, environment (dev|prod validation),
+      aws_region, stripe_secret_key, stripe_webhook_secret, textbelt_api_key,
+      detailer_phone_number, lambda_runtime, lambda_timeout, lambda_memory,
+      log_retention
+    · Sensitive variables marked sensitive = true
+    · locals block derives: account_id, s3_bucket, name_prefix, function_name
+
+  s3.tf
+    · aws_s3_bucket "deployments" — bucket = tra3-{account_id}-deployments
+    · Versioning enabled
+    · AES256 server-side encryption
+    · All public access blocked
+    · Lifecycle rules: expire noncurrent function zips after 30 days,
+      layer zips after 90 days
+    · prevent_destroy = true
+
+  iam.tf
+    · IAM role for Lambda execution (sts:AssumeRole from lambda.amazonaws.com)
+    · Least-privilege inline policy:
+        - CloudWatch Logs: CreateLogGroup, CreateLogStream, PutLogEvents
+          scoped to the exact Lambda log group ARN
+        - S3: GetObject scoped to the deployments bucket
+
+  layer.tf
+    · aws_lambda_layer_version "dependencies"
+    · Pulled from s3://tra3-{account_id}-deployments/layers/dependencies/layer.zip
+    · create_before_destroy = true
+
+  lambda.tf
+    · aws_lambda_function "booking_webhook"
+    · Code pulled from S3: functions/{client}/{env}/lambda_function.zip
+    · Attaches the dependencies layer
+    · Environment variables injected from tfvars:
+        STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, TEXTBELT_API_KEY,
+        DETAILER_PHONE, ENVIRONMENT
+    · depends_on CloudWatch log group and IAM role
+
+  apigw.tf
+    · HTTP API (API Gateway v2)
+    · $default stage with auto_deploy and JSON access logging to CloudWatch
+    · AWS_PROXY integration → Lambda (payload format 2.0)
+    · Route: POST /webhook
+    · Lambda permission scoped to the API's execution ARN
+
+  cloudwatch.tf
+    · Log group: /aws/lambda/tra3-{client}-{env}-booking-webhook
+    · Log group: /tra3/{client}/{env}/api-access
+    · Both use var.log_retention (default 14 days)
+
+  outputs.tf
+    · webhook_url       — full HTTPS URL to paste into Stripe dashboard
+    · lambda_function_name
+    · lambda_function_arn
+    · layer_arn
+    · s3_bucket
+    · cloudwatch_log_group
+
+Validation:
+  · python -m py_compile: N/A (HCL files)
+  · terraform fmt: not installed in sandbox — files written to spec
+  · No "rosie" anywhere in any .tf file ✓
+  · No hardcoded credentials ✓
+
+────────────────────────────────────────────────────────────────────────────────
+PROMPT 02 — LAMBDA FUNCTION
+Path: backend-integration/lambda/ and backend-integration/layer/
+────────────────────────────────────────────────────────────────────────────────
+Files created (3):
+
+  lambda/requirements.txt
+    stripe==7.10.0
+    requests==2.31.0
+
+  layer/requirements.txt
+    stripe==7.10.0
+    requests==2.31.0
+
+  lambda/lambda_function.py
+    Full Stripe webhook handler — 11 steps:
+
+    Step 1  Extract body and stripe-signature header; set stripe.api_key
+    Step 2  Verify Stripe signature via stripe.Webhook.construct_event()
+            · SignatureVerificationError → log + return 400 "Invalid signature"
+            · Any other exception        → log + return 400 "Webhook error"
+    Step 3  Log stripe_webhook_received (structured JSON to CloudWatch)
+    Step 4  Filter: ignore all event types except checkout.session.completed
+    Step 5  Extract session and customer details (name, email, phone, deposit)
+    Step 6  Extract custom fields: service, date, location
+    Step 7  Calculate balance due using SERVICE_PRICES substring map:
+              "sm detail" → $100, "md detail" → $150, "lg detail" → $200
+              "small" → $100, "medium" → $150, "large" → $200
+              "full detail" → $150
+            Log balance_calculated event
+    Step 8  Send detailer SMS (CRITICAL — returns 500 if delivery fails)
+            · Includes: Name, Phone, Email, Service, Date, Location,
+              Deposit, Balance (omitted if service not in price map)
+            · No URLs in message body
+    Step 9  Send customer SMS (NON-CRITICAL — 500 never returned on failure)
+            · Skipped gracefully if no phone on file
+            · Includes: confirmation, service, date, location, deposit,
+              balance (or "Balance collected after service."), business phone
+            · Failure logged but booking is still considered confirmed
+    Step 10 Log booking_processed summary (environment, customer_name,
+            service, deposit_paid, balance_due, detailer_sms, customer_sms)
+    Step 11 Return 200 "Booking processed"
+
+    Helpers:
+      _response(status_code, message) — standard API GW response dict
+      _send_sms(phone, message, recipient_label) — Textbelt POST, never raises
+
+    Module-level constants:
+      STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, TEXTBELT_API_KEY,
+      DETAILER_PHONE, ENVIRONMENT — all from os.environ
+      SERVICE_PRICES dict, BUSINESS_PHONE = "(334) 294-8228"
+
+    Security rules honoured:
+      · Sensitive env vars never logged
+      · Full phone numbers never logged
+      · All print() calls use json.dumps structured logs
+      · Bracket access used on stripe_event and stripe_event["data"]["object"]
+      · .get() with fallbacks used on session fields (nullable in test events)
+
+Validation:
+  · python -m py_compile backend-integration/lambda/lambda_function.py: PASS ✓
+  · No "rosie" anywhere ✓
+  · CodeQL: 0 alerts ✓
+
+────────────────────────────────────────────────────────────────────────────────
+PROMPT 03 — DEPLOY SCRIPTS
+Path: backend-integration/scripts/
+────────────────────────────────────────────────────────────────────────────────
+Files created (2):
+
+  bootstrap-layer.ps1
+    Run once per AWS account; re-run when layer deps change.
+    $ErrorActionPreference = "Stop" set at top.
+    5-step banner output with timing:
+
+      [STEP 1/5] Get AWS account ID (aws sts get-caller-identity)
+                 Derive S3 bucket name: tra3-{account_id}-deployments
+      [STEP 2/5] Create build directory (backend-integration\layer-build\python\)
+                 Cleans previous build if present
+      [STEP 3/5] pip install layer/requirements.txt → build dir
+                 Full output visible (no --quiet)
+      [STEP 4/5] Compress-Archive build dir → backend-integration\layer.zip
+                 Prints zip size in KB
+      [STEP 5/5] aws s3 cp → s3://{bucket}/layers/dependencies/layer.zip
+                 Cleans up build dir and zip after upload
+
+    Every command printed as DarkGray before execution.
+
+  deploy.ps1
+    Full infrastructure deploy. Run from repo root.
+    Parameters:
+      -Client       [Mandatory]  client slug, e.g. gentlemens-touch
+      -Environment  [Optional]   "dev" or "prod" (default: "prod")
+      -Force        [Switch]     forces terraform reinit
+
+    $ErrorActionPreference = "Stop" set at top.
+    5-step banner output:
+
+      [STEP 0/5] Preflight checks
+                 · terraform --version
+                 · aws --version
+                 · aws sts get-caller-identity (derive account ID + S3 bucket)
+                 · Verify tfvars file exists (exits 1 with helpful message if not)
+                 · Verify layer.zip present in S3 (exits 1 if not, points to
+                   bootstrap-layer.ps1)
+      [STEP 1/5] Package Lambda
+                 · Compress lambda_function.py → lambda_function.zip
+                 · aws s3 cp → functions/{client}/{env}/lambda_function.zip
+      [STEP 2/5] Terraform Init
+                 · Workspace: dev → named "dev" workspace; prod → "default"
+                 · terraform init -backend-config (bucket, key, region)
+                   skipped if .terraform/ exists and -Force not set
+      [STEP 3/5] Terraform Apply
+                 · terraform apply -auto-approve with client_name, environment,
+                   and var-file pointing to clients/{client}/{env}.tfvars
+      [STEP 4/5] Outputs
+                 · terraform output -json | ConvertFrom-Json
+                 · Prints webhook URL prominently
+      [STEP 5/5] Next Steps
+                 · Instructions for Stripe dashboard webhook setup
+                 · dev: toggle to TEST mode; prod: toggle to LIVE mode
+                 · Reminds to re-run script after adding webhook signing secret
+
+────────────────────────────────────────────────────────────────────────────────
+PROMPT 04 — CONFIG FILES & .GITIGNORE
+────────────────────────────────────────────────────────────────────────────────
+Files created (3):
+
+  backend-integration/clients/gentlemens-touch/prod.tfvars
+    · client_name           = "gentlemens-touch"
+    · environment           = "prod"
+    · stripe_secret_key     = "REPLACE_WITH_LIVE_KEY"
+    · stripe_webhook_secret = "REPLACE_AFTER_DEPLOY"
+    · textbelt_api_key      = <real key from prompt spec>
+    · detailer_phone_number = "+13346522601"
+    · aws_region            = "us-east-1"
+    ⚠️  Gitignored — never committed with real keys
+
+  backend-integration/clients/gentlemens-touch/dev.tfvars
+    · environment           = "dev"
+    · stripe_secret_key     = sk_test_51TFmE8... (test key from prompt spec)
+    · stripe_webhook_secret = "REPLACE_AFTER_DEPLOY"
+    · All other fields same as prod
+    ⚠️  Gitignored
+
+  backend-integration/clients/example-client/dev.tfvars
+    · Template for new clients — all values are REPLACE_ME placeholders
+    · client_name           = "your-client-slug"
+    · stripe_secret_key     = "sk_test_REPLACE_ME"
+    · detailer_phone_number = "+1REPLACE"
+    ✅  NOT gitignored — committed as an onboarding template
+
+File updated (1):
+
+  .gitignore  (TRA3 section appended, no existing entries removed)
+    **/.terraform/
+    *.tfstate, *.tfstate.backup, *.tfstate.lock.info
+    .terraform.lock.hcl
+    backend-integration/lambda/lambda_function.zip
+    backend-integration/layer/layer-build/
+    backend-integration/layer/layer.zip
+    backend-integration/clients/*/prod.tfvars
+    backend-integration/clients/*/dev.tfvars
+    !backend-integration/clients/example-client/dev.tfvars   ← exception rule
+
+────────────────────────────────────────────────────────────────────────────────
+FULL FILE MANIFEST (17 files changed)
+────────────────────────────────────────────────────────────────────────────────
+  NEW  backend-integration/terraform/providers.tf
+  NEW  backend-integration/terraform/variables.tf
+  NEW  backend-integration/terraform/s3.tf
+  NEW  backend-integration/terraform/iam.tf
+  NEW  backend-integration/terraform/layer.tf
+  NEW  backend-integration/terraform/lambda.tf
+  NEW  backend-integration/terraform/apigw.tf
+  NEW  backend-integration/terraform/cloudwatch.tf
+  NEW  backend-integration/terraform/outputs.tf
+  NEW  backend-integration/lambda/lambda_function.py
+  NEW  backend-integration/lambda/requirements.txt
+  NEW  backend-integration/layer/requirements.txt
+  NEW  backend-integration/scripts/bootstrap-layer.ps1
+  NEW  backend-integration/scripts/deploy.ps1
+  NEW  backend-integration/clients/gentlemens-touch/prod.tfvars
+  NEW  backend-integration/clients/gentlemens-touch/dev.tfvars
+  NEW  backend-integration/clients/example-client/dev.tfvars
+  MOD  .gitignore
+
+────────────────────────────────────────────────────────────────────────────────
+VALIDATION SUMMARY
+────────────────────────────────────────────────────────────────────────────────
+  python -m py_compile lambda_function.py   PASS ✓
+  No "rosie" string in any file             PASS ✓
+  No hardcoded live credentials in .tf      PASS ✓
+  CodeQL security scan (Python)             0 alerts ✓
+  terraform fmt / validate                  Skipped — terraform not in sandbox
+                                            (HCL written exactly to spec)
+
+================================================================================
