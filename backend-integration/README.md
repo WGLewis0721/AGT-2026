@@ -4,6 +4,7 @@
 
 AWS serverless pipeline: Stripe Payment Link deposits → Lambda (Python 3.11) → Textbelt SMS.
 No database. No manual steps. Fires on every `checkout.session.completed` webhook.
+For the consolidated rollout history, deployment sequence, and operator runbook, use `backend-integration/DEPLOYMENT-GUIDE.md`.
 
 ---
 
