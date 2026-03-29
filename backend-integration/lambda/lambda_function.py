@@ -228,7 +228,7 @@ def lambda_handler(event, context):
         if balance_due is not None:
             sms_body_customer += f"Balance:  ${balance_due:.2f} due after service\n"
         else:
-            sms_body_customer += "Remaining balance collected after service.\n"
+            sms_body_customer += "Balance collected after service.\n"
 
         sms_body_customer += (
             f"{divider}\n"
