@@ -2161,7 +2161,7 @@
         <li>Dashboard &amp; console wipe-down</li>
         <li>Door jamb cleaning</li>
       </ul>
-      <button class="btn-package" onclick="openBookingModal('https://cal.com/william-g.-lewis-ai51kb/mobile-detail-appointment-service-1')">Book &amp; Pay Deposit &rarr;</button>
+      <button class="btn-package" onclick="openBookingModal('https://cal.com/william-g.-lewis-ai51kb/mobile-detail-appointment-service-1', 'https://buy.stripe.com/9B6bJ2ahTf73cDH1Qp1ZS00')">Book &amp; Pay Deposit &rarr;</button>
     </div>
     <!-- Medium -->
     <div class="package-card featured fade-in">
@@ -3171,7 +3171,7 @@
   </p>
 
   <div class="packages-grid" style="max-width:1000px; margin:0 auto 48px;">
-    <div class="package-card fade-in" style="cursor:pointer;" onclick="openBookingModal('https://cal.com/william-g.-lewis-ai51kb/mobile-detail-appointment-service-1')">
+    <div class="package-card fade-in" style="cursor:pointer;" onclick="openBookingModal('https://cal.com/william-g.-lewis-ai51kb/mobile-detail-appointment-service-1', 'https://buy.stripe.com/9B6bJ2ahTf73cDH1Qp1ZS00')">
       <div class="package-size">Small Vehicle</div>
       <div class="package-name">Full Luxury Detail</div>
       <div class="package-time">⏱ ~90 minutes</div>
@@ -3185,7 +3185,7 @@
         <li>Wheel &amp; tire cleaning</li>
         <li>Dashboard treatment</li>
       </ul>
-      <button class="btn-gold" type="button" style="width:100%; margin-top:20px;" onclick="event.stopPropagation(); openBookingModal('https://cal.com/william-g.-lewis-ai51kb/mobile-detail-appointment-service-1')">Book Now — Small Vehicle</button>
+      <button class="btn-gold" type="button" style="width:100%; margin-top:20px;" onclick="event.stopPropagation(); openBookingModal('https://cal.com/william-g.-lewis-ai51kb/mobile-detail-appointment-service-1', 'https://buy.stripe.com/9B6bJ2ahTf73cDH1Qp1ZS00')">Book Now — Small Vehicle</button>
     </div>
 
     <div class="package-card featured fade-in" style="cursor:pointer; border-color:#C9A84C;" onclick="openBookingModal('https://cal.com/william-g.-lewis-ai51kb/mobile-detail-appointment-service-2')">
@@ -3395,6 +3395,7 @@
 
   // ─── BOOKING STATE ───
   let pendingCalUrl = '';
+  let pendingStripeUrl = '';
 
   function toggleAddon(el) {
     if (el) {
@@ -3402,8 +3403,9 @@
     }
   }
 
-  function openBookingModal(url) {
+  function openBookingModal(url, stripeUrl) {
     pendingCalUrl = url;
+    pendingStripeUrl = stripeUrl || '';
     const modal = document.getElementById('waiver-modal');
     const agreeBtn = document.getElementById('waiver-agree-btn');
     if (modal) modal.classList.add('open');
@@ -3423,11 +3425,20 @@
   function agreeAndBook() {
     if (pendingCalUrl) {
       window.open(pendingCalUrl, '_blank', 'noopener');
+      const stripeUrl = pendingStripeUrl;
       pendingCalUrl = '';
+      pendingStripeUrl = '';
+      const modal = document.getElementById('waiver-modal');
+      if (modal) modal.classList.remove('open');
+      document.body.style.overflow = '';
+      if (stripeUrl) {
+        window.location.href = stripeUrl;
+      }
+    } else {
+      const modal = document.getElementById('waiver-modal');
+      if (modal) modal.classList.remove('open');
+      document.body.style.overflow = '';
     }
-    const modal = document.getElementById('waiver-modal');
-    if (modal) modal.classList.remove('open');
-    document.body.style.overflow = '';
   }
 
   function closeWaiverModal() {
