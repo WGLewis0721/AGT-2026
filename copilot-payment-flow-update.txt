@@ -1,0 +1,49 @@
+You are editing index.html in the repo root of WGLewis0721/AGT-2026.
+
+Make exactly these 4 changes and nothing else. Do not touch any other file or any other part of index.html.
+
+CHANGE 1 — Add pendingStripeUrl variable
+
+Find this line in the <script> block: let pendingCalUrl = '';
+
+Add this immediately after it: let pendingStripeUrl = '';
+
+CHANGE 2 — Update openBookingModal function
+
+Find this exact function: function openBookingModal(url) { pendingCalUrl = url; const modal = document.getElementById('waiver-modal'); const agreeBtn = document.getElementById('waiver-agree-btn'); if (modal) modal.style.display = 'flex'; if (agreeBtn) agreeBtn.style.display = 'inline-block'; }
+
+Replace it with: function openBookingModal(url, stripeUrl) { pendingCalUrl = url; pendingStripeUrl = stripeUrl || ''; const modal = document.getElementById('waiver-modal'); const agreeBtn = document.getElementById('waiver-agree-btn'); if (modal) modal.style.display = 'flex'; if (agreeBtn) agreeBtn.style.display = 'inline-block'; }
+
+CHANGE 3 — Update agreeAndBook function
+
+Find this exact function: function agreeAndBook() { if (pendingCalUrl) { window.open(pendingCalUrl, '_blank'); pendingCalUrl = ''; } const modal = document.getElementById('waiver-modal'); if (modal) modal.style.display = 'none'; }
+
+Replace it with: function agreeAndBook() { if (pendingCalUrl) { window.open(pendingCalUrl, '_blank'); const stripeUrl = pendingStripeUrl; pendingCalUrl = ''; pendingStripeUrl = ''; const modal = document.getElementById('waiver-modal'); if (modal) modal.style.display = 'none'; if (stripeUrl) { window.location.href = stripeUrl; } } else { const modal = document.getElementById('waiver-modal'); if (modal) modal.style.display = 'none'; } }
+
+CHANGE 4 — Update Small Vehicle onclick calls
+
+There are exactly 2 places in index.html where the Small Vehicle booking triggers openBookingModal with only the Cal.com URL. Find both of them — one is in the #packages section package card, one is in the #booking section booking card. They currently look like:
+
+onclick="openBookingModal('https://cal.com/william-g.-lewis-ai51kb/mobile-detail-appointment-service-1')"
+
+Replace BOTH occurrences with:
+
+onclick="openBookingModal('https://cal.com/william-g.-lewis-ai51kb/mobile-detail-appointment-service-1', 'https://buy.stripe.com/9B6bJ2ahTf73cDH1Qp1ZS00')"
+
+Also find any div elements for Small Vehicle that have onclick="openBookingModal(...)" with only one argument and update those the same way.
+
+Do NOT change Medium Vehicle or Large Vehicle onclick calls. Do NOT change any other part of the file.
+
+VERIFICATION
+
+After making the 4 changes, verify:
+
+grep for "pendingStripeUrl" — should appear in at least 4 places
+grep for "9B6bJ2ahTf73cDH1Qp1ZS00" — should appear in 2-3 places
+grep for "mobile-detail-appointment-service-2" — should still have only 1 URL argument (not changed)
+COMMIT AND PUSH
+
+git add index.html git commit -m "feat: SM Detail → Cal.com + Stripe redirect after waiver" git push origin main
+
+Report the summary of changes in a text file, commit hash, and create pull request.
+
