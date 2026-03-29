@@ -405,9 +405,9 @@ If the shared bucket must be removed, do that after Terraform teardown because i
 
 This guide was compiled from:
 
-- `codex-updates-372026-v1`
-- `github-copilot-updates-v1.txt`
-- `copilot-updates-3282026-v1.txt`
-- `copilote-updates-3282026-v1.txt`
-- `prompt-07-summary.txt`
+- `artifacts/summaries/codex-updates-372026-v1`
+- `artifacts/summaries/github-copilot-updates-v1.txt`
+- `artifacts/summaries/copilot-updates-3282026-v1.txt`
+- `artifacts/summaries/copilote-updates-3282026-v1.txt`
+- `artifacts/summaries/prompt-07-summary.txt`
 - the current `backend-integration/README.md`
