@@ -212,26 +212,20 @@ def lambda_handler(event, context):
             _log("ERROR", "detailer_sms_failed", detail=str(exc))
             return _response(500, "SMS failed")
 
+        sms_divider = "\u2500" * 42
         sms_body_customer = (
-            f"\U0001F697 Booking Confirmed!\n"
-            f"A Gentlemen's Touch Mobile Detailing\n"
-            f"{divider}\n"
+            f"\U0001F697 Booking Confirmed \u2014 A Gentlemen's Touch\n"
+            f"{sms_divider}\n"
             f"Hi {customer_name}! Your detail is booked.\n"
-            f"{divider}\n"
+            f"{sms_divider}\n"
             f"Service:  {service}\n"
             f"Date:     {date}\n"
             f"Location: {location}\n"
-            f"{divider}\n"
-            f"Deposit:  ${deposit_paid:.2f} received\n"
-        )
-
-        if balance_due is not None:
-            sms_body_customer += f"Balance:  ${balance_due:.2f} due after service\n"
-        else:
-            sms_body_customer += "Remaining balance collected after service.\n"
-
-        sms_body_customer += (
-            f"{divider}\n"
+            f"Deposit:  ${deposit_paid:.2f} \u2713 Received\n"
+            f"{sms_divider}\n"
+            f"After your service, your detailer will\n"
+            f"send your balance link.\n"
+            f"\n"
             f"Questions? Call {BUSINESS_PHONE}"
         )
 
