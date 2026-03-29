@@ -74,18 +74,14 @@ Drop your new PNG into `images/` and update these `src` attributes in `index.htm
 
 ---
 
-## Updating Payment Handles
-
-Search `index.html` for the placeholders below and replace each one:
-
-| Placeholder | Replace with |
-|---|---|
-| `$YOURHANDLE` | Your Cash App cashtag |
-| `@YOURHANDLE` | Your Venmo username |
-| `(334) 294-8228` | Your Zelle phone number (already set — update if needed) |
+## Booking Flow
+Booking is handled via Cal.com with Stripe deposit payment built in.
+Three separate Cal.com event types correspond to each vehicle size:
+- Small: https://cal.com/william-g.-lewis-ai51kb/mobile-detail-appointment-service-1
+- Medium: https://cal.com/william-g.-lewis-ai51kb/mobile-detail-appointment-service-2
+- Large: https://cal.com/william-g.-lewis-ai51kb/mobile-detail-appointment-service-3
 
 ---
-
 ## Adding or Updating Services
 
 Package cards and add-ons are written directly in `index.html` inside `#packages` and `#addons`.
@@ -119,11 +115,6 @@ Production-ready AWS serverless infrastructure in [`backend-integration/`](./bac
 
 See [`backend-integration/README.md`](./backend-integration/README.md) for setup and deployment.
 
-## Known Issues / TODO
-
-- [ ] Payment handles (`$YOURHANDLE`, `@YOURHANDLE`) in `index.html` Step 4 need to be replaced with real Cash App / Venmo handles
-
----
 
 ## Contact
 
