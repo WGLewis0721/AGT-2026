@@ -1,137 +1,87 @@
-# A Gentlemen's Touch — AGT Mobile Detailing
+# A Gentlemen's Touch
 
-## Version 2 Development
+### Luxury Mobile Detailing — Built from the Ground Up
 
-This repository now includes an AI-driven development system.
-
-Key files:
-- docs/system-context.md (architecture and rules)
-- docs/skills/ (reusable AI task modules)
-- docs/vscode-handoff-prompt.md (execution prompt for local development)
-
-All new development occurs in:
-AGT-website-v2-branch
-
-main is production and must remain stable.
+**[Live Site →](https://wglewis0721.github.io/AGT-2026/)**
 
 ---
 
-https://wglewis0721.github.io/AGT-2026/
+## This isn't a template. It's a system.
 
-Static marketing and booking website for **A Gentlemen's Touch (AGT)**, a luxury mobile car detailing business.
+Wix gives everyone the same box to decorate. Squarespace gives you beautiful constraints. Booksy puts your business next to every competitor in a zip code.
 
-**Design:** Deep black backgrounds (`#0a0a0a`), gold accents (`#C9A84C`), editorial luxury aesthetic.
-Fonts: Cormorant Garamond (display/serif), Bebas Neue (logo/headings), Montserrat (body/UI).
-Inspired by high-end automotive culture and white-glove service.
+This is none of those things.
 
-> **Wix Velo app** (the legacy multi-page Wix integration) has been moved to the [`wix/`](./wix/) directory and is kept for reference only. Active development continues here on the static site.
+AGT is a **fully custom** presence and booking system designed to do one thing: make every person who finds this business feel like they've discovered something rare. Because they have.
 
 ---
 
-## Page Structure
+## What it feels like
 
-| Section | ID | Purpose |
-|---|---|---|
-| Hero | `#home` | Full-screen hero with logo, tagline, and CTA |
-| Who We Are | `#about` | Brand story and service area |
-| What We Offer | `#services` | Service category overview |
-| Full Luxury Detail Packages | `#packages` | Package cards with pricing |
-| Add-On Services | `#addons` | À-la-carte add-on pills |
-| Before & After | `#portfolio` | Photo portfolio gallery |
-| Schedule Your Appointment | `#booking` | 4-step booking funnel |
+A client lands on the site. Deep black. A soft gold glow. Not a theme — a mood. The kind of restraint that signals confidence. They don't feel like they're on a booking platform. They feel like they've arrived somewhere.
+
+They pick a package. They choose their date. They pay a deposit in one tap. Twenty seconds later, they get a text confirmation with every detail they need — no app download, no login, no friction.
+
+The detailer gets a text too. Name, phone, address, service, deposit paid, balance due. Everything. Automatically. Before they've touched a sponge.
+
+That's the experience. End to end.
 
 ---
 
-## Running Locally
+## What makes it different
+
+| | Wix / Squarespace | Booksy | **AGT** |
+|---|---|---|---|
+| Brand | Constrained by templates | Generic marketplace UI | Every pixel is intentional |
+| Ownership | You rent the platform | Your data lives on their platform | You own everything — code, data, domain |
+| Competition | You're a page on their platform | You're listed next to rivals | No one else is here |
+| Automation | Basic form notifications | Basic reminders | Deposit collected → both parties texted → balance tracked, automatically |
+| Cost | $15–50/month forever | Commission + monthly fees | Under $10/month in infrastructure |
+| Feel | Built for everyone | Built for the industry | Built for *this* business |
+
+---
+
+## Under the hood
+
+For developers and future owners — the system is simple by design.
+
+**Frontend** — A single `index.html`. Zero dependencies. No build step. Runs anywhere. The luxury aesthetic is pure CSS and considered typography — nothing is borrowed from a UI kit.
+
+**Booking** — Cal.com handles scheduling. Stripe handles deposits. The customer never feels the seam between them.
+
+**Automation (TRA3)** — When a booking completes, an AWS Lambda function fires. It reads the Stripe event, calculates the balance due, and sends a formatted SMS to both the detailer and the customer. The entire backend runs serverlessly for less than the cost of a car wash.
+
+**Infrastructure as Code** — Every AWS resource is defined in Terraform. Deploy a new environment in minutes. Hand off to a new developer in an afternoon.
+
+---
+
+## For developers
 
 ```bash
-# No build step required — open the file directly
+# No build step required — open directly in a browser
 open index.html        # macOS
 start index.html       # Windows
 ```
 
----
+**Publishing to GitHub Pages**
+1. Push to GitHub → **Settings → Pages** → select `main` branch, root `/`
+2. Live at `https://yourusername.github.io/AGT-2026/`
 
-## Publishing (GitHub Pages)
+**Booking backend (TRA3)**
+See [`backend-integration/README.md`](./backend-integration/README.md) for AWS setup, Terraform deployment, and Stripe webhook configuration.
 
-1. Push this repository to GitHub.
-2. Go to **Settings → Pages** in your repository.
-3. Under **Branch**, select `main` and the root folder `/`.
-4. Click **Save**.
-5. GitHub will provide a URL like `https://yourusername.github.io/AGT-2026/` within a minute or two.
+**Services & Packages**
+Edit package cards and add-ons directly in `index.html` inside `#packages` and `#addons`.
 
----
+**Booking links** (Cal.com, by vehicle size)
+- Small → `service-1`
+- Medium → `service-2`
+- Large → `service-3`
 
-## Asset Setup
-
-All images live in the `images/` folder.
-
-| File | Used in |
-|---|---|
-| `images/photo-10.png` | Favicon, nav logo, hero logo |
-| `images/photo-9.jpeg` | About section background |
-| `images/photo-1.jpeg` | Portfolio — Before & After Full Detail |
-| `images/photo-2.jpeg` | Portfolio — Interior Deep Clean |
-| `images/photo-3.jpeg` | Portfolio — Exterior Polish and Shine |
-| `images/photo-4.jpeg` | Portfolio — Wheel and Tire Detail |
-| `images/photo-5.jpeg` | Portfolio — Engine Bay Clean |
-
-### Replacing the Logo
-
-Drop your new PNG into `images/` and update these `src` attributes in `index.html`:
-
-```html
-<!-- Nav logo -->
-<img src="images/photo-10.png" style="height:48px;" alt="AGT Logo" />
-
-<!-- Hero logo -->
-<img src="images/photo-10.png" style="width:180px;" alt="AGT" />
-```
+**Active development branch:** `AGT-website-v2-branch` — `main` is production, always stable.
 
 ---
-
-## Booking Flow
-Booking is handled via Cal.com with Stripe deposit payment built in.
-Three separate Cal.com event types correspond to each vehicle size:
-- Small: https://cal.com/william-g.-lewis-ai51kb/mobile-detail-appointment-service-1
-- Medium: https://cal.com/william-g.-lewis-ai51kb/mobile-detail-appointment-service-2
-- Large: https://cal.com/william-g.-lewis-ai51kb/mobile-detail-appointment-service-3
-
----
-## Adding or Updating Services
-
-Package cards and add-ons are written directly in `index.html` inside `#packages` and `#addons`.
-To add a new package card:
-
-```html
-<div class="pkg-card" onclick="selectPkg('Your Package Name', 00)">
-  <h3>Your Package Name</h3>
-  <div class="pkg-price">$00</div>
-  <p>Short description of what's included.</p>
-</div>
-```
-
----
-
-## Tech Stack
-
-- **HTML5 / CSS3 / ES2020** — zero-dependency static site; no build step, no framework
-- **[Cal.com](https://cal.com)** — scheduling embed (`mobile-detail-appointment`, `month_view` layout)
-- **Google Fonts** — Cormorant Garamond, Bebas Neue, Montserrat
-- **Infrastructure** — AWS Lambda, API Gateway, S3, CloudWatch · Terraform IaC · TRA3 booking automation
-
-## Booking Backend Automation (TRA3)
-
-Production-ready AWS serverless infrastructure in [`backend-integration/`](./backend-integration):
-
-- **Stripe** — collects deposit at Cal.com booking time
-- **AWS Lambda** — processes Stripe webhooks, calculates balance due
-- **Textbelt** — sends SMS to detailer and customer on every booking
-- **Terraform** — all infrastructure as code, dev/prod environments
-
-See [`backend-integration/README.md`](./backend-integration/README.md) for setup and deployment.
-
 
 ## Contact
 
-Questions or updates? Reach out at **agentlemenstouch@gmail.com**
+**agentlemenstouch@gmail.com**
