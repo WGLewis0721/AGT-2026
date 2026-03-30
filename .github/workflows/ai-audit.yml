@@ -1,6 +1,6 @@
 # ─── AI-Generated Code Audit ──────────────────────────────────────────────────
-# Triggers on pushes to AGT-website-v2-branch ONLY when the commit message
-# contains the marker "[AI-GENERATED]".
+# Triggers on pushes to agt-website-v2 or AGT-website-v2-branch when the
+# commit message contains the marker "[AI-GENERATED]".
 #
 # Checks (defined in scripts/ai_audit.py):
 #   1. Hardcoded secrets
@@ -20,6 +20,7 @@ name: AI-Generated Code Audit
 on:
   push:
     branches:
+      - agt-website-v2
       - AGT-website-v2-branch
 
 jobs:
