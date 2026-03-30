@@ -42,9 +42,6 @@ SERVICE_PRICES = {
     "sm detail": 100.00,
     "md detail": 150.00,
     "lg detail": 200.00,
-    "small": 100.00,
-    "medium": 150.00,
-    "large": 200.00,
     "full detail": 150.00,
 }
 
@@ -264,11 +261,12 @@ def _handle_calcom_webhook(event: dict, body: str) -> dict:
         has_phone=booking["customer_phone"] is not None,
     )
 
-    service_lower = booking["service"].lower()
-    full_price = next(
-        (price for key, price in SERVICE_PRICES.items() if key in service_lower),
-        None,
-    )
+    service_lower = booking["service"].lower().strip()
+    full_price = SERVICE_PRICES.get(service_lower)
+    if full_price is None:
+        matched_keys = [key for key in SERVICE_PRICES if key in service_lower]
+        if matched_keys:
+            full_price = SERVICE_PRICES[max(matched_keys, key=len)]
     balance_due = round(full_price - booking["deposit_paid"], 2) if full_price else None
     balance_due = max(balance_due, 0) if balance_due is not None else None
 
@@ -404,11 +402,12 @@ def _handle_stripe_webhook(event: dict, body: str) -> dict:
         date = custom_fields.get("date", "Not specified")
         location = custom_fields.get("location", "Not specified")
 
-        service_lower = service.lower()
-        full_price = next(
-            (price for key, price in SERVICE_PRICES.items() if key in service_lower),
-            None,
-        )
+        service_lower = service.lower().strip()
+        full_price = SERVICE_PRICES.get(service_lower)
+        if full_price is None:
+            matched_keys = [key for key in SERVICE_PRICES if key in service_lower]
+            if matched_keys:
+                full_price = SERVICE_PRICES[max(matched_keys, key=len)]
         balance_due = round(full_price - deposit_paid, 2) if full_price else None
         balance_due = max(balance_due, 0) if balance_due is not None else None
 
@@ -505,8 +504,8 @@ def lambda_handler(event, context):
     has_stripe_sig = "stripe-signature" in headers
     has_cal_sig = "x-cal-signature-256" in headers
 
-    is_calcom = False
-    if not has_stripe_sig:
+    is_calcom = has_cal_sig
+    if not has_stripe_sig and not has_cal_sig:
         try:
             parsed = json.loads(body)
             if "triggerEvent" in parsed:
@@ -514,7 +513,7 @@ def lambda_handler(event, context):
         except Exception:
             pass
 
-    if is_calcom or has_cal_sig:
+    if is_calcom:
         return _handle_calcom_webhook(event, body)
 
     return _handle_stripe_webhook(event, body)
