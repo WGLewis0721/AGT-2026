@@ -742,6 +742,8 @@ def _handle_stripe_webhook(event: dict, body: str) -> dict:
         return err
     try:
         session = stripe_event["data"]["object"]
+        metadata = session.get("metadata") or {}
+        booking_id = str(metadata.get("booking_id") or "").strip() or "unknown"
         _log(
             "INFO",
             "stripe_webhook_received",
@@ -751,6 +753,7 @@ def _handle_stripe_webhook(event: dict, body: str) -> dict:
             session_id=session.get("id", "unknown"),
             payment_status=session.get("payment_status", "unknown"),
             amount_total=session.get("amount_total", 0),
+            booking_id=booking_id,
         )
         if stripe_event["type"] != "checkout.session.completed":
             _log("INFO", "event_ignored", detail=f"Ignored event type: {stripe_event['type']}")
@@ -772,7 +775,7 @@ def _handle_stripe_webhook(event: dict, body: str) -> dict:
         return _response(200, "SMS sent")
     except Exception as exc:
         _log("ERROR", "webhook_processing_failed", detail=str(exc))
-        return _response(500, "Webhook processing failed")
+        return _response(500, "Webhook processed with errors")
 
 
 def lambda_handler(event, context):
