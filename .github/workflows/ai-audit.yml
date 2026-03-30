@@ -1,0 +1,142 @@
+# ─── AI-Generated Code Audit ──────────────────────────────────────────────────
+# Triggers on pushes to AGT-website-v2-branch ONLY when the commit message
+# contains the marker "[AI-GENERATED]".
+#
+# Checks (defined in scripts/ai_audit.py):
+#   1. Hardcoded secrets
+#   2. Duplicate logic patterns
+#   3. Large / overly-complex functions
+#   4. Disallowed patterns (frontend business logic)
+#   5. Unnecessary dependencies
+#   6. Missing input validation (heuristic)
+#
+# Rules sourced from:
+#   - docs/system-context.md
+#   - .github/copilot-instructions.md
+# ──────────────────────────────────────────────────────────────────────────────
+
+name: AI-Generated Code Audit
+
+on:
+  push:
+    branches:
+      - AGT-website-v2-branch
+
+jobs:
+  audit:
+    name: Audit AI-Generated Code
+    runs-on: ubuntu-latest
+
+    # Only run when the commit message contains [AI-GENERATED]
+    if: contains(github.event.head_commit.message, '[AI-GENERATED]')
+
+    permissions:
+      contents: read
+      pull-requests: write   # needed for the optional PR comment step
+
+    steps:
+      # ── 1. Checkout full history so we can diff against the previous commit ──
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      # ── 2. Set up Python (no external packages needed) ───────────────────────
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # ── 3. Display project rules for audit context ───────────────────────────
+      - name: Print project rules (system-context.md)
+        run: |
+          echo "=========================================="
+          echo "  AGT Project Rules (docs/system-context.md)"
+          echo "=========================================="
+          cat docs/system-context.md
+          echo ""
+
+      # ── 4. Resolve the list of files changed in this push ────────────────────
+      - name: Identify changed files
+        id: changed
+        run: |
+          # Files changed between the previous commit and HEAD.
+          # Fall back to listing all files in the commit if no parent exists
+          # (e.g. first commit on a branch).
+          if git rev-parse --quiet --verify HEAD~1 >/dev/null 2>&1; then
+            git diff --name-only HEAD~1 HEAD -- \
+              '*.py' '*.js' '*.jsw' '*.ts' '*.tsx' '*.html' \
+              2>/dev/null > /tmp/changed_files.txt
+          else
+            git diff-tree --no-commit-id -r --name-only HEAD -- \
+              '*.py' '*.js' '*.jsw' '*.ts' '*.tsx' '*.html' \
+              2>/dev/null > /tmp/changed_files.txt
+          fi
+
+          # Filter to only existing regular files
+          > /tmp/auditable_files.txt
+          while IFS= read -r f; do
+            [ -f "$f" ] && echo "$f" >> /tmp/auditable_files.txt
+          done < /tmp/changed_files.txt
+
+          if [ ! -s /tmp/auditable_files.txt ]; then
+            echo "No auditable files changed in this push."
+            echo "has_files=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "Files to audit:"
+            cat /tmp/auditable_files.txt
+            echo "has_files=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      # ── 5. Run the audit ──────────────────────────────────────────────────────
+      - name: Run AI code audit
+        id: audit
+        if: steps.changed.outputs.has_files == 'true'
+        run: |
+          set -o pipefail
+          # Use xargs with null-delimited input to safely handle spaces in paths.
+          # `set -o pipefail` ensures python3's non-zero exit propagates through tee.
+          tr '\n' '\0' < /tmp/auditable_files.txt \
+            | xargs -0 python3 scripts/ai_audit.py \
+            | tee /tmp/audit_output.txt
+          # Explicitly re-exit with xargs/python exit code (first pipe stage)
+          exit ${PIPESTATUS[0]}
+        shell: bash
+
+      - name: No auditable files changed
+        if: steps.changed.outputs.has_files == 'false'
+        run: |
+          echo "✓ No auditable files (*.py, *.js, *.jsw, *.ts, *.tsx, *.html) were changed."
+          echo "  Skipping audit — pipeline passes."
+
+      # ── 6. (Optional) Post audit results as a commit comment ─────────────────
+      - name: Post audit results as commit comment
+        if: always() && steps.changed.outputs.has_files == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ ! -f /tmp/audit_output.txt ]; then
+            echo "No audit output to post."
+            exit 0
+          fi
+
+          RESULT=$(cat /tmp/audit_output.txt)
+          STATUS_ICON="✅"
+          if grep -q "AUDIT FAILED" /tmp/audit_output.txt; then
+            STATUS_ICON="❌"
+          fi
+
+          BODY="${STATUS_ICON} **AGT AI-Generated Code Audit**
+
+          \`\`\`
+          ${RESULT}
+          \`\`\`
+
+          > Triggered by commit: \`${{ github.sha }}\`
+          > Branch: \`${{ github.ref_name }}\`"
+
+          gh api \
+            --method POST \
+            -H "Accept: application/vnd.github+json" \
+            /repos/${{ github.repository }}/commits/${{ github.sha }}/comments \
+            -f body="$BODY" || echo "Warning: could not post commit comment (non-fatal)"
