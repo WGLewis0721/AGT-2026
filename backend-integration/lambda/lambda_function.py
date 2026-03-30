@@ -440,6 +440,8 @@ def _handle_stripe_webhook(event: dict, body: str) -> dict:
 
     try:
         session = stripe_event["data"]["object"]
+        metadata = session.get("metadata") or {}
+        booking_id = str(metadata.get("booking_id") or "").strip() or "unknown"
         _log(
             "INFO",
             "stripe_webhook_received",
@@ -449,6 +451,7 @@ def _handle_stripe_webhook(event: dict, body: str) -> dict:
             session_id=session.get("id", "unknown"),
             payment_status=session.get("payment_status", "unknown"),
             amount_total=session.get("amount_total", 0),
+            booking_id=booking_id,
         )
 
         if stripe_event["type"] != "checkout.session.completed":
@@ -474,18 +477,35 @@ def _handle_stripe_webhook(event: dict, body: str) -> dict:
             for field in (session.get("custom_fields") or [])
             if "key" in field
         }
-        service = custom_fields.get("service", "Not specified")
-        addons = custom_fields.get("add-ons") or custom_fields.get("addons")
+        service = custom_fields.get("service") or metadata.get("service") or "Not specified"
+        addons = (
+            custom_fields.get("add-ons")
+            or custom_fields.get("addons")
+            or metadata.get("add-ons")
+            or metadata.get("addons")
+            or metadata.get("add_ons")
+            or None
+        )
+        if addons and not str(addons).strip():
+            addons = None
         address = (
             custom_fields.get("address-of-service")
             or custom_fields.get("addressOfService")
             or custom_fields.get("address_of_service")
             or custom_fields.get("address")
             or custom_fields.get("Address of Service")
+            or custom_fields.get("location")
+            or metadata.get("address-of-service")
+            or metadata.get("addressOfService")
+            or metadata.get("address_of_service")
+            or metadata.get("address")
+            or metadata.get("location")
             or None
         )
-        date = custom_fields.get("date", "Not specified")
-        location = custom_fields.get("location", "Not specified")
+        if address and not str(address).strip():
+            address = None
+        date = custom_fields.get("date") or metadata.get("date") or "Not specified"
+        location = custom_fields.get("location") or metadata.get("location") or "Not specified"
 
         service_lower = service.lower().strip()
         full_price = SERVICE_PRICES.get(service_lower)
@@ -524,8 +544,10 @@ def _handle_stripe_webhook(event: dict, body: str) -> dict:
             f"Customer Phone: {customer_phone or 'No phone'}"
         )
 
-        if not _send_sms(DETAILER_PHONE, sms_body_detailer, "detailer"):
-            return _response(500, "SMS failed")
+        try:
+            _send_sms(DETAILER_PHONE, sms_body_detailer, "detailer")
+        except Exception as exc:
+            _log("ERROR", "detailer_sms_failed", detail=str(exc))
 
         balance_customer = (
             f"${balance_due:.2f} due after service"
@@ -552,7 +574,10 @@ def _handle_stripe_webhook(event: dict, body: str) -> dict:
         if not customer_phone:
             _log("INFO", "customer_sms_skipped", detail="no phone on file")
         else:
-            _send_sms(customer_phone, sms_body_customer, "customer")
+            try:
+                _send_sms(customer_phone, sms_body_customer, "customer")
+            except Exception as exc:
+                _log("ERROR", "customer_sms_failed", detail=str(exc))
 
         _log(
             "INFO",
@@ -561,11 +586,13 @@ def _handle_stripe_webhook(event: dict, body: str) -> dict:
             service=service,
             deposit_paid=deposit_paid,
             balance_due=balance_due,
+            booking_id=booking_id,
         )
-        return _response(200, "SMS sent")
+        print(f"Booking confirmed: {booking_id}")
+        return _response(200, "Webhook processed")
     except Exception as exc:
         _log("ERROR", "webhook_processing_failed", detail=str(exc))
-        return _response(500, "Webhook processing failed")
+        return _response(200, "Webhook processed with errors")
 
 
 def lambda_handler(event, context):
