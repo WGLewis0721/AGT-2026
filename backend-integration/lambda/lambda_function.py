@@ -472,40 +472,48 @@ def _handle_stripe_webhook(event: dict, body: str) -> dict:
         amount_total = session.get("amount_total")
         deposit_paid = _amount_to_dollars(amount_total, "invalid_amount_value")
 
+        def _nonempty(val):
+            """Return val if non-empty and not the placeholder 'Not specified', else None."""
+            if val is None:
+                return None
+            s = str(val).strip()
+            return s if s and s.lower() != "not specified" else None
+
         custom_fields = {
-            field["key"]: field.get("text", {}).get("value", "Not specified")
+            field["key"]: _nonempty(field.get("text", {}).get("value"))
             for field in (session.get("custom_fields") or [])
             if "key" in field
         }
-        service = custom_fields.get("service") or metadata.get("service") or "Not specified"
+        service = (
+            _nonempty(custom_fields.get("service"))
+            or _nonempty(metadata.get("service"))
+            or "Not specified"
+        )
         addons = (
-            custom_fields.get("add-ons")
-            or custom_fields.get("addons")
-            or metadata.get("add-ons")
-            or metadata.get("addons")
-            or metadata.get("add_ons")
-            or None
+            _nonempty(custom_fields.get("add-ons"))
+            or _nonempty(custom_fields.get("addons"))
+            or _nonempty(metadata.get("add-ons"))
+            or _nonempty(metadata.get("addons"))
+            or _nonempty(metadata.get("add_ons"))
         )
-        if addons and not str(addons).strip():
-            addons = None
         address = (
-            custom_fields.get("address-of-service")
-            or custom_fields.get("addressOfService")
-            or custom_fields.get("address_of_service")
-            or custom_fields.get("address")
-            or custom_fields.get("Address of Service")
-            or custom_fields.get("location")
-            or metadata.get("address-of-service")
-            or metadata.get("addressOfService")
-            or metadata.get("address_of_service")
-            or metadata.get("address")
-            or metadata.get("location")
-            or None
+            _nonempty(custom_fields.get("address-of-service"))
+            or _nonempty(custom_fields.get("addressOfService"))
+            or _nonempty(custom_fields.get("address_of_service"))
+            or _nonempty(custom_fields.get("address"))
+            or _nonempty(custom_fields.get("Address of Service"))
+            or _nonempty(custom_fields.get("location"))
+            or _nonempty(metadata.get("address-of-service"))
+            or _nonempty(metadata.get("addressOfService"))
+            or _nonempty(metadata.get("address_of_service"))
+            or _nonempty(metadata.get("address"))
+            or _nonempty(metadata.get("location"))
         )
-        if address and not str(address).strip():
-            address = None
-        date = custom_fields.get("date") or metadata.get("date") or "Not specified"
-        location = custom_fields.get("location") or metadata.get("location") or "Not specified"
+        date = (
+            _nonempty(custom_fields.get("date"))
+            or _nonempty(metadata.get("date"))
+            or "Not specified"
+        )
 
         service_lower = service.lower().strip()
         full_price = SERVICE_PRICES.get(service_lower)
@@ -544,10 +552,13 @@ def _handle_stripe_webhook(event: dict, body: str) -> dict:
             f"Customer Phone: {customer_phone or 'No phone'}"
         )
 
-        try:
-            _send_sms(DETAILER_PHONE, sms_body_detailer, "detailer")
-        except Exception as exc:
-            _log("ERROR", "detailer_sms_failed", detail=str(exc))
+        detailer_sms_ok = _send_sms(DETAILER_PHONE, sms_body_detailer, "detailer")
+        if not detailer_sms_ok:
+            _log(
+                "ERROR",
+                "detailer_sms_failed",
+                phone=DETAILER_PHONE,
+            )
 
         balance_customer = (
             f"${balance_due:.2f} due after service"
@@ -571,13 +582,16 @@ def _handle_stripe_webhook(event: dict, body: str) -> dict:
             f"Questions? Call {detailer_phone_display}"
         )
 
+        customer_sms_status = "skipped"
         if not customer_phone:
             _log("INFO", "customer_sms_skipped", detail="no phone on file")
         else:
-            try:
-                _send_sms(customer_phone, sms_body_customer, "customer")
-            except Exception as exc:
-                _log("ERROR", "customer_sms_failed", detail=str(exc))
+            customer_sms_ok = _send_sms(customer_phone, sms_body_customer, "customer")
+            if customer_sms_ok:
+                customer_sms_status = "sent"
+            else:
+                customer_sms_status = "failed"
+                _log("ERROR", "customer_sms_failed", phone=customer_phone)
 
         _log(
             "INFO",
@@ -587,12 +601,13 @@ def _handle_stripe_webhook(event: dict, body: str) -> dict:
             deposit_paid=deposit_paid,
             balance_due=balance_due,
             booking_id=booking_id,
+            customer_sms=customer_sms_status,
         )
-        print(f"Booking confirmed: {booking_id}")
+        _log("INFO", "booking_confirmed", booking_id=booking_id)
         return _response(200, "Webhook processed")
     except Exception as exc:
         _log("ERROR", "webhook_processing_failed", detail=str(exc))
-        return _response(200, "Webhook processed with errors")
+        return _response(500, "Webhook processed with errors")
 
 
 def lambda_handler(event, context):
