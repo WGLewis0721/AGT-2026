@@ -1,7 +1,9 @@
 terraform {
   required_version = ">= 1.5.0"
 
-  backend "s3" {}
+  backend "s3" {
+    dynamodb_table = "tra3-terraform-state-lock"
+  }
 
   required_providers {
     aws = {
