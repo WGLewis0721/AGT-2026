@@ -26,7 +26,30 @@ function Remove-PathIfExists {
     )
 
     if (Test-Path -LiteralPath $Path) {
-        Remove-Item -LiteralPath $Path -Force
+        Remove-Item -LiteralPath $Path -Force -Recurse
+    }
+}
+
+function New-ZipFromFiles {
+    param(
+        [string]$DestinationPath,
+        [string[]]$Files
+    )
+
+    $stageRoot = Join-Path ([System.IO.Path]::GetTempPath()) ([System.Guid]::NewGuid().ToString())
+    New-Item -ItemType Directory -Path $stageRoot | Out-Null
+
+    try {
+        foreach ($file in $Files) {
+            $destination = Join-Path $stageRoot (Split-Path -Leaf $file)
+            Copy-Item -LiteralPath $file -Destination $destination -Force
+        }
+
+        Remove-PathIfExists -Path $DestinationPath
+        Compress-Archive -Path (Join-Path $stageRoot '*') -DestinationPath $DestinationPath -Force
+    }
+    finally {
+        Remove-PathIfExists -Path $stageRoot
     }
 }
 
@@ -34,15 +57,23 @@ $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $backendDir = Split-Path -Parent $scriptDir
 $repoRoot = Split-Path -Parent $backendDir
 $lambdaDir = Join-Path $backendDir "lambda"
+$sharedDir = Join-Path $backendDir "shared"
+$apiDir = Join-Path $repoRoot "api"
 $costReporterDir = Join-Path $backendDir "cost-reporter"
-$zipPath = Join-Path $lambdaDir "lambda_function.zip"
+$webhookZipPath = Join-Path $lambdaDir "lambda_function.zip"
+$bookingIntentZipPath = Join-Path $apiDir "booking_intent.zip"
+$checkoutZipPath = Join-Path $apiDir "create_checkout_session.zip"
 $costReporterZipPath = Join-Path $costReporterDir "cost_reporter.zip"
 $terraformDir = Join-Path $backendDir "terraform"
 $varsFile = Join-Path $backendDir "clients/$Client/$Environment.tfvars"
-$lambdaSource = Join-Path $lambdaDir "lambda_function.py"
-$costReporterSource = Join-Path $costReporterDir "cost_reporter_handler.py"
 $workspaceName = if ($Environment -eq "prod") { "default" } else { $Environment }
 $backendKey = "terraform-state/$Client/terraform.tfstate"
+
+$webhookSource = Join-Path $lambdaDir "lambda_function.py"
+$bookingIntentSource = Join-Path $apiDir "booking_intent.py"
+$checkoutSource = Join-Path $apiDir "create_checkout_session.py"
+$sharedSource = Join-Path $sharedDir "booking_common.py"
+$costReporterSource = Join-Path $costReporterDir "cost_reporter_handler.py"
 
 if (-not (Test-Path -LiteralPath $varsFile)) {
     Write-Host "Missing client tfvars file: $varsFile" -ForegroundColor Red
@@ -58,7 +89,6 @@ try {
     $accountId = ((@(& aws sts get-caller-identity --query Account --output text)) -join "").Trim()
     Assert-LastExitCode "aws sts get-caller-identity"
     $s3Bucket = "tra3-$accountId-deployments"
-    $s3FunctionKey = "functions/$Client/$Environment/lambda_function.zip"
 
     $layerKey = ((@(& aws s3api list-objects-v2 --bucket $s3Bucket --prefix "layers/dependencies/layer.zip" --query "Contents[?Key=='layers/dependencies/layer.zip'].Key" --output text)) -join "").Trim()
     Assert-LastExitCode "aws s3api list-objects-v2"
@@ -66,20 +96,43 @@ try {
         throw "Dependency layer not found in s3://$s3Bucket/layers/dependencies/layer.zip. Run .\\backend-integration\\scripts\\bootstrap-layer.ps1 first."
     }
 
-    Write-Host "Step 1 - Package Lambda" -ForegroundColor Cyan
-    Remove-PathIfExists -Path $zipPath
-    Remove-PathIfExists -Path $costReporterZipPath
-    Compress-Archive -Path $lambdaSource -DestinationPath $zipPath -Force
-    Compress-Archive -Path $costReporterSource -DestinationPath $costReporterZipPath -Force
-    Write-Host "Lambda package created: $zipPath" -ForegroundColor Green
+    Write-Host "Step 1 - Package Lambda artifacts" -ForegroundColor Cyan
+    New-ZipFromFiles -DestinationPath $webhookZipPath -Files @(
+        $webhookSource,
+        $sharedSource
+    )
+    New-ZipFromFiles -DestinationPath $bookingIntentZipPath -Files @(
+        $bookingIntentSource,
+        $sharedSource
+    )
+    New-ZipFromFiles -DestinationPath $checkoutZipPath -Files @(
+        $checkoutSource,
+        $sharedSource
+    )
+    New-ZipFromFiles -DestinationPath $costReporterZipPath -Files @(
+        $costReporterSource
+    )
+    Write-Host "Webhook package created: $webhookZipPath" -ForegroundColor Green
+    Write-Host "Booking intent package created: $bookingIntentZipPath" -ForegroundColor Green
+    Write-Host "Checkout session package created: $checkoutZipPath" -ForegroundColor Green
     Write-Host "Cost reporter package created: $costReporterZipPath" -ForegroundColor Green
 
-    Write-Host "Step 2 - Upload Lambda package" -ForegroundColor Cyan
+    Write-Host "Step 2 - Upload Lambda packages" -ForegroundColor Cyan
     $artifacts = @(
         @{
             Label = "Webhook Lambda"
-            ZipPath = $zipPath
-            S3Key = $s3FunctionKey
+            ZipPath = $webhookZipPath
+            S3Key = "functions/$Client/$Environment/lambda_function.zip"
+        },
+        @{
+            Label = "Booking intent Lambda"
+            ZipPath = $bookingIntentZipPath
+            S3Key = "functions/$Client/$Environment/booking_intent.zip"
+        },
+        @{
+            Label = "Checkout session Lambda"
+            ZipPath = $checkoutZipPath
+            S3Key = "functions/$Client/$Environment/create_checkout_session.zip"
         },
         @{
             Label = "Cost reporter Lambda"
@@ -139,19 +192,19 @@ try {
     & terraform apply -auto-approve "-var=client_name=$Client" "-var=environment=$Environment" "-var-file=../clients/$Client/$Environment.tfvars"
     Assert-LastExitCode "terraform apply"
 
+    $bookingIntentUrl = ((@(& terraform output -raw booking_intent_url)) -join "").Trim()
+    Assert-LastExitCode "terraform output booking_intent_url"
+    $checkoutUrl = ((@(& terraform output -raw create_checkout_session_url)) -join "").Trim()
+    Assert-LastExitCode "terraform output create_checkout_session_url"
+    $webhookUrl = ((@(& terraform output -raw webhook_url)) -join "").Trim()
+    Assert-LastExitCode "terraform output webhook_url"
+
     Write-Host "Deployment finished successfully." -ForegroundColor Green
     Write-Host "" -ForegroundColor White
-    Write-Host "Next steps:" -ForegroundColor White
-    Write-Host "1. Copy the webhook_url output for $Environment." -ForegroundColor White
-    if ($Environment -eq "dev") {
-        Write-Host "2. Paste it into Stripe -> Developers -> Webhooks -> Add endpoint in TEST mode." -ForegroundColor White
-    }
-    else {
-        Write-Host "2. Paste it into Stripe -> Developers -> Webhooks -> Add endpoint in LIVE mode." -ForegroundColor White
-    }
-    Write-Host "3. Set the event to: checkout.session.completed" -ForegroundColor White
-    Write-Host "4. If Stripe rotates the signing secret, update SSM parameter /tra3/$Client/$Environment/stripe_webhook_secret." -ForegroundColor White
-    Write-Host "5. Re-run .\\scripts\\deploy.ps1 -Client $Client -Environment $Environment after any parameter change." -ForegroundColor White
+    Write-Host "Endpoints:" -ForegroundColor White
+    Write-Host "  booking-intent:          $bookingIntentUrl" -ForegroundColor White
+    Write-Host "  create-checkout-session: $checkoutUrl" -ForegroundColor White
+    Write-Host "  webhook:                 $webhookUrl" -ForegroundColor White
 }
 finally {
     Set-Location $repoRoot
