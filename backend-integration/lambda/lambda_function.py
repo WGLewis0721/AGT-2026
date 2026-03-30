@@ -179,7 +179,7 @@ def _first_present(mapping: dict, *keys):
     """Return the first non-empty value found in *mapping* for any of *keys*."""
     for key in keys:
         value = mapping.get(key)
-        if value and (not isinstance(value, str) or value.strip()):
+        if value is not None and (not isinstance(value, str) or value.strip()):
             return value
     return None
 
@@ -331,7 +331,8 @@ def _parse_calcom_appointment_date(payload: dict) -> str:
             f"{dt.strftime('%a %b')} {dt.day} @ "
             f"{hour}:{dt.strftime('%M %p')} {dt.tzname() or 'UTC'}"
         )
-    except Exception:
+    except Exception as exc:
+        _log("WARN", "calcom_date_parse_error", detail=str(exc))
         return start_time_raw or "Not specified"
 
 
