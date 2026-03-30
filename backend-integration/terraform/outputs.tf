@@ -27,3 +27,13 @@ output "cloudwatch_log_group" {
   description = "Lambda CloudWatch log group"
   value       = aws_cloudwatch_log_group.booking_webhook.name
 }
+
+output "daily_cost_report_topic_arn" {
+  description = "SNS topic ARN for the daily AWS cost report (prod only)"
+  value       = local.billing_enabled ? aws_sns_topic.daily_cost_report[0].arn : null
+}
+
+output "daily_cost_report_email" {
+  description = "Billing email recipient (prod only)"
+  value       = local.billing_enabled ? var.billing_report_email : null
+}

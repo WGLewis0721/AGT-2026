@@ -34,10 +34,13 @@ $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $backendDir = Split-Path -Parent $scriptDir
 $repoRoot = Split-Path -Parent $backendDir
 $lambdaDir = Join-Path $backendDir "lambda"
+$costReporterDir = Join-Path $backendDir "cost-reporter"
 $zipPath = Join-Path $lambdaDir "lambda_function.zip"
+$costReporterZipPath = Join-Path $costReporterDir "cost_reporter.zip"
 $terraformDir = Join-Path $backendDir "terraform"
 $varsFile = Join-Path $backendDir "clients/$Client/$Environment.tfvars"
 $lambdaSource = Join-Path $lambdaDir "lambda_function.py"
+$costReporterSource = Join-Path $costReporterDir "cost_reporter_handler.py"
 $workspaceName = if ($Environment -eq "prod") { "default" } else { $Environment }
 $backendKey = "terraform-state/$Client/terraform.tfstate"
 
@@ -65,21 +68,43 @@ try {
 
     Write-Host "Step 1 - Package Lambda" -ForegroundColor Cyan
     Remove-PathIfExists -Path $zipPath
+    Remove-PathIfExists -Path $costReporterZipPath
     Compress-Archive -Path $lambdaSource -DestinationPath $zipPath -Force
+    Compress-Archive -Path $costReporterSource -DestinationPath $costReporterZipPath -Force
     Write-Host "Lambda package created: $zipPath" -ForegroundColor Green
+    Write-Host "Cost reporter package created: $costReporterZipPath" -ForegroundColor Green
 
     Write-Host "Step 2 - Upload Lambda package" -ForegroundColor Cyan
-    $localHash = (Get-FileHash -Path $zipPath -Algorithm MD5).Hash.ToLower()
-    $remoteETag = ((@(& aws s3api head-object --bucket $s3Bucket --key $s3FunctionKey --query ETag --output text 2>$null)) -join "").Trim().Trim('"').ToLower()
+    $artifacts = @(
+        @{
+            Label = "Webhook Lambda"
+            ZipPath = $zipPath
+            S3Key = $s3FunctionKey
+        },
+        @{
+            Label = "Cost reporter Lambda"
+            ZipPath = $costReporterZipPath
+            S3Key = "functions/$Client/$Environment/cost_reporter.zip"
+        }
+    )
 
-    if ($localHash -eq $remoteETag) {
-        Write-Host "Lambda zip unchanged - skipping S3 upload" -ForegroundColor DarkGray
-    }
-    else {
-        Write-Host "Lambda zip changed - uploading to S3..." -ForegroundColor DarkGray
-        & aws s3 cp $zipPath "s3://$s3Bucket/$s3FunctionKey"
-        Assert-LastExitCode "aws s3 cp lambda_function.zip"
-        Write-Host "Lambda package uploaded: s3://$s3Bucket/$s3FunctionKey" -ForegroundColor Green
+    foreach ($artifact in $artifacts) {
+        $localHash = (Get-FileHash -Path $artifact.ZipPath -Algorithm MD5).Hash.ToLower()
+        $remoteETag = ((@(& aws s3api list-objects-v2 --bucket $s3Bucket --prefix $artifact.S3Key --query "Contents[?Key=='$($artifact.S3Key)'].ETag | [0]" --output text 2>$null)) -join "").Trim().Trim('"').ToLower()
+        Assert-LastExitCode "aws s3api list-objects-v2 $($artifact.S3Key)"
+        if ($remoteETag -eq "none") {
+            $remoteETag = ""
+        }
+
+        if ($localHash -eq $remoteETag) {
+            Write-Host "$($artifact.Label) zip unchanged - skipping S3 upload" -ForegroundColor DarkGray
+            continue
+        }
+
+        Write-Host "$($artifact.Label) zip changed - uploading to S3..." -ForegroundColor DarkGray
+        & aws s3 cp $artifact.ZipPath "s3://$s3Bucket/$($artifact.S3Key)"
+        Assert-LastExitCode "aws s3 cp $($artifact.S3Key)"
+        Write-Host "$($artifact.Label) package uploaded: s3://$s3Bucket/$($artifact.S3Key)" -ForegroundColor Green
     }
 
     Write-Host "Step 3 - Terraform init" -ForegroundColor Cyan
@@ -125,8 +150,8 @@ try {
         Write-Host "2. Paste it into Stripe -> Developers -> Webhooks -> Add endpoint in LIVE mode." -ForegroundColor White
     }
     Write-Host "3. Set the event to: checkout.session.completed" -ForegroundColor White
-    Write-Host "4. Copy the signing secret back into $Environment.tfvars as stripe_webhook_secret." -ForegroundColor White
-    Write-Host "5. Re-run .\\scripts\\deploy.ps1 -Client $Client -Environment $Environment to apply the secret." -ForegroundColor White
+    Write-Host "4. If Stripe rotates the signing secret, update SSM parameter /tra3/$Client/$Environment/stripe_webhook_secret." -ForegroundColor White
+    Write-Host "5. Re-run .\\scripts\\deploy.ps1 -Client $Client -Environment $Environment after any parameter change." -ForegroundColor White
 }
 finally {
     Set-Location $repoRoot
