@@ -228,6 +228,18 @@ def _parse_calcom_booking(payload: dict) -> dict:
     if addons and not addons.strip():
         addons = None
 
+    address = (
+        (responses.get("address-of-service") or {}).get("value")
+        or (responses.get("addressOfService") or {}).get("value")
+        or (responses.get("address_of_service") or {}).get("value")
+        or (responses.get("address") or {}).get("value")
+        or (responses.get("Address of Service") or {}).get("value")
+        or (responses.get("location") or {}).get("value")
+        or None
+    )
+    if address and not str(address).strip():
+        address = None
+
     start_time_raw = payload.get("startTime") or ""
     try:
         dt = datetime.fromisoformat(start_time_raw.replace("Z", "+00:00"))
@@ -250,6 +262,7 @@ def _parse_calcom_booking(payload: dict) -> dict:
         "customer_phone": customer_phone,
         "service": service,
         "addons": addons,
+        "address": address,
         "appointment_date": appointment_date,
         "deposit_paid": deposit_paid,
         "booking_uid": payload.get("uid") or "unknown",
@@ -329,6 +342,7 @@ def _handle_calcom_webhook(event: dict, body: str) -> dict:
     addons = booking["addons"]
     divider = "──────────────────────────────────────────"
     addons_line = f"\nAdd-Ons:  {addons}" if addons else ""
+    address_line = f"\nAddress:  {booking['address']}" if booking.get("address") else ""
     balance_line = f"${balance_due:.2f}" if balance_due is not None else "Not mapped"
 
     sms_detailer = (
@@ -338,7 +352,7 @@ def _handle_calcom_webhook(event: dict, body: str) -> dict:
         f"Phone:    {booking['customer_phone'] or 'No phone'}\n"
         f"Email:    {booking['customer_email']}\n"
         f"{divider}\n"
-        f"Service:  {booking['service']}{addons_line}\n"
+        f"Service:  {booking['service']}{addons_line}{address_line}\n"
         f"Date:     {booking['appointment_date']}\n"
         f"{divider}\n"
         f"Deposit:  ${booking['deposit_paid']:.2f}\n"
@@ -358,6 +372,7 @@ def _handle_calcom_webhook(event: dict, body: str) -> dict:
             else "Contact us for balance details"
         )
         addons_customer_line = f"\nAdd-Ons:  {addons}" if addons else ""
+        address_customer_line = f"\nAddress:  {booking['address']}" if booking.get("address") else ""
 
         sms_customer = (
             f"\U0001F697 Booking Confirmed!\n"
@@ -365,7 +380,7 @@ def _handle_calcom_webhook(event: dict, body: str) -> dict:
             f"{divider}\n"
             f"Hi {booking['customer_name']}! Your detail is booked.\n"
             f"{divider}\n"
-            f"Service:  {booking['service']}{addons_customer_line}\n"
+            f"Service:  {booking['service']}{addons_customer_line}{address_customer_line}\n"
             f"Date:     {booking['appointment_date']}\n"
             f"{divider}\n"
             f"Deposit:  ${booking['deposit_paid']:.2f} received\n"
@@ -461,6 +476,14 @@ def _handle_stripe_webhook(event: dict, body: str) -> dict:
         }
         service = custom_fields.get("service", "Not specified")
         addons = custom_fields.get("add-ons") or custom_fields.get("addons")
+        address = (
+            custom_fields.get("address-of-service")
+            or custom_fields.get("addressOfService")
+            or custom_fields.get("address_of_service")
+            or custom_fields.get("address")
+            or custom_fields.get("Address of Service")
+            or None
+        )
         date = custom_fields.get("date", "Not specified")
         location = custom_fields.get("location", "Not specified")
 
@@ -483,6 +506,7 @@ def _handle_stripe_webhook(event: dict, body: str) -> dict:
 
         divider = "──────────────────────────────────────────"
         addons_line = f"\nAdd-Ons:  {addons}" if addons else ""
+        address_line = f"\nAddress:  {address}" if address else ""
         balance_line = f"${balance_due:.2f}" if balance_due is not None else "Not mapped"
         sms_body_detailer = (
             f"\U0001F697 NEW DETAIL BOOKING\n"
@@ -491,7 +515,7 @@ def _handle_stripe_webhook(event: dict, body: str) -> dict:
             f"Phone:    {customer_phone or 'No phone'}\n"
             f"Email:    {customer_email}\n"
             f"{divider}\n"
-            f"Service:  {service}{addons_line}\n"
+            f"Service:  {service}{addons_line}{address_line}\n"
             f"Date:     {date}\n"
             f"{divider}\n"
             f"Deposit:  ${deposit_paid:.2f}\n"
@@ -509,13 +533,14 @@ def _handle_stripe_webhook(event: dict, body: str) -> dict:
             else "Contact us for balance details"
         )
         addons_customer_line = f"\nAdd-Ons:  {addons}" if addons else ""
+        address_customer_line = f"\nAddress:  {address}" if address else ""
         sms_body_customer = (
             f"\U0001F697 Booking Confirmed!\n"
             f"A Gentlemen's Touch\n"
             f"{divider}\n"
             f"Hi {customer_name}! Your detail is booked.\n"
             f"{divider}\n"
-            f"Service:  {service}{addons_customer_line}\n"
+            f"Service:  {service}{addons_customer_line}{address_customer_line}\n"
             f"Date:     {date}\n"
             f"{divider}\n"
             f"Deposit:  ${deposit_paid:.2f} received\n"
