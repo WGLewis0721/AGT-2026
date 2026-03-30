@@ -411,3 +411,14 @@ This guide was compiled from:
 - `artifacts/summaries/copilote-updates-3282026-v1.txt`
 - `artifacts/summaries/prompt-07-summary.txt`
 - the current `backend-integration/README.md`
+
+## Version 2 Architecture
+
+Version 2 introduces:
+
+- DynamoDB as source of truth for bookings
+- Backend-driven booking flow
+- Stripe dynamic checkout sessions
+- Reduced dependency on Cal.com for business logic
+
+Deployment flow remains the same, but backend logic will evolve.
