@@ -26,6 +26,13 @@ variable "stripe_webhook_secret" {
   sensitive   = true
 }
 
+variable "calcom_webhook_secret" {
+  description = "Cal.com webhook signing secret"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
 variable "textbelt_api_key" {
   description = "Textbelt API key for SMS delivery."
   type        = string

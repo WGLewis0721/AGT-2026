@@ -17,6 +17,7 @@ resource "aws_lambda_function" "booking_webhook" {
     variables = {
       STRIPE_SECRET_KEY     = var.stripe_secret_key
       STRIPE_WEBHOOK_SECRET = var.stripe_webhook_secret
+      CALCOM_WEBHOOK_SECRET = var.calcom_webhook_secret
       TEXTBELT_API_KEY      = var.textbelt_api_key
       DETAILER_PHONE        = var.detailer_phone_number
       ENVIRONMENT           = var.environment
