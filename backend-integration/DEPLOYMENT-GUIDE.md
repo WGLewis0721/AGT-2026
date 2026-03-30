@@ -134,12 +134,19 @@ What this does:
 
 ### 2. Configure client secrets
 
-Fill in:
+Migrate the current secret values into AWS Systems Manager Parameter Store:
+
+```powershell
+.\backend-integration\scripts\migrate-secrets-to-ssm.ps1 -Client gentlemens-touch -Environment dev
+.\backend-integration\scripts\migrate-secrets-to-ssm.ps1 -Client gentlemens-touch -Environment prod
+```
+
+The checked-in tfvars files should then contain only parameter names:
 
 - `backend-integration/clients/gentlemens-touch/dev.tfvars`
 - `backend-integration/clients/gentlemens-touch/prod.tfvars`
 
-Required values include:
+The migrated parameters include:
 
 - `stripe_secret_key`
 - `stripe_webhook_secret`
@@ -167,11 +174,8 @@ Register the dev webhook URL in Stripe TEST mode for:
 
 - `checkout.session.completed`
 
-Then update:
-
-- `backend-integration/clients/gentlemens-touch/dev.tfvars`
-
-with the Stripe signing secret if needed, and redeploy dev:
+Then update SSM parameter `/tra3/gentlemens-touch/dev/stripe_webhook_secret`
+if the Stripe signing secret changes, and redeploy dev:
 
 ```powershell
 .\backend-integration\scripts\deploy.ps1 -Client gentlemens-touch -Environment dev
@@ -205,7 +209,8 @@ Register the prod webhook URL in Stripe LIVE mode for:
 
 - `checkout.session.completed`
 
-Then redeploy prod if the live webhook secret changes:
+Then update `/tra3/gentlemens-touch/prod/stripe_webhook_secret` in Parameter Store
+and redeploy prod if the live webhook secret changes:
 
 ```powershell
 .\backend-integration\scripts\deploy.ps1 -Client gentlemens-touch -Environment prod
@@ -235,6 +240,17 @@ If layer dependencies change:
 .\backend-integration\scripts\deploy.ps1 -Client gentlemens-touch -Environment dev
 .\backend-integration\scripts\deploy.ps1 -Client gentlemens-touch -Environment prod
 ```
+
+## Daily Billing Email
+
+Production deploys can create a daily AWS billing report that sends account
+cost and credit usage to the `billing_report_email` value in `prod.tfvars`.
+
+Notes:
+
+- The billing stack is created only in `prod`
+- SNS sends a subscription confirmation email to the configured inbox
+- The recipient must confirm that email before daily reports will arrive
 
 ## SMS Behavior
 

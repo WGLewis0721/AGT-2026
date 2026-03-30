@@ -14,34 +14,50 @@ variable "environment" {
   }
 }
 
-variable "stripe_secret_key" {
-  description = "Stripe secret key for API access."
+variable "stripe_secret_key_parameter_name" {
+  description = "SSM Parameter Store name for the Stripe secret key."
   type        = string
-  sensitive   = true
 }
 
-variable "stripe_webhook_secret" {
-  description = "Stripe webhook signing secret."
+variable "stripe_webhook_secret_parameter_name" {
+  description = "SSM Parameter Store name for the Stripe webhook signing secret."
   type        = string
-  sensitive   = true
 }
 
-variable "calcom_webhook_secret" {
-  description = "Cal.com webhook signing secret"
+variable "calcom_webhook_secret_parameter_name" {
+  description = "Optional SSM Parameter Store name for the Cal.com webhook signing secret."
   type        = string
-  sensitive   = true
   default     = ""
 }
 
-variable "textbelt_api_key" {
-  description = "Textbelt API key for SMS delivery."
+variable "textbelt_api_key_parameter_name" {
+  description = "SSM Parameter Store name for the Textbelt API key."
   type        = string
-  sensitive   = true
 }
 
-variable "detailer_phone_number" {
-  description = "Business owner phone number in E.164 format."
+variable "detailer_phone_number_parameter_name" {
+  description = "SSM Parameter Store name for the business owner phone number."
   type        = string
+}
+
+variable "billing_report_email" {
+  description = "Daily billing report email recipient. Leave blank to disable billing emails."
+  type        = string
+  default     = ""
+
+  validation {
+    condition = (
+      var.billing_report_email == ""
+      || can(regex("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$", var.billing_report_email))
+    )
+    error_message = "billing_report_email must be blank or a valid email address."
+  }
+}
+
+variable "billing_schedule_expression" {
+  description = "EventBridge schedule expression for the daily billing report."
+  type        = string
+  default     = "rate(1 day)"
 }
 
 variable "aws_region" {

@@ -1,6 +1,6 @@
 # ─── AI-Generated Code Audit ──────────────────────────────────────────────────
-# Triggers on pushes to agt-website-v2 ONLY when the commit message
-# contains the marker "[AI-GENERATED]".
+# Triggers on pushes to agt-website-v2 or AGT-website-v2-branch when the
+# commit message contains the marker "[AI-GENERATED]".
 #
 # Checks (defined in scripts/ai_audit.py):
 #   1. Hardcoded secrets
@@ -9,6 +9,8 @@
 #   4. Disallowed patterns (frontend business logic)
 #   5. Unnecessary dependencies
 #   6. Missing input validation (heuristic)
+# Coverage includes Terraform, tfvars, PowerShell, and workflow files so
+# infra secret leaks are audited too.
 #
 # Rules sourced from:
 #   - docs/system-context.md
@@ -21,6 +23,7 @@ on:
   push:
     branches:
       - agt-website-v2
+      - AGT-website-v2-branch
 
 jobs:
   audit:
@@ -66,10 +69,12 @@ jobs:
           if git rev-parse --quiet --verify HEAD~1 >/dev/null 2>&1; then
             git diff --name-only HEAD~1 HEAD -- \
               '*.py' '*.js' '*.jsw' '*.ts' '*.tsx' '*.html' \
+              '*.tf' '*.tfvars' '*.ps1' '*.yml' '*.yaml' \
               2>/dev/null > /tmp/changed_files.txt
           else
             git diff-tree --no-commit-id -r --name-only HEAD -- \
               '*.py' '*.js' '*.jsw' '*.ts' '*.tsx' '*.html' \
+              '*.tf' '*.tfvars' '*.ps1' '*.yml' '*.yaml' \
               2>/dev/null > /tmp/changed_files.txt
           fi
 
@@ -106,7 +111,7 @@ jobs:
       - name: No auditable files changed
         if: steps.changed.outputs.has_files == 'false'
         run: |
-          echo "✓ No auditable files (*.py, *.js, *.jsw, *.ts, *.tsx, *.html) were changed."
+          echo "No auditable files (*.py, *.js, *.jsw, *.ts, *.tsx, *.html, *.tf, *.tfvars, *.ps1, *.yml, *.yaml) were changed."
           echo "  Skipping audit — pipeline passes."
 
       # ── 6. (Optional) Post audit results as a commit comment ─────────────────

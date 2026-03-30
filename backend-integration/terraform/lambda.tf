@@ -15,11 +15,11 @@ resource "aws_lambda_function" "booking_webhook" {
 
   environment {
     variables = {
-      STRIPE_SECRET_KEY     = var.stripe_secret_key
-      STRIPE_WEBHOOK_SECRET = var.stripe_webhook_secret
-      CALCOM_WEBHOOK_SECRET = var.calcom_webhook_secret
-      TEXTBELT_API_KEY      = var.textbelt_api_key
-      DETAILER_PHONE        = var.detailer_phone_number
+      STRIPE_SECRET_KEY     = data.aws_ssm_parameter.stripe_secret_key.value
+      STRIPE_WEBHOOK_SECRET = data.aws_ssm_parameter.stripe_webhook_secret.value
+      CALCOM_WEBHOOK_SECRET = local.calcom_webhook_secret
+      TEXTBELT_API_KEY      = data.aws_ssm_parameter.textbelt_api_key.value
+      DETAILER_PHONE        = data.aws_ssm_parameter.detailer_phone_number.value
       ENVIRONMENT           = var.environment
     }
   }
