@@ -15,7 +15,7 @@ import stripe
 # fields @timestamp, @message
 # | filter @message like /booking_processed|calcom_booking_processed/
 # | sort @timestamp desc
-# | limit 50
+# | limit 50....
 #
 # Failed customer SMS alerts:
 # fields @timestamp, @message
