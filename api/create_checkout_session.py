@@ -3,6 +3,7 @@ import json
 import os
 
 import stripe
+from booking_common import booking_table, get_booking, utc_now_iso
 
 
 def _log(event_name, **fields):
@@ -51,16 +52,14 @@ def _parse_body(event):
     return body
 
 
-def _get_placeholder_booking(booking_id):
-    return {
-        "booking_id": booking_id,
-        "package": "medium",
-        "total": 150,
-        "deposit": 30,
-    }
+def _build_redirect_url(domain_url, status_value, session_token):
+    return (
+        f"{domain_url}/?checkout={status_value}"
+        f"&session_id={session_token}"
+    )
 
 
-def _create_session(booking_id, deposit_cents):
+def _create_session(booking):
     stripe_secret_key = os.environ.get("STRIPE_SECRET_KEY", "").strip()
     domain_url = os.environ.get("DOMAIN_URL", "").strip().rstrip("/")
 
@@ -69,25 +68,59 @@ def _create_session(booking_id, deposit_cents):
 
     stripe.api_key = stripe_secret_key
 
-    return stripe.checkout.Session.create(
-        mode="payment",
-        payment_method_types=["card"],
-        line_items=[
+    pricing = booking.get("pricing") or {}
+    deposit = int(pricing.get("deposit") or 0)
+    if deposit <= 0:
+        raise RuntimeError("booking deposit is invalid")
+
+    booking_id = booking["booking_id"]
+    customer = booking.get("customer") or {}
+    addon_labels = booking.get("addon_labels") or []
+    addon_summary = ", ".join(addon_labels)
+
+    metadata = {
+        "booking_id": booking_id,
+        "package": booking.get("package", ""),
+        "appointment_time": booking.get("appointment_time", ""),
+        "address": booking.get("address", ""),
+    }
+    if addon_summary:
+        metadata["addons"] = addon_summary
+
+    session_params = {
+        "mode": "payment",
+        "client_reference_id": booking_id,
+        "payment_method_types": ["card"],
+        "phone_number_collection": {"enabled": True},
+        "line_items": [
             {
                 "price_data": {
                     "currency": "usd",
                     "product_data": {
-                        "name": "Detailing Deposit",
+                        "name": f"{booking.get('package_label', 'Detailing')} Deposit",
+                        "description": "20% booking deposit collected at checkout.",
                     },
-                    "unit_amount": deposit_cents,
+                    "unit_amount": deposit * 100,
                 },
                 "quantity": 1,
             }
         ],
-        success_url=f"{domain_url}/success?session_id={{CHECKOUT_SESSION_ID}}",
-        cancel_url=f"{domain_url}/cancel",
-        metadata={"booking_id": booking_id},
-    )
+        "success_url": _build_redirect_url(
+            domain_url,
+            "success",
+            "{CHECKOUT_SESSION_ID}",
+        ),
+        "cancel_url": _build_redirect_url(
+            domain_url,
+            "cancelled",
+            "{CHECKOUT_SESSION_ID}",
+        ),
+        "metadata": metadata,
+    }
+    if customer.get("email"):
+        session_params["customer_email"] = customer["email"]
+
+    return stripe.checkout.Session.create(**session_params)
 
 
 def lambda_handler(event, context):
@@ -102,14 +135,40 @@ def lambda_handler(event, context):
             return _response(400, {"message": "booking_id is required"})
 
         booking_id = booking_id.strip()
-        booking = _get_placeholder_booking(booking_id)
-        deposit_cents = int(booking["deposit"] * 100)
+        booking = get_booking(booking_id)
+        if not booking:
+            _log("create_checkout_session_not_found", booking_id=booking_id)
+            return _response(404, {"message": "booking not found"})
 
-        session = _create_session(booking_id, deposit_cents)
+        if booking.get("status") == "confirmed":
+            _log("create_checkout_session_conflict", booking_id=booking_id)
+            return _response(409, {"message": "booking is already confirmed"})
+
+        session = _create_session(booking)
+        now = utc_now_iso()
+
+        booking_table().update_item(
+            Key={"booking_id": booking_id},
+            UpdateExpression=(
+                "SET updated_at = :updated_at, "
+                "stripe_checkout_session_id = :session_id, "
+                "stripe_checkout_url = :checkout_url, "
+                "payment_status = :payment_status"
+            ),
+            ExpressionAttributeValues={
+                ":updated_at": now,
+                ":session_id": getattr(session, "id", ""),
+                ":checkout_url": session.url,
+                ":payment_status": "pending",
+            },
+        )
+
+        pricing = booking.get("pricing") or {}
+        deposit_cents = int(pricing.get("deposit", 0)) * 100
         _log(
             "create_checkout_session_created",
             booking_id=booking_id,
-            package=booking["package"],
+            package=booking.get("package"),
             deposit_cents=deposit_cents,
             checkout_session_id=getattr(session, "id", None),
         )

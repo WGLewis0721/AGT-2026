@@ -7,6 +7,7 @@ from datetime import datetime, timezone
 
 import requests
 import stripe
+from booking_common import booking_table, format_addons, get_booking
 
 # CloudWatch Logs Insights - AWS Console -> CloudWatch -> Logs Insights
 # Log group: /aws/lambda/tra3-gentlemens-touch-{environment}-booking-webhook
@@ -43,6 +44,9 @@ SERVICE_PRICES = {
     "md detail": 150.00,
     "lg detail": 200.00,
     "full detail": 150.00,
+    "small": 100.00,
+    "medium": 150.00,
+    "large": 200.00,
 }
 
 BUSINESS_PHONE = "(334) 294-8228"
@@ -97,6 +101,97 @@ def _response(status_code, message):
         "headers": {"Content-Type": "application/json"},
         "body": json.dumps({"message": message}),
     }
+
+
+def _format_phone_display(phone_number):
+    digits_only = "".join(character for character in str(phone_number or "") if character.isdigit())
+    if len(digits_only) == 11 and digits_only.startswith("1"):
+        digits_only = digits_only[1:]
+
+    if len(digits_only) == 10:
+        return f"({digits_only[:3]}) {digits_only[3:6]}-{digits_only[6:]}"
+
+    return phone_number or BUSINESS_PHONE
+
+
+def _format_appointment_time(value):
+    if not value:
+        return "Not specified"
+
+    try:
+        dt = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt.strftime("%Y-%m-%d %I:%M %p %Z").strip()
+    except Exception:
+        return str(value)
+
+
+def _to_float(value):
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return 0.0
+
+
+def _load_booking_record(booking_id):
+    if not booking_id or booking_id == "unknown":
+        return None
+
+    try:
+        booking = get_booking(booking_id)
+        if booking:
+            _log("INFO", "booking_loaded", booking_id=booking_id, status=booking.get("status"))
+        else:
+            _log("WARN", "booking_not_found", booking_id=booking_id)
+        return booking
+    except Exception as exc:
+        _log("ERROR", "booking_lookup_failed", booking_id=booking_id, detail=str(exc))
+        return None
+
+
+def _mark_booking_confirmed(
+    booking_id,
+    session_id,
+    stripe_event_id,
+    amount_total_cents,
+    detailer_sms_status,
+    customer_sms_status,
+):
+    if not booking_id or booking_id == "unknown":
+        return
+
+    try:
+        booking_table().update_item(
+            Key={"booking_id": booking_id},
+            UpdateExpression=(
+                "SET #status = :status, "
+                "payment_status = :payment_status, "
+                "paid_at = :paid_at, "
+                "updated_at = :updated_at, "
+                "stripe_event_id = :stripe_event_id, "
+                "stripe_checkout_session_id = :session_id, "
+                "stripe_amount_total_cents = :amount_total_cents, "
+                "detailer_sms_status = :detailer_sms_status, "
+                "customer_sms_status = :customer_sms_status"
+            ),
+            ExpressionAttributeNames={
+                "#status": "status",
+            },
+            ExpressionAttributeValues={
+                ":status": "confirmed",
+                ":payment_status": "paid",
+                ":paid_at": datetime.now(timezone.utc).isoformat(),
+                ":updated_at": datetime.now(timezone.utc).isoformat(),
+                ":stripe_event_id": stripe_event_id,
+                ":session_id": session_id,
+                ":amount_total_cents": int(amount_total_cents or 0),
+                ":detailer_sms_status": detailer_sms_status,
+                ":customer_sms_status": customer_sms_status,
+            },
+        )
+    except Exception as exc:
+        _log("ERROR", "booking_update_failed", booking_id=booking_id, detail=str(exc))
 
 
 def _send_sms(phone_number, message, recipient):
@@ -459,62 +554,75 @@ def _handle_stripe_webhook(event: dict, body: str) -> dict:
             return _response(200, "Ignored")
 
         customer_details = session.get("customer_details") or {}
-        customer_name = customer_details.get("name") or "Unknown"
-        customer_email = customer_details.get("email") or "No email"
-        customer_phone = _normalize_phone_number(customer_details.get("phone") or None)
-        detailer_phone_display = (DETAILER_PHONE or "").replace("+1", "").strip()
-        if len(detailer_phone_display) == 10:
-            detailer_phone_display = (
-                f"({detailer_phone_display[:3]}) "
-                f"{detailer_phone_display[3:6]}-"
-                f"{detailer_phone_display[6:]}"
-            )
+        detailer_phone_display = _format_phone_display(DETAILER_PHONE)
         amount_total = session.get("amount_total")
         deposit_paid = _amount_to_dollars(amount_total, "invalid_amount_value")
+        booking = _load_booking_record(booking_id)
 
-        custom_fields = {
-            field["key"]: field.get("text", {}).get("value", "Not specified")
-            for field in (session.get("custom_fields") or [])
-            if "key" in field
-        }
-        service = custom_fields.get("service") or metadata.get("service") or "Not specified"
-        addons = (
-            custom_fields.get("add-ons")
-            or custom_fields.get("addons")
-            or metadata.get("add-ons")
-            or metadata.get("addons")
-            or metadata.get("add_ons")
-            or None
-        )
-        if addons and not str(addons).strip():
-            addons = None
-        address = (
-            custom_fields.get("address-of-service")
-            or custom_fields.get("addressOfService")
-            or custom_fields.get("address_of_service")
-            or custom_fields.get("address")
-            or custom_fields.get("Address of Service")
-            or custom_fields.get("location")
-            or metadata.get("address-of-service")
-            or metadata.get("addressOfService")
-            or metadata.get("address_of_service")
-            or metadata.get("address")
-            or metadata.get("location")
-            or None
-        )
-        if address and not str(address).strip():
-            address = None
-        date = custom_fields.get("date") or metadata.get("date") or "Not specified"
-        location = custom_fields.get("location") or metadata.get("location") or "Not specified"
+        if booking and booking.get("status") == "confirmed":
+            _log("INFO", "booking_already_confirmed", booking_id=booking_id)
+            return _response(200, "Already confirmed")
 
-        service_lower = service.lower().strip()
-        full_price = SERVICE_PRICES.get(service_lower)
-        if full_price is None:
-            matched_keys = [key for key in SERVICE_PRICES if key in service_lower]
-            if matched_keys:
-                full_price = SERVICE_PRICES[max(matched_keys, key=len)]
-        balance_due = round(full_price - deposit_paid, 2) if full_price else None
-        balance_due = max(balance_due, 0) if balance_due is not None else None
+        if booking:
+            customer = booking.get("customer") or {}
+            pricing = booking.get("pricing") or {}
+            customer_name = customer.get("name") or customer_details.get("name") or "Unknown"
+            customer_email = customer.get("email") or customer_details.get("email") or "No email"
+            customer_phone = _normalize_phone_number(
+                customer.get("phone") or customer_details.get("phone") or None
+            )
+            service = booking.get("package_label") or metadata.get("service") or "Not specified"
+            addons = format_addons(booking.get("addons") or []) or None
+            address = booking.get("address") or metadata.get("address") or None
+            date = _format_appointment_time(booking.get("appointment_time"))
+            booking_total = _to_float(pricing.get("total"))
+            balance_due = max(booking_total - deposit_paid, 0) if booking_total else None
+        else:
+            custom_fields = {
+                field["key"]: field.get("text", {}).get("value", "Not specified")
+                for field in (session.get("custom_fields") or [])
+                if "key" in field
+            }
+            customer_name = customer_details.get("name") or "Unknown"
+            customer_email = customer_details.get("email") or "No email"
+            customer_phone = _normalize_phone_number(customer_details.get("phone") or None)
+            service = custom_fields.get("service") or metadata.get("service") or "Not specified"
+            addons = (
+                custom_fields.get("add-ons")
+                or custom_fields.get("addons")
+                or metadata.get("add-ons")
+                or metadata.get("addons")
+                or metadata.get("add_ons")
+                or None
+            )
+            if addons and not str(addons).strip():
+                addons = None
+            address = (
+                custom_fields.get("address-of-service")
+                or custom_fields.get("addressOfService")
+                or custom_fields.get("address_of_service")
+                or custom_fields.get("address")
+                or custom_fields.get("Address of Service")
+                or custom_fields.get("location")
+                or metadata.get("address-of-service")
+                or metadata.get("addressOfService")
+                or metadata.get("address_of_service")
+                or metadata.get("address")
+                or metadata.get("location")
+                or None
+            )
+            if address and not str(address).strip():
+                address = None
+            date = custom_fields.get("date") or metadata.get("date") or "Not specified"
+
+            service_lower = service.lower().strip()
+            full_price = SERVICE_PRICES.get(service_lower)
+            if full_price is None:
+                matched_keys = [key for key in SERVICE_PRICES if key in service_lower]
+                if matched_keys:
+                    full_price = SERVICE_PRICES[max(matched_keys, key=len)]
+            balance_due = round(full_price - deposit_paid, 2) if full_price else None
+            balance_due = max(balance_due, 0) if balance_due is not None else None
 
         _log(
             "INFO",
@@ -544,10 +652,7 @@ def _handle_stripe_webhook(event: dict, body: str) -> dict:
             f"Customer Phone: {customer_phone or 'No phone'}"
         )
 
-        try:
-            _send_sms(DETAILER_PHONE, sms_body_detailer, "detailer")
-        except Exception as exc:
-            _log("ERROR", "detailer_sms_failed", detail=str(exc))
+        detailer_sms_status = "sent" if _send_sms(DETAILER_PHONE, sms_body_detailer, "detailer") else "failed"
 
         balance_customer = (
             f"${balance_due:.2f} due after service"
@@ -571,13 +676,23 @@ def _handle_stripe_webhook(event: dict, body: str) -> dict:
             f"Questions? Call {detailer_phone_display}"
         )
 
+        customer_sms_status = "skipped"
         if not customer_phone:
             _log("INFO", "customer_sms_skipped", detail="no phone on file")
         else:
-            try:
-                _send_sms(customer_phone, sms_body_customer, "customer")
-            except Exception as exc:
-                _log("ERROR", "customer_sms_failed", detail=str(exc))
+            customer_sms_status = (
+                "sent" if _send_sms(customer_phone, sms_body_customer, "customer") else "failed"
+            )
+
+        if booking:
+            _mark_booking_confirmed(
+                booking_id=booking_id,
+                session_id=session.get("id", "unknown"),
+                stripe_event_id=stripe_event["id"],
+                amount_total_cents=amount_total,
+                detailer_sms_status=detailer_sms_status,
+                customer_sms_status=customer_sms_status,
+            )
 
         _log(
             "INFO",
@@ -587,6 +702,8 @@ def _handle_stripe_webhook(event: dict, body: str) -> dict:
             deposit_paid=deposit_paid,
             balance_due=balance_due,
             booking_id=booking_id,
+            detailer_sms=detailer_sms_status,
+            customer_sms=customer_sms_status,
         )
         print(f"Booking confirmed: {booking_id}")
         return _response(200, "Webhook processed")

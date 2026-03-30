@@ -22,6 +22,9 @@ backend-integration/lambda/lambda_function.zip
 backend-integration/layer/layer-build/
 backend-integration/layer/layer.zip
 backend-integration/layer/.requirements.hash
+api/booking_intent.zip
+api/create_checkout_session.zip
+backend-integration/cost-reporter/cost_reporter.zip
 
 # Client credentials
 *.tfvars
