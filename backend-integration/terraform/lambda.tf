@@ -25,9 +25,4 @@ resource "aws_lambda_function" "booking_webhook" {
   }
 
   tags = local.common_tags
-
-  depends_on = [
-    aws_cloudwatch_log_group.booking_webhook,
-    aws_iam_role_policy_attachment.lambda_basic_execution,
-  ]
 }

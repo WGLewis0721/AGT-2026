@@ -122,6 +122,34 @@ def _send_sms(phone_number, message, recipient):
         return False
 
 
+def _normalize_phone_number(phone_number):
+    if not phone_number:
+        return None
+
+    phone_text = str(phone_number).strip()
+    digits_only = "".join(character for character in phone_text if character.isdigit())
+
+    if len(digits_only) == 10:
+        return f"+1{digits_only}"
+
+    if len(digits_only) == 11 and digits_only.startswith("1"):
+        return f"+{digits_only}"
+
+    if phone_text.startswith("+") and 10 <= len(digits_only) <= 15:
+        return f"+{digits_only}"
+
+    _log("WARN", "invalid_phone_format", detail="phone not E.164 compatible")
+    return None
+
+
+def _amount_to_dollars(value, warning_event):
+    try:
+        return float(value) / 100 if value is not None else 0.0
+    except (TypeError, ValueError):
+        _log("WARN", warning_event, detail=str(value))
+        return 0.0
+
+
 def _verify_calcom_signature(body: str, signature: str) -> bool:
     """Verify Cal.com webhook signature using HMAC-SHA256."""
     if not CALCOM_WEBHOOK_SECRET or not signature:
@@ -177,6 +205,7 @@ def _parse_calcom_booking(payload: dict) -> dict:
         "phone",
         "smsReminderNumber",
     )
+    customer_phone = _normalize_phone_number(customer_phone)
 
     service = (
         _response_value("service")
@@ -200,8 +229,8 @@ def _parse_calcom_booking(payload: dict) -> dict:
     except Exception:
         appointment_date = start_time_raw or "Not specified"
 
-    price_cents = payload.get("price") or 0
-    deposit_paid = price_cents / 100
+    price_cents = payload.get("price")
+    deposit_paid = _amount_to_dollars(price_cents, "invalid_price_value")
 
     return {
         "customer_name": customer_name,
@@ -389,9 +418,9 @@ def _handle_stripe_webhook(event: dict, body: str) -> dict:
         customer_details = session.get("customer_details") or {}
         customer_name = customer_details.get("name") or "Unknown"
         customer_email = customer_details.get("email") or "No email"
-        customer_phone = customer_details.get("phone") or "No phone"
-        amount_total = session.get("amount_total") or 0
-        deposit_paid = amount_total / 100
+        customer_phone = _normalize_phone_number(customer_details.get("phone") or None)
+        amount_total = session.get("amount_total")
+        deposit_paid = _amount_to_dollars(amount_total, "invalid_amount_value")
 
         custom_fields = {
             field["key"]: field.get("text", {}).get("value", "Not specified")
@@ -424,7 +453,7 @@ def _handle_stripe_webhook(event: dict, body: str) -> dict:
             f"\U0001F697 NEW DETAIL BOOKING\n"
             f"{divider}\n"
             f"Name:     {customer_name}\n"
-            f"Phone:    {customer_phone}\n"
+            f"Phone:    {customer_phone or 'No phone'}\n"
             f"Email:    {customer_email}\n"
             f"{divider}\n"
             f"Service:  {service}\n"
@@ -468,7 +497,7 @@ def _handle_stripe_webhook(event: dict, body: str) -> dict:
             f"Questions? Call {BUSINESS_PHONE}"
         )
 
-        if not customer_phone or customer_phone == "No phone":
+        if not customer_phone:
             _log("INFO", "customer_sms_skipped", detail="no phone on file")
         else:
             _send_sms(customer_phone, sms_body_customer, "customer")

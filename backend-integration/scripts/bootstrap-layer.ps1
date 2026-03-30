@@ -37,6 +37,7 @@ $layerDir = Join-Path $backendDir "layer"
 $buildDir = Join-Path $layerDir "layer-build"
 $pythonDir = Join-Path $buildDir "python"
 $requirementsFile = Join-Path $layerDir "requirements.txt"
+$hashFile = Join-Path $layerDir ".requirements.hash"
 $layerZip = Join-Path $layerDir "layer.zip"
 $encryptionConfigFile = Join-Path $layerDir "bucket-encryption.json"
 $publicAccessBlockFile = Join-Path $layerDir "bucket-public-access.json"
@@ -81,6 +82,16 @@ try {
         Assert-LastExitCode "aws s3api create-bucket"
     }
 
+    $currentHash = (Get-FileHash -Path $requirementsFile -Algorithm SHA256).Hash
+    $remoteLayerKey = ((@(& aws s3api list-objects-v2 --bucket $s3Bucket --prefix $s3Key --query "Contents[?Key=='$s3Key'].Key" --output text)) -join "").Trim()
+    if ((Test-Path -LiteralPath $hashFile) -and $remoteLayerKey) {
+        $storedHash = (Get-Content -LiteralPath $hashFile -Raw).Trim()
+        if ($currentHash -eq $storedHash) {
+            Write-Host "requirements.txt unchanged - skipping layer rebuild" -ForegroundColor DarkGray
+            return
+        }
+    }
+
     Set-Content -LiteralPath $encryptionConfigFile -Value $encryptionConfig -Encoding ascii
     Set-Content -LiteralPath $publicAccessBlockFile -Value $publicAccessBlock -Encoding ascii
 
@@ -113,6 +124,7 @@ try {
     Write-Host "Step 3 - Upload layer artifact" -ForegroundColor Cyan
     & aws s3 cp $layerZip "s3://$s3Bucket/$s3Key"
     Assert-LastExitCode "aws s3 cp layer.zip"
+    Set-Content -LiteralPath $hashFile -Value $currentHash -Encoding ascii
 
     Write-Host "Layer uploaded: s3://$s3Bucket/$s3Key" -ForegroundColor Green
 }

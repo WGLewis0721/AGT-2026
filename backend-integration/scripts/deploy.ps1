@@ -69,9 +69,18 @@ try {
     Write-Host "Lambda package created: $zipPath" -ForegroundColor Green
 
     Write-Host "Step 2 - Upload Lambda package" -ForegroundColor Cyan
-    & aws s3 cp $zipPath "s3://$s3Bucket/$s3FunctionKey"
-    Assert-LastExitCode "aws s3 cp lambda_function.zip"
-    Write-Host "Lambda package uploaded: s3://$s3Bucket/$s3FunctionKey" -ForegroundColor Green
+    $localHash = (Get-FileHash -Path $zipPath -Algorithm MD5).Hash.ToLower()
+    $remoteETag = ((@(& aws s3api head-object --bucket $s3Bucket --key $s3FunctionKey --query ETag --output text 2>$null)) -join "").Trim().Trim('"').ToLower()
+
+    if ($localHash -eq $remoteETag) {
+        Write-Host "Lambda zip unchanged - skipping S3 upload" -ForegroundColor DarkGray
+    }
+    else {
+        Write-Host "Lambda zip changed - uploading to S3..." -ForegroundColor DarkGray
+        & aws s3 cp $zipPath "s3://$s3Bucket/$s3FunctionKey"
+        Assert-LastExitCode "aws s3 cp lambda_function.zip"
+        Write-Host "Lambda package uploaded: s3://$s3Bucket/$s3FunctionKey" -ForegroundColor Green
+    }
 
     Write-Host "Step 3 - Terraform init" -ForegroundColor Cyan
     Set-Location $terraformDir

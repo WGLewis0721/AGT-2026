@@ -21,6 +21,7 @@ backend-integration/lambda/booking-lambda.zip
 backend-integration/lambda/lambda_function.zip
 backend-integration/layer/layer-build/
 backend-integration/layer/layer.zip
+backend-integration/layer/.requirements.hash
 
 # Client credentials
 *.tfvars
