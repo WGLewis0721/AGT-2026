@@ -1,5 +1,21 @@
 # A Gentlemen's Touch — AGT Mobile Detailing
 
+## Version 2 Development
+
+This repository now includes an AI-driven development system.
+
+Key files:
+- docs/system-context.md (architecture and rules)
+- docs/skills/ (reusable AI task modules)
+- docs/vscode-handoff-prompt.md (execution prompt for local development)
+
+All new development occurs in:
+AGT-website-v2-branch
+
+main is production and must remain stable.
+
+---
+
 https://wglewis0721.github.io/AGT-2026/
 
 Static marketing and booking website for **A Gentlemen's Touch (AGT)**, a luxury mobile car detailing business.

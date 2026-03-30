@@ -150,3 +150,24 @@ Search `index.html` for `$YOURHANDLE` and `@YOURHANDLE`; replace with real Cash 
 - **Do not** change `wix.config.json` `siteId` — it identifies the live Wix production site
 - **Do not** use DOM APIs (`document.getElementById`, `querySelector`, etc.) in Velo page code — use `$w()`
 - **Do not** hardcode prices in Velo page code outside of `ALL_SERVICES`/`ADD_ONS` data arrays
+
+## AGT Booking System Rules
+
+Always read:
+- docs/system-context.md
+- docs/skills/
+
+Constraints:
+- DynamoDB is the only database
+- No frontend business logic
+- Keep cost minimal
+- No unnecessary dependencies
+
+Internet usage:
+- Only official docs (AWS, Stripe, Cal.com)
+- No random blog code
+
+Output:
+- clean
+- minimal
+- production-ready
