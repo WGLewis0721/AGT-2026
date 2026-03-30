@@ -7,7 +7,6 @@ from datetime import datetime, timezone
 
 import requests
 import stripe
-from booking_common import booking_table, format_addons, get_booking
 
 # CloudWatch Logs Insights - AWS Console -> CloudWatch -> Logs Insights
 # Log group: /aws/lambda/tra3-gentlemens-touch-{environment}-booking-webhook
@@ -44,13 +43,13 @@ SERVICE_PRICES = {
     "md detail": 150.00,
     "lg detail": 200.00,
     "full detail": 150.00,
-    "small": 100.00,
-    "medium": 150.00,
-    "large": 200.00,
 }
 
 BUSINESS_PHONE = "(334) 294-8228"
+DIVIDER = "──────────────────────────────────────────"
 
+
+# ─── Utility helpers ─────────────────────────────────────────────────────────
 
 def _sanitize_string(value):
     sanitized = str(value)
@@ -101,97 +100,6 @@ def _response(status_code, message):
         "headers": {"Content-Type": "application/json"},
         "body": json.dumps({"message": message}),
     }
-
-
-def _format_phone_display(phone_number):
-    digits_only = "".join(character for character in str(phone_number or "") if character.isdigit())
-    if len(digits_only) == 11 and digits_only.startswith("1"):
-        digits_only = digits_only[1:]
-
-    if len(digits_only) == 10:
-        return f"({digits_only[:3]}) {digits_only[3:6]}-{digits_only[6:]}"
-
-    return phone_number or BUSINESS_PHONE
-
-
-def _format_appointment_time(value):
-    if not value:
-        return "Not specified"
-
-    try:
-        dt = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
-        if dt.tzinfo is None:
-            dt = dt.replace(tzinfo=timezone.utc)
-        return dt.strftime("%Y-%m-%d %I:%M %p %Z").strip()
-    except Exception:
-        return str(value)
-
-
-def _to_float(value):
-    try:
-        return float(value)
-    except (TypeError, ValueError):
-        return 0.0
-
-
-def _load_booking_record(booking_id):
-    if not booking_id or booking_id == "unknown":
-        return None
-
-    try:
-        booking = get_booking(booking_id)
-        if booking:
-            _log("INFO", "booking_loaded", booking_id=booking_id, status=booking.get("status"))
-        else:
-            _log("WARN", "booking_not_found", booking_id=booking_id)
-        return booking
-    except Exception as exc:
-        _log("ERROR", "booking_lookup_failed", booking_id=booking_id, detail=str(exc))
-        return None
-
-
-def _mark_booking_confirmed(
-    booking_id,
-    session_id,
-    stripe_event_id,
-    amount_total_cents,
-    detailer_sms_status,
-    customer_sms_status,
-):
-    if not booking_id or booking_id == "unknown":
-        return
-
-    try:
-        booking_table().update_item(
-            Key={"booking_id": booking_id},
-            UpdateExpression=(
-                "SET #status = :status, "
-                "payment_status = :payment_status, "
-                "paid_at = :paid_at, "
-                "updated_at = :updated_at, "
-                "stripe_event_id = :stripe_event_id, "
-                "stripe_checkout_session_id = :session_id, "
-                "stripe_amount_total_cents = :amount_total_cents, "
-                "detailer_sms_status = :detailer_sms_status, "
-                "customer_sms_status = :customer_sms_status"
-            ),
-            ExpressionAttributeNames={
-                "#status": "status",
-            },
-            ExpressionAttributeValues={
-                ":status": "confirmed",
-                ":payment_status": "paid",
-                ":paid_at": datetime.now(timezone.utc).isoformat(),
-                ":updated_at": datetime.now(timezone.utc).isoformat(),
-                ":stripe_event_id": stripe_event_id,
-                ":session_id": session_id,
-                ":amount_total_cents": int(amount_total_cents or 0),
-                ":detailer_sms_status": detailer_sms_status,
-                ":customer_sms_status": customer_sms_status,
-            },
-        )
-    except Exception as exc:
-        _log("ERROR", "booking_update_failed", booking_id=booking_id, detail=str(exc))
 
 
 def _send_sms(phone_number, message, recipient):
@@ -267,52 +175,78 @@ def _calculate_balance_due(service_name: str, deposit_paid: float):
     return max(balance, 0) if balance is not None else None
 
 
-def _build_detailer_sms(name, phone, email, service, addons, address, date, deposit_paid, balance_due):
-    divider = "──────────────────────────────────────────"
-    addons_line = f"\nAdd-Ons:  {addons}" if addons else ""
-    address_line = f"\nAddress:  {address}" if address else ""
+def _first_present(mapping: dict, *keys):
+    """Return the first non-empty value found in *mapping* for any of *keys*."""
+    for key in keys:
+        value = mapping.get(key)
+        if value is not None and (not isinstance(value, str) or value.strip()):
+            return value
+    return None
+
+
+# ─── SMS builders ────────────────────────────────────────────────────────────
+
+def _build_detailer_sms(booking: dict, balance_due) -> str:
+    addons_line = f"\nAdd-Ons:  {booking['addons']}" if booking.get("addons") else ""
+    address_line = f"\nAddress:  {booking['address']}" if booking.get("address") else ""
     balance_line = f"${balance_due:.2f}" if balance_due is not None else "Not mapped"
+    phone = booking.get("customer_phone") or "No phone"
     return (
         f"\U0001F697 NEW DETAIL BOOKING\n"
-        f"{divider}\n"
-        f"Name:     {name}\n"
-        f"Phone:    {phone or 'No phone'}\n"
-        f"Email:    {email}\n"
-        f"{divider}\n"
-        f"Service:  {service}{addons_line}{address_line}\n"
-        f"Date:     {date}\n"
-        f"{divider}\n"
-        f"Deposit:  ${deposit_paid:.2f}\n"
+        f"{DIVIDER}\n"
+        f"Name:     {booking['customer_name']}\n"
+        f"Phone:    {phone}\n"
+        f"Email:    {booking['customer_email']}\n"
+        f"{DIVIDER}\n"
+        f"Service:  {booking['service']}{addons_line}{address_line}\n"
+        f"Date:     {booking['appointment_date']}\n"
+        f"{DIVIDER}\n"
+        f"Deposit:  ${booking['deposit_paid']:.2f}\n"
         f"Balance:  {balance_line}\n"
-        f"{divider}\n"
-        f"Customer Phone: {phone or 'No phone'}"
+        f"{DIVIDER}\n"
+        f"Customer Phone: {phone}"
     )
 
 
-def _build_customer_sms(name, service, addons, address, date, deposit_paid, balance_due, detailer_phone_display):
-    divider = "──────────────────────────────────────────"
-    addons_line = f"\nAdd-Ons:  {addons}" if addons else ""
-    address_line = f"\nAddress:  {address}" if address else ""
+def _build_customer_sms(booking: dict, balance_due, detailer_phone_display: str) -> str:
     balance_str = (
         f"${balance_due:.2f} due after service"
         if balance_due is not None
         else "Contact us for balance details"
     )
+    addons_line = f"\nAdd-Ons:  {booking['addons']}" if booking.get("addons") else ""
+    address_line = f"\nAddress:  {booking['address']}" if booking.get("address") else ""
     return (
         f"\U0001F697 Booking Confirmed!\n"
         f"A Gentlemen's Touch\n"
-        f"{divider}\n"
-        f"Hi {name}! Your detail is booked.\n"
-        f"{divider}\n"
-        f"Service:  {service}{addons_line}{address_line}\n"
-        f"Date:     {date}\n"
-        f"{divider}\n"
-        f"Deposit:  ${deposit_paid:.2f} received\n"
+        f"{DIVIDER}\n"
+        f"Hi {booking['customer_name']}! Your detail is booked.\n"
+        f"{DIVIDER}\n"
+        f"Service:  {booking['service']}{addons_line}{address_line}\n"
+        f"Date:     {booking['appointment_date']}\n"
+        f"{DIVIDER}\n"
+        f"Deposit:  ${booking['deposit_paid']:.2f} received\n"
         f"Balance:  {balance_str}\n"
-        f"{divider}\n"
+        f"{DIVIDER}\n"
         f"Questions? Call {detailer_phone_display}"
     )
 
+
+def _send_booking_sms(booking: dict, detailer_phone_display: str) -> tuple:
+    """Send detailer and optional customer SMS. Returns (customer_sms_status, err_response)."""
+    balance_due = booking.get("balance_due")
+    sms_detailer = _build_detailer_sms(booking, balance_due)
+    if not _send_sms(DETAILER_PHONE, sms_detailer, "detailer"):
+        return "failed", _response(500, "Detailer SMS failed")
+    if not booking.get("customer_phone"):
+        _log("INFO", "customer_sms_skipped", detail="no phone on file")
+        return "skipped", None
+    sms_customer = _build_customer_sms(booking, balance_due, detailer_phone_display)
+    status = "sent" if _send_sms(booking["customer_phone"], sms_customer, "customer") else "failed"
+    return status, None
+
+
+# ─── Cal.com webhook handlers ─────────────────────────────────────────────────
 
 def _verify_calcom_signature(body: str, signature: str) -> bool:
     """Verify Cal.com webhook signature using HMAC-SHA256."""
@@ -360,9 +294,8 @@ def _parse_calcom_contact(responses: dict, attendees: list) -> tuple:
     return customer_name, customer_email, _normalize_phone_number(customer_phone)
 
 
-def _parse_calcom_service_address(payload: dict, responses: dict) -> tuple:
-
 def _parse_calcom_service(payload: dict, responses: dict) -> str:
+    """Extract service name from Cal.com webhook payload/responses."""
     service = _calcom_response_value(responses, "service", "Service", "serviceType", "service_type")
     if not service:
         raw_title = payload.get("eventTitle") or payload.get("type") or ""
@@ -375,38 +308,16 @@ def _parse_calcom_service(payload: dict, responses: dict) -> str:
             "lg mobile detail appointment": "LG Detail",
         }
         service = title_map.get(raw_title.lower().strip()) or raw_title or "Not specified"
-    addons = (
-        _calcom_response_value(responses, "add-ons", "addons", "Add-Ons", "add_ons", "additionalNotes")
-        or payload.get("additionalNotes")
-        or None
-    )
-    if addons and not addons.strip():
-        addons = None
     return service
 
 
 def _parse_calcom_address(responses: dict):
-    address = (
-        (responses.get("address-of-service") or {}).get("value")
-        or (responses.get("addressOfService") or {}).get("value")
-        or (responses.get("address_of_service") or {}).get("value")
-        or (responses.get("address") or {}).get("value")
-        or (responses.get("Address of Service") or {}).get("value")
-        or (responses.get("location") or {}).get("value")
-        or None
+    """Extract service address from Cal.com webhook responses."""
+    return _calcom_response_value(
+        responses,
+        "address-of-service", "addressOfService", "address_of_service",
+        "address", "Address of Service", "location",
     )
-    if address and not str(address).strip():
-        address = None
-    return service, addons, address
-
-
-def _parse_calcom_booking(payload: dict) -> dict:
-    """Extract booking details from Cal.com BOOKING_PAYMENT_INITIATED payload."""
-    responses = payload.get("responses") or {}
-    attendees = payload.get("attendees") or []
-    customer_name, customer_email, customer_phone = _parse_calcom_contact(responses, attendees)
-    service, addons, address = _parse_calcom_service_address(payload, responses)
-    return address
 
 
 def _parse_calcom_appointment_date(payload: dict) -> str:
@@ -420,9 +331,8 @@ def _parse_calcom_appointment_date(payload: dict) -> str:
             f"{dt.strftime('%a %b')} {dt.day} @ "
             f"{hour}:{dt.strftime('%M %p')} {dt.tzname() or 'UTC'}"
         )
-    except Exception:
-        appointment_date = start_time_raw or "Not specified"
-    deposit_paid = _amount_to_dollars(payload.get("price"), "invalid_price_value")
+    except Exception as exc:
+        _log("WARN", "calcom_date_parse_error", detail=str(exc))
         return start_time_raw or "Not specified"
 
 
@@ -433,19 +343,8 @@ def _parse_calcom_booking(payload: dict) -> dict:
     """
     responses = payload.get("responses") or {}
     attendees = payload.get("attendees") or []
-    customer_name = (
-        _calcom_response_value(responses, "name")
-        or (attendees[0].get("name") if attendees else None)
-        or "Unknown"
-    )
-    customer_email = (
-        _calcom_response_value(responses, "email")
-        or (attendees[0].get("email") if attendees else None)
-        or "No email"
-    )
-    customer_phone = _normalize_phone_number(
-        _calcom_response_value(responses, "attendeePhoneNumber", "phone", "smsReminderNumber")
-    )
+    customer_name, customer_email, customer_phone = _parse_calcom_contact(responses, attendees)
+    service = _parse_calcom_service(payload, responses)
     addons = (
         _calcom_response_value(responses, "add-ons", "addons", "Add-Ons", "add_ons", "additionalNotes")
         or payload.get("additionalNotes")
@@ -453,173 +352,35 @@ def _parse_calcom_booking(payload: dict) -> dict:
     )
     if addons and not addons.strip():
         addons = None
+    address = _parse_calcom_address(responses)
+    appointment_date = _parse_calcom_appointment_date(payload)
+    deposit_paid = _amount_to_dollars(payload.get("price"), "invalid_price_value")
     return {
         "customer_name": customer_name,
         "customer_email": customer_email,
         "customer_phone": customer_phone,
-        "service": _parse_calcom_service(payload, responses),
+        "service": service,
         "addons": addons,
-        "address": _parse_calcom_address(responses),
-        "appointment_date": _parse_calcom_appointment_date(payload),
-        "deposit_paid": _amount_to_dollars(payload.get("price"), "invalid_price_value"),
+        "address": address,
+        "appointment_date": appointment_date,
+        "deposit_paid": deposit_paid,
+        "balance_due": _calculate_balance_due(service, deposit_paid),
         "booking_uid": payload.get("uid") or "unknown",
     }
 
 
-def _format_detailer_phone() -> str:
-    display = (DETAILER_PHONE or "").replace("+1", "").strip()
-    if len(display) == 10:
-        display = f"({display[:3]}) {display[3:6]}-{display[6:]}"
-    return display
-
-
-def _calculate_balance_due(service: str, deposit_paid: float):
-    service_lower = service.lower().strip()
-    full_price = SERVICE_PRICES.get(service_lower)
-    if full_price is None:
-        matched_keys = [key for key in SERVICE_PRICES if key in service_lower]
-        if matched_keys:
-            full_price = SERVICE_PRICES[max(matched_keys, key=len)]
-    balance_due = round(full_price - deposit_paid, 2) if full_price else None
-    return max(balance_due, 0) if balance_due is not None else None
-
-
-def _build_detailer_sms(booking: dict, balance_due, divider: str) -> str:
-    addons_line = f"\nAdd-Ons:  {booking['addons']}" if booking.get("addons") else ""
-    address_line = f"\nAddress:  {booking['address']}" if booking.get("address") else ""
-    balance_line = f"${balance_due:.2f}" if balance_due is not None else "Not mapped"
-    return (
-        f"\U0001F697 NEW DETAIL BOOKING\n"
-        f"{divider}\n"
-        f"Name:     {booking['customer_name']}\n"
-        f"Phone:    {booking['customer_phone'] or 'No phone'}\n"
-        f"Email:    {booking['customer_email']}\n"
-        f"{divider}\n"
-        f"Service:  {booking['service']}{addons_line}{address_line}\n"
-        f"Date:     {booking['appointment_date']}\n"
-        f"{divider}\n"
-        f"Deposit:  ${booking['deposit_paid']:.2f}\n"
-        f"Balance:  {balance_line}\n"
-        f"{divider}\n"
-        f"Customer Phone: {booking['customer_phone'] or 'No phone'}"
-    )
-
-
-def _build_customer_sms(booking: dict, balance_due, detailer_phone_display: str, divider: str) -> str:
-    balance_customer = (
-        f"${balance_due:.2f} due after service"
-        if balance_due is not None
-        else "Contact us for balance details"
-    )
-    addons_line = f"\nAdd-Ons:  {booking['addons']}" if booking.get("addons") else ""
-    address_line = f"\nAddress:  {booking['address']}" if booking.get("address") else ""
-    return (
-        f"\U0001F697 Booking Confirmed!\n"
-        f"A Gentlemen's Touch\n"
-        f"{divider}\n"
-        f"Hi {booking['customer_name']}! Your detail is booked.\n"
-        f"{divider}\n"
-        f"Service:  {booking['service']}{addons_line}{address_line}\n"
-        f"Date:     {booking['appointment_date']}\n"
-        f"{divider}\n"
-        f"Deposit:  ${booking['deposit_paid']:.2f} received\n"
-        f"Balance:  {balance_customer}\n"
-        f"{divider}\n"
-        f"Questions? Call {detailer_phone_display}"
-    )
-
-
-def _parse_and_verify_calcom(event: dict, body: str) -> tuple:
-    headers = _normalized_headers(event)
-    sig_header = headers.get("x-cal-signature-256", "")
-    if CALCOM_WEBHOOK_SECRET and not _verify_calcom_signature(body, sig_header):
-        _log("ERROR", "calcom_invalid_signature")
-        return None, _response(400, "Invalid Cal.com signature")
-    try:
-        data = json.loads(body)
-    except Exception as exc:
-        _log("ERROR", "calcom_parse_error", detail=str(exc))
-        return None, _response(400, "Invalid JSON")
-    return data, None
-
-
-def _check_calcom_trigger(data: dict):
-    trigger = data.get("triggerEvent", "")
-    payload = data.get("payload") or {}
-    _log(
-        "INFO",
-        "calcom_webhook_received",
-        trigger=trigger,
-        booking_id=payload.get("bookingId"),
-        event_title=payload.get("eventTitle"),
-    )
-    if trigger != "BOOKING_PAYMENT_INITIATED":
-        _log("INFO", "calcom_ignored", trigger=trigger)
-        return _response(200, f"Ignored: {trigger}")
-    return None
-
-
-def _send_calcom_sms(booking: dict, balance_due, detailer_phone_display: str) -> tuple:
-    divider = "──────────────────────────────────────────"
-    sms_detailer = _build_detailer_sms(booking, balance_due, divider)
-    if not _send_sms(DETAILER_PHONE, sms_detailer, "detailer"):
-        return None, _response(500, "Detailer SMS failed")
-    customer_sms_status = "skipped"
-    if booking["customer_phone"]:
-        sms_customer = _build_customer_sms(booking, balance_due, detailer_phone_display, divider)
-        if _send_sms(booking["customer_phone"], sms_customer, "customer"):
-            customer_sms_status = "sent"
-        else:
-            customer_sms_status = "failed"
-    else:
-        _log("INFO", "customer_sms_skipped", detail="no phone on file")
-    return customer_sms_status, None
-
-def _verify_calcom_request(event: dict, body: str):
-    """Verify Cal.com signature and parse JSON body. Returns (data, err_response)."""
-    headers = _normalized_headers(event)
-    sig_header = headers.get("x-cal-signature-256", "")
-    if CALCOM_WEBHOOK_SECRET and not _verify_calcom_signature(body, sig_header):
-        _log("ERROR", "calcom_invalid_signature")
-        return None, _response(400, "Invalid Cal.com signature")
-    try:
-        data = json.loads(body)
-    except Exception as exc:
-        _log("ERROR", "calcom_parse_error", detail=str(exc))
-        return None, _response(400, "Invalid JSON")
-    return data, None
-
-
-def _send_calcom_sms(booking: dict, balance_due, detailer_phone_display: str):
-    """Send detailer and customer SMS for a Cal.com booking. Returns (status, err_response)."""
-    sms_detailer = _build_detailer_sms(
-        booking["customer_name"], booking["customer_phone"], booking["customer_email"],
-        booking["service"], booking["addons"], booking.get("address"),
-        booking["appointment_date"], booking["deposit_paid"], balance_due,
-    )
-    if not _send_sms(DETAILER_PHONE, sms_detailer, "detailer"):
-        return "failed", _response(500, "Detailer SMS failed")
-    customer_sms_status = "skipped"
-    if booking["customer_phone"]:
-        sms_customer = _build_customer_sms(
-            booking["customer_name"], booking["service"], booking["addons"],
-            booking.get("address"), booking["appointment_date"],
-            booking["deposit_paid"], balance_due, detailer_phone_display,
-        )
-        if _send_sms(booking["customer_phone"], sms_customer, "customer"):
-            customer_sms_status = "sent"
-        else:
-            customer_sms_status = "failed"
-    else:
-        _log("INFO", "customer_sms_skipped", detail="no phone on file")
-    return customer_sms_status, None
-
-
 def _handle_calcom_webhook(event: dict, body: str) -> dict:
     """Handle incoming Cal.com webhook. Verifies signature, parses booking, sends SMS."""
-    data, err = _verify_calcom_request(event, body)
-    if err:
-        return err
+    headers = _normalized_headers(event)
+    sig_header = headers.get("x-cal-signature-256", "")
+    if CALCOM_WEBHOOK_SECRET and not _verify_calcom_signature(body, sig_header):
+        _log("ERROR", "calcom_invalid_signature")
+        return _response(400, "Invalid Cal.com signature")
+    try:
+        data = json.loads(body)
+    except Exception as exc:
+        _log("ERROR", "calcom_parse_error", detail=str(exc))
+        return _response(400, "Invalid JSON")
 
     trigger = data.get("triggerEvent", "")
     payload = data.get("payload") or {}
@@ -643,50 +404,25 @@ def _handle_calcom_webhook(event: dict, body: str) -> dict:
         deposit_paid=booking["deposit_paid"],
         has_phone=booking["customer_phone"] is not None,
     )
-    balance_due = _calculate_balance_due(booking["service"], booking["deposit_paid"])
-    _log("INFO", "balance_calculated", service=booking["service"],
-         deposit_paid=booking["deposit_paid"], balance_due=balance_due)
-
-    customer_sms_status, err = _send_calcom_sms(booking, balance_due, _format_detailer_phone())
-    if err:
-        return err
-
-def _handle_calcom_webhook(event: dict, body: str) -> dict:
-    """Handle incoming Cal.com webhook. Verifies signature, parses booking, sends SMS."""
-    data, err = _parse_and_verify_calcom(event, body)
-    if err:
-        return err
-    trigger_err = _check_calcom_trigger(data)
-    if trigger_err:
-        return trigger_err
-    payload = data.get("payload") or {}
-    booking = _parse_calcom_booking(payload)
-    detailer_phone_display = _format_detailer_phone()
-    _log(
-        "INFO",
-        "calcom_booking_parsed",
-        service=booking["service"],
-        deposit_paid=booking["deposit_paid"],
-        has_phone=booking["customer_phone"] is not None,
-    )
-    balance_due = _calculate_balance_due(booking["service"], booking["deposit_paid"])
     _log(
         "INFO",
         "balance_calculated",
         service=booking["service"],
         deposit_paid=booking["deposit_paid"],
-        balance_due=balance_due,
+        balance_due=booking["balance_due"],
     )
-    customer_sms_status, sms_err = _send_calcom_sms(booking, balance_due, detailer_phone_display)
+
+    customer_sms_status, sms_err = _send_booking_sms(booking, _format_detailer_phone())
     if sms_err:
         return sms_err
+
     _log(
         "INFO",
         "calcom_booking_processed",
         customer_name=booking["customer_name"],
         service=booking["service"],
         deposit_paid=booking["deposit_paid"],
-        balance_due=balance_due,
+        balance_due=booking["balance_due"],
         detailer_sms="sent",
         customer_sms=customer_sms_status,
         booking_uid=booking["booking_uid"],
@@ -694,10 +430,9 @@ def _handle_calcom_webhook(event: dict, body: str) -> dict:
     return _response(200, "Cal.com booking processed")
 
 
+# ─── Stripe webhook handlers ──────────────────────────────────────────────────
+
 def _verify_stripe_event(event: dict, body: str) -> tuple:
-    headers = _normalized_headers(event)
-    sig_header = headers.get("stripe-signature", "")
-def _verify_stripe_event(event: dict, body: str):
     """Verify Stripe webhook signature. Returns (stripe_event_dict, err_response)."""
     sig_header = _normalized_headers(event).get("stripe-signature", "")
     stripe.api_key = STRIPE_SECRET_KEY
@@ -712,7 +447,6 @@ def _verify_stripe_event(event: dict, body: str):
     except Exception as exc:
         _log("ERROR", "webhook_verification_failed", detail=str(exc))
         return None, _response(400, "Webhook error")
-    return stripe_event, None
 
 
 def _extract_stripe_booking(session: dict) -> dict:
@@ -723,111 +457,24 @@ def _extract_stripe_booking(session: dict) -> dict:
         for field in (session.get("custom_fields") or [])
         if "key" in field
     }
-    return {
-        "customer_name": customer_details.get("name") or "Unknown",
-        "customer_email": customer_details.get("email") or "No email",
-        "customer_phone": _normalize_phone_number(customer_details.get("phone") or None),
-        "service": custom_fields.get("service", "Not specified"),
-        "addons": custom_fields.get("add-ons") or custom_fields.get("addons"),
-        "address": (
-            custom_fields.get("address-of-service")
-            or custom_fields.get("addressOfService")
-            or custom_fields.get("address_of_service")
-            or custom_fields.get("address")
-            or custom_fields.get("Address of Service")
-            or None
-        ),
-        "date": custom_fields.get("date", "Not specified"),
-        "location": custom_fields.get("location", "Not specified"),
-    }
-
-
-def _send_stripe_sms(booking: dict, deposit_paid: float, balance_due, detailer_phone_display: str):
-    """Send detailer and optional customer SMS for a Stripe booking."""
-    sms_detailer = _build_detailer_sms(
-        booking["customer_name"], booking["customer_phone"], booking["customer_email"],
-        booking["service"], booking["addons"], booking["address"],
-        booking["date"], deposit_paid, balance_due,
-    )
-    if not _send_sms(DETAILER_PHONE, sms_detailer, "detailer"):
-        return _response(500, "SMS failed")
-    if not booking["customer_phone"]:
-        _log("INFO", "customer_sms_skipped", detail="no phone on file")
-        return None
-    sms_customer = _build_customer_sms(
-        booking["customer_name"], booking["service"], booking["addons"],
-        booking["address"], booking["date"], deposit_paid,
-        balance_due, detailer_phone_display,
-    )
-    _send_sms(booking["customer_phone"], sms_customer, "customer")
-    return None
-
-
-def _handle_stripe_webhook(event: dict, body: str) -> dict:
-    """Handle incoming Stripe webhook (checkout.session.completed)."""
-    stripe_event, err = _verify_stripe_event(event, body)
-    if err:
-        return err
-
-
-def _extract_stripe_booking(session: dict) -> dict:
-    customer_details = session.get("customer_details") or {}
-    custom_fields = {
-        field["key"]: field.get("text", {}).get("value", "Not specified")
-        for field in (session.get("custom_fields") or [])
-        if "key" in field
-    }
     service = custom_fields.get("service", "Not specified")
-    addons = custom_fields.get("add-ons") or custom_fields.get("addons")
-    address = (
-        custom_fields.get("address-of-service")
-        or custom_fields.get("addressOfService")
-        or custom_fields.get("address_of_service")
-        or custom_fields.get("address")
-        or custom_fields.get("Address of Service")
-        or None
+    address = _first_present(
+        custom_fields,
+        "address-of-service", "addressOfService", "address_of_service",
+        "address", "Address of Service",
     )
+    deposit_paid = _amount_to_dollars(session.get("amount_total"), "invalid_amount_value")
     return {
         "customer_name": customer_details.get("name") or "Unknown",
         "customer_email": customer_details.get("email") or "No email",
         "customer_phone": _normalize_phone_number(customer_details.get("phone") or None),
         "service": service,
-        "addons": addons,
+        "addons": custom_fields.get("add-ons") or custom_fields.get("addons"),
         "address": address,
         "appointment_date": custom_fields.get("date", "Not specified"),
-        "deposit_paid": _amount_to_dollars(session.get("amount_total"), "invalid_amount_value"),
+        "deposit_paid": deposit_paid,
+        "balance_due": _calculate_balance_due(service, deposit_paid),
     }
-
-
-def _process_stripe_session(session: dict) -> dict:
-    booking = _extract_stripe_booking(session)
-    detailer_phone_display = _format_detailer_phone()
-    balance_due = _calculate_balance_due(booking["service"], booking["deposit_paid"])
-    _log(
-        "INFO",
-        "balance_calculated",
-        service=booking["service"],
-        deposit_paid=booking["deposit_paid"],
-        balance_due=balance_due,
-    )
-    divider = "──────────────────────────────────────────"
-    sms_body_detailer = _build_detailer_sms(booking, balance_due, divider)
-    if not _send_sms(DETAILER_PHONE, sms_body_detailer, "detailer"):
-        return _response(500, "SMS failed")
-    sms_body_customer = _build_customer_sms(booking, balance_due, detailer_phone_display, divider)
-    if not booking["customer_phone"]:
-        _log("INFO", "customer_sms_skipped", detail="no phone on file")
-    else:
-        _send_sms(booking["customer_phone"], sms_body_customer, "customer")
-    _log(
-        "INFO",
-        "booking_processed",
-        customer=booking["customer_name"],
-        service=booking["service"],
-        deposit_paid=booking["deposit_paid"],
-        balance_due=balance_due,
-    )
-    return _response(200, "SMS sent")
 
 
 def _handle_stripe_webhook(event: dict, body: str) -> dict:
@@ -853,182 +500,32 @@ def _handle_stripe_webhook(event: dict, body: str) -> dict:
         if stripe_event["type"] != "checkout.session.completed":
             _log("INFO", "event_ignored", detail=f"Ignored event type: {stripe_event['type']}")
             return _response(200, "Ignored")
-        return _process_stripe_session(session)
-
-<<<<<<< HEAD
-        customer_details = session.get("customer_details") or {}
-        detailer_phone_display = _format_phone_display(DETAILER_PHONE)
-        amount_total = session.get("amount_total")
-        deposit_paid = _amount_to_dollars(amount_total, "invalid_amount_value")
-        booking = _load_booking_record(booking_id)
-
-        if booking and booking.get("status") == "confirmed":
-            _log("INFO", "booking_already_confirmed", booking_id=booking_id)
-            return _response(200, "Already confirmed")
-
-        if booking:
-            customer = booking.get("customer") or {}
-            pricing = booking.get("pricing") or {}
-            customer_name = customer.get("name") or customer_details.get("name") or "Unknown"
-            customer_email = customer.get("email") or customer_details.get("email") or "No email"
-            customer_phone = _normalize_phone_number(
-                customer.get("phone") or customer_details.get("phone") or None
-            )
-            service = booking.get("package_label") or metadata.get("service") or "Not specified"
-            addons = format_addons(booking.get("addons") or []) or None
-            address = booking.get("address") or metadata.get("address") or None
-            date = _format_appointment_time(booking.get("appointment_time"))
-            booking_total = _to_float(pricing.get("total"))
-            balance_due = max(booking_total - deposit_paid, 0) if booking_total else None
-        else:
-            custom_fields = {
-                field["key"]: field.get("text", {}).get("value", "Not specified")
-                for field in (session.get("custom_fields") or [])
-                if "key" in field
-            }
-            customer_name = customer_details.get("name") or "Unknown"
-            customer_email = customer_details.get("email") or "No email"
-            customer_phone = _normalize_phone_number(customer_details.get("phone") or None)
-            service = custom_fields.get("service") or metadata.get("service") or "Not specified"
-            addons = (
-                custom_fields.get("add-ons")
-                or custom_fields.get("addons")
-                or metadata.get("add-ons")
-                or metadata.get("addons")
-                or metadata.get("add_ons")
-                or None
-            )
-            if addons and not str(addons).strip():
-                addons = None
-            address = (
-                custom_fields.get("address-of-service")
-                or custom_fields.get("addressOfService")
-                or custom_fields.get("address_of_service")
-                or custom_fields.get("address")
-                or custom_fields.get("Address of Service")
-                or custom_fields.get("location")
-                or metadata.get("address-of-service")
-                or metadata.get("addressOfService")
-                or metadata.get("address_of_service")
-                or metadata.get("address")
-                or metadata.get("location")
-                or None
-            )
-            if address and not str(address).strip():
-                address = None
-            date = custom_fields.get("date") or metadata.get("date") or "Not specified"
-
-            service_lower = service.lower().strip()
-            full_price = SERVICE_PRICES.get(service_lower)
-            if full_price is None:
-                matched_keys = [key for key in SERVICE_PRICES if key in service_lower]
-                if matched_keys:
-                    full_price = SERVICE_PRICES[max(matched_keys, key=len)]
-            balance_due = round(full_price - deposit_paid, 2) if full_price else None
-            balance_due = max(balance_due, 0) if balance_due is not None else None
-
+        booking = _extract_stripe_booking(session)
         _log(
             "INFO",
             "balance_calculated",
-            service=service,
-            deposit_paid=deposit_paid,
-            balance_due=balance_due,
+            service=booking["service"],
+            deposit_paid=booking["deposit_paid"],
+            balance_due=booking["balance_due"],
         )
-
-        divider = "──────────────────────────────────────────"
-        addons_line = f"\nAdd-Ons:  {addons}" if addons else ""
-        address_line = f"\nAddress:  {address}" if address else ""
-        balance_line = f"${balance_due:.2f}" if balance_due is not None else "Not mapped"
-        sms_body_detailer = (
-            f"\U0001F697 NEW DETAIL BOOKING\n"
-            f"{divider}\n"
-            f"Name:     {customer_name}\n"
-            f"Phone:    {customer_phone or 'No phone'}\n"
-            f"Email:    {customer_email}\n"
-            f"{divider}\n"
-            f"Service:  {service}{addons_line}{address_line}\n"
-            f"Date:     {date}\n"
-            f"{divider}\n"
-            f"Deposit:  ${deposit_paid:.2f}\n"
-            f"Balance:  {balance_line}\n"
-            f"{divider}\n"
-            f"Customer Phone: {customer_phone or 'No phone'}"
-        )
-
-        detailer_sms_status = "sent" if _send_sms(DETAILER_PHONE, sms_body_detailer, "detailer") else "failed"
-
-        balance_customer = (
-            f"${balance_due:.2f} due after service"
-            if balance_due is not None
-            else "Contact us for balance details"
-        )
-        addons_customer_line = f"\nAdd-Ons:  {addons}" if addons else ""
-        address_customer_line = f"\nAddress:  {address}" if address else ""
-        sms_body_customer = (
-            f"\U0001F697 Booking Confirmed!\n"
-            f"A Gentlemen's Touch\n"
-            f"{divider}\n"
-            f"Hi {customer_name}! Your detail is booked.\n"
-            f"{divider}\n"
-            f"Service:  {service}{addons_customer_line}{address_customer_line}\n"
-            f"Date:     {date}\n"
-            f"{divider}\n"
-            f"Deposit:  ${deposit_paid:.2f} received\n"
-            f"Balance:  {balance_customer}\n"
-            f"{divider}\n"
-            f"Questions? Call {detailer_phone_display}"
-        )
-
-        customer_sms_status = "skipped"
-        if not customer_phone:
-            _log("INFO", "customer_sms_skipped", detail="no phone on file")
-        else:
-            customer_sms_status = (
-                "sent" if _send_sms(customer_phone, sms_body_customer, "customer") else "failed"
-            )
-
-        if booking:
-            _mark_booking_confirmed(
-                booking_id=booking_id,
-                session_id=session.get("id", "unknown"),
-                stripe_event_id=stripe_event["id"],
-                amount_total_cents=amount_total,
-                detailer_sms_status=detailer_sms_status,
-                customer_sms_status=customer_sms_status,
-            )
-
+        customer_sms_status, sms_err = _send_booking_sms(booking, _format_detailer_phone())
+        if sms_err:
+            return sms_err
         _log(
             "INFO",
             "booking_processed",
-            customer=customer_name,
-            service=service,
-            deposit_paid=deposit_paid,
-            balance_due=balance_due,
-            booking_id=booking_id,
-            detailer_sms=detailer_sms_status,
-            customer_sms=customer_sms_status,
+            customer=booking["customer_name"],
+            service=booking["service"],
+            deposit_paid=booking["deposit_paid"],
+            balance_due=booking["balance_due"],
         )
-        print(f"Booking confirmed: {booking_id}")
-        return _response(200, "Webhook processed")
-=======
-        booking = _extract_stripe_booking(session)
-        deposit_paid = _amount_to_dollars(session.get("amount_total"), "invalid_amount_value")
-        balance_due = _calculate_balance_due(booking["service"], deposit_paid)
-        _log("INFO", "balance_calculated", service=booking["service"],
-             deposit_paid=deposit_paid, balance_due=balance_due)
-
-        sms_err = _send_stripe_sms(booking, deposit_paid, balance_due, _format_detailer_phone())
-        if sms_err:
-            return sms_err
-
-        _log("INFO", "booking_processed", customer=booking["customer_name"],
-             service=booking["service"], deposit_paid=deposit_paid, balance_due=balance_due)
         return _response(200, "SMS sent")
->>>>>>> 8dd8c8d99d20df693dd10a29c85f89fe20c2b040
     except Exception as exc:
         _log("ERROR", "webhook_processing_failed", detail=str(exc))
         return _response(500, "Webhook processed with errors")
 
+
+# ─── Entry point ──────────────────────────────────────────────────────────────
 
 def lambda_handler(event, context):
     """

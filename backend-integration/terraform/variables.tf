@@ -40,11 +40,6 @@ variable "detailer_phone_number_parameter_name" {
   type        = string
 }
 
-variable "domain_url" {
-  description = "Frontend URL used for Stripe checkout success and cancel redirects."
-  type        = string
-}
-
 variable "billing_report_email" {
   description = "Daily billing report email recipient. Leave blank to disable billing emails."
   type        = string
