@@ -156,14 +156,56 @@
   </div>
 
   <script>
-    // Read Cal.com URL from sessionStorage (set before Stripe redirect)
-    const calUrl = sessionStorage.getItem('agt_cal_url')
-      || 'https://cal.com/william-g.-lewis-ai51kb/mobile-detail-appointment-service-1';
+    // ─── DISPLAY NAME MAPS ───────────────────────────────────────────────
+    const PACKAGES = {
+      sm_detail: 'Small Vehicle Detail',
+      md_detail: 'Medium Vehicle Detail',
+      lg_detail: 'Large / SUV / Truck Detail',
+    };
 
-    // Set the button href
+    const ADDONS = {
+      pet_hair:   'Pet Hair Removal',
+      shampooing: 'Interior Shampooing',
+      upholstery: 'Upholstery Shampoo',
+      wax:        'Hand Wax Upgrade',
+      steam:      'Steam Cleaning',
+      polishing:  'Machine Polishing',
+      headlights: 'Headlight Restoration',
+      odor:       'Odor Removal',
+      engine_bay: 'Engine Bay Cleaning',
+      leather:    'Leather Treatment',
+    };
+
+    const FALLBACK_URL = 'https://cal.com/william-g.-lewis-ai51kb/mobile-detail-appointment-service-1';
+
+    // ─── READ SESSION STORAGE ────────────────────────────────────────────
+    const baseCalUrl = sessionStorage.getItem('agt_cal_url') || FALLBACK_URL;
+    const packageKey = sessionStorage.getItem('agt_package') || '';
+    const addonsRaw  = sessionStorage.getItem('agt_addons') || '';
+    const deposit    = sessionStorage.getItem('agt_deposit') || '';
+    const balance    = sessionStorage.getItem('agt_balance') || '';
+
+    // ─── BUILD PREFILLED URL ─────────────────────────────────────────────
+    const serviceName = PACKAGES[packageKey] || '';
+    const addonNames  = addonsRaw
+      ? addonsRaw.split(',').map(k => ADDONS[k.trim()] || '').filter(Boolean).join(', ')
+      : '';
+
+    let calUrl = baseCalUrl;
+
+    if (serviceName || addonNames) {
+      const params = new URLSearchParams();
+      if (serviceName) params.set('service', serviceName);
+      if (addonNames)  params.set('add-ons', addonNames);
+      if (deposit && balance) {
+        params.set('notes', 'Deposit paid: $' + deposit + ' | Balance due: $' + balance);
+      }
+      calUrl = baseCalUrl + (baseCalUrl.includes('?') ? '&' : '?') + params.toString();
+    }
+
+    // ─── SET LINK + COUNTDOWN ────────────────────────────────────────────
     document.getElementById('cal-link').href = calUrl;
 
-    // Countdown and auto-redirect
     let seconds = 3;
     const countdownEl = document.getElementById('countdown');
 

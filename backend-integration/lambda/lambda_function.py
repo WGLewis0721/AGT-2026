@@ -675,65 +675,35 @@ def _handle_stripe_webhook(event: dict, body: str) -> dict:
         return _response(200, "Ignored")
 
     booking = _extract_stripe_booking(session)
-    detailer_phone_display = _format_detailer_phone()
 
+    deposit_paid = booking["deposit_paid"]
     balance_due = (
         booking["balance_due"]
         if booking["balance_due"] is not None
-        else _calculate_balance_due(booking["service"], booking["deposit_paid"])
+        else _calculate_balance_due(booking["service"], deposit_paid)
     )
 
     _log(
         "INFO",
-        "balance_calculated",
-        service=booking["service"],
-        deposit_paid=booking["deposit_paid"],
+        "stripe_payment_confirmed",
+        session_id=session.get("id", "unknown"),
+        booking_id=booking_id,
+        deposit_paid=deposit_paid,
         balance_due=balance_due,
+        customer_email=booking["customer_email"],
+        livemode=stripe_event.get("livemode", False),
     )
-
-    divider = "\u2500" * 42
-    sms_detailer = _build_detailer_sms(booking, balance_due, divider)
-    detailer_sms_status = (
-        "sent" if _send_sms(DETAILER_PHONE, sms_detailer, "detailer")
-        else "failed"
-    )
-
-    customer_sms_status = "skipped"
-    if booking["customer_phone"]:
-        sms_customer = _build_customer_sms(
-            booking, balance_due, detailer_phone_display, divider
-        )
-        customer_sms_status = (
-            "sent" if _send_sms(
-                booking["customer_phone"], sms_customer, "customer"
-            )
-            else "failed"
-        )
-    else:
-        _log("INFO", "customer_sms_skipped", detail="no phone on file")
 
     _mark_booking_confirmed(
         booking_id=booking_id,
         session_id=session.get("id", "unknown"),
         stripe_event_id=stripe_event["id"],
         amount_total_cents=session.get("amount_total"),
-        detailer_sms_status=detailer_sms_status,
-        customer_sms_status=customer_sms_status,
+        detailer_sms_status="pending_calcom",
+        customer_sms_status="pending_calcom",
     )
 
-    _log(
-        "INFO",
-        "booking_processed",
-        customer=booking["customer_name"],
-        service=booking["service"],
-        deposit_paid=booking["deposit_paid"],
-        balance_due=balance_due,
-        booking_id=booking_id,
-        detailer_sms=detailer_sms_status,
-        customer_sms=customer_sms_status,
-    )
-
-    return _response(200, "Webhook processed")
+    return _response(200, "Payment confirmed")
 
 
 # ─── Lambda Handler ─────────────────
