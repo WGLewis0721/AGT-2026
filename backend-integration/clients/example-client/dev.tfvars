@@ -11,4 +11,5 @@ stripe_webhook_secret_parameter_name = "/tra3/your-client-name/dev/stripe_webhoo
 textbelt_api_key_parameter_name      = "/tra3/your-client-name/dev/textbelt_api_key"
 detailer_phone_number_parameter_name = "/tra3/your-client-name/dev/detailer_phone_number"
 calcom_webhook_secret_parameter_name = "/tra3/your-client-name/dev/calcom_webhook_secret"
+domain_url                           = "https://example.com"
 aws_region                           = "us-east-1"
