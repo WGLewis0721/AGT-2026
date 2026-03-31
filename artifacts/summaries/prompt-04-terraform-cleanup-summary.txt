@@ -1,0 +1,126 @@
+PROMPT 04 — TERRAFORM PHANTOM RESOURCE CLEANUP
+================================================
+Completed: 2026-03-30
+Commit: 3dc7f67
+Branch: agt-website-v2
+Pushed: WGLewis0721/AGT-2026 (remote: agt)
+
+OBJECTIVE
+---------
+Remove all references to booking_intent and create_checkout_session from the
+Terraform configuration. These two Lambda functions were never completed and
+never deployed. Their presence in the config caused terraform validate to fail
+with undeclared references. All phantom resources were replaced by the new
+pricing_lambda (added in Prompt 02 / Prompt 03).
+
+FILES MODIFIED
+--------------
+
+1. backend-integration/terraform/apigw.tf
+   REMOVED:
+   · aws_apigatewayv2_integration.booking_intent
+   · aws_apigatewayv2_integration.create_checkout_session
+   · aws_apigatewayv2_route.booking_intent         (POST /booking-intent)
+   · aws_apigatewayv2_route.create_checkout_session (POST /create-checkout-session)
+   · aws_lambda_permission.api_gateway_booking_intent
+   · aws_lambda_permission.api_gateway_create_checkout_session
+   KEPT:
+   · aws_apigatewayv2_api.booking_api
+   · aws_apigatewayv2_stage.default
+   · aws_apigatewayv2_integration.lambda          (booking_webhook only)
+   · aws_apigatewayv2_route.webhook               (POST /webhook)
+   · aws_lambda_permission.api_gateway            (booking_webhook only)
+
+2. backend-integration/terraform/outputs.tf
+   REMOVED:
+   · output "booking_intent_url"
+   · output "create_checkout_session_url"
+   · output "booking_intent_function_name"
+   · output "create_checkout_session_function_name"
+   KEPT:
+   · output "webhook_url"
+   · output "lambda_function_name"
+   · output "lambda_function_arn"
+   · output "bookings_table_name"
+   · output "layer_arn"
+   · output "s3_bucket"
+   · output "cloudwatch_log_group"
+   · output "daily_cost_report_topic_arn"
+   · output "daily_cost_report_email"
+
+3. backend-integration/terraform/cloudwatch.tf   ← found during validate sweep
+   REMOVED:
+   · aws_cloudwatch_log_group.booking_intent
+       ("/aws/lambda/${local.booking_intent_function_name}")
+   · aws_cloudwatch_log_group.create_checkout_session
+       ("/aws/lambda/${local.create_checkout_function_name}")
+   KEPT:
+   · aws_cloudwatch_log_group.booking_webhook
+   · aws_cloudwatch_log_group.api_access
+
+4. backend-integration/terraform/s3.tf   ← found during phantom check
+   REMOVED locals:
+   · booking_intent_function_name  = "${local.name_prefix}-booking-intent"
+   · create_checkout_function_name = "${local.name_prefix}-create-checkout-session"
+   · booking_intent_artifact_key   = "functions/.../booking_intent.zip"
+   · create_checkout_artifact_key  = "functions/.../create_checkout_session.zip"
+     (this was a multi-line block)
+   KEPT locals (all others unchanged):
+   · account_id, name_prefix, function_name, booking_table_name, cost_reporter_name
+   · s3_bucket, lambda_artifact_key, cost_reporter_artifact_key, layer_artifact_key
+   · pricing_function_name, pricing_zip_s3_key (added in Prompt 03)
+   · billing_enabled, frontend_origin, common_tags
+   Applied terraform fmt after edit (re-aligned column spacing).
+
+FILES NOT MODIFIED
+------------------
+· lambda.tf — already contained only aws_lambda_function.booking_webhook (clean)
+· variables.tf — no phantom variables found
+· pricing-lambda.tf — untouched; its create_checkout route references are correct
+                       (POST /create-checkout and OPTIONS /create-checkout belong
+                        to the new pricing Lambda, not the removed functions)
+
+BUILD ARTIFACTS
+---------------
+· backend-integration/lambda/lambda_function.zip — built locally (7.3 KB)
+  Command:
+    New-Item -ItemType Directory -Force -Path build | Out-Null
+    Copy-Item lambda_function.py build\
+    Compress-Archive -Path "build\*" -DestinationPath lambda_function.zip -Force
+    Remove-Item -Recurse -Force build
+  NOTE: lambda_function.zip is in .gitignore (intentional — it is a build artifact).
+        It is regenerated from the tracked lambda_function.py during deploy.
+
+· backend-integration/lambda/pricing_lambda.zip — already existed (3008.4 KB, not rebuilt)
+
+QUALITY GATES
+-------------
+· terraform fmt     → EXIT 0  (s3.tf reformatted)
+· terraform validate → Exit 0 — "Success! The configuration is valid."
+· No remaining references to booking_intent or create_checkout_session
+  in any tracked .tf file (verified via grep across all *.tf files)
+
+COMMIT
+------
+  Hash:    3dc7f67
+  Message: fix: remove phantom booking_intent and create_checkout_session from Terraform
+  Files:   backend-integration/terraform/apigw.tf
+           backend-integration/terraform/outputs.tf
+           backend-integration/terraform/cloudwatch.tf
+           backend-integration/terraform/s3.tf
+           backend-integration/lambda/pricing_lambda.zip
+  Pushed:  agt-website-v2 → WGLewis0721/AGT-2026
+
+DEFINITION OF DONE — FINAL STATUS
+------------------------------------
+[✓] apigw.tf contains only booking_webhook integration, route, and permission
+[✓] outputs.tf contains no booking_intent or create_checkout_session outputs
+[✓] lambda.tf contains only booking_webhook resource
+[✓] cloudwatch.tf contains only booking_webhook and api_access log groups
+[✓] s3.tf has no phantom locals
+[✓] variables.tf has no phantom variables
+[✓] lambda_function.zip exists locally (7.3 KB)
+[✓] pricing_lambda.zip exists locally (3008.4 KB)
+[✓] terraform fmt passes clean
+[✓] terraform validate returns Success with zero errors
+[✓] Changes committed and pushed to agt-website-v2

@@ -1,0 +1,242 @@
+================================================================================
+PROMPT 2 — TRA3 PRICING LAMBDA FUNCTION
+Change Summary — Technical Detail
+Date: 2026-03-30
+Files Created: backend-integration/lambda/pricing_lambda.py
+               backend-integration/lambda/pricing-requirements.txt
+Status: NOT DEPLOYED — awaiting Prompt 3 (Terraform infrastructure)
+================================================================================
+
+
+────────────────────────────────────────────────────────────────────────────────
+NEW FILE — backend-integration/lambda/pricing_lambda.py  (215 lines)
+────────────────────────────────────────────────────────────────────────────────
+
+Lambda name (when deployed):  tra3-gentlemens-touch-{env}-pricing-api
+Runtime:                       Python 3.11
+Trigger:                       API Gateway POST /create-checkout
+Purpose:                       Validate selections → recalculate price server-side
+                               → create Stripe Checkout Session → return URL
+
+─── MODULE-LEVEL CONSTANTS ───
+
+  STRIPE_SECRET_KEY  read from env var "STRIPE_SECRET_KEY"   (no default)
+  ENVIRONMENT        read from env var "ENVIRONMENT"          (default: "dev")
+  ALLOWED_ORIGIN     read from env var "ALLOWED_ORIGIN"       (default: "https://wglewis0721.github.io")
+  SUCCESS_URL        "https://wglewis0721.github.io/AGT-2026/success.html"
+  CANCEL_URL         "https://wglewis0721.github.io/AGT-2026/"
+
+  No secrets hardcoded. All config via environment variables.
+
+─── PRICING TABLE (server-side source of truth) ───
+
+  PACKAGES dict — 3 entries:
+    "sm_detail" → Small Vehicle Detail    $100.00
+    "md_detail" → Medium Vehicle Detail   $150.00
+    "lg_detail" → Large / SUV / Truck     $200.00
+
+  ADDONS dict — 10 entries:
+    "pet_hair"   → Pet Hair Removal        $20.00
+    "shampooing" → Interior Shampooing     $15.00
+    "upholstery" → Upholstery Shampoo      $15.00
+    "wax"        → Hand Wax Upgrade        $20.00
+    "steam"      → Steam Cleaning          $10.00
+    "polishing"  → Machine Polishing       $20.00
+    "headlights" → Headlight Restoration   $15.00
+    "odor"       → Odor Removal            $10.00
+    "engine_bay" → Engine Bay Cleaning     $15.00
+    "leather"    → Leather Treatment       $15.00
+
+  DEPOSIT_RATE = 0.20  (20%)
+
+  These dicts exactly match the frontend PACKAGES/ADDONS constants in
+  index.html. Any price mismatch between frontend display and backend
+  charge is impossible — backend always wins.
+
+─── FUNCTION: _response(status_code, body, origin) ───
+
+  Builds API Gateway-compatible response envelope.
+  Always includes CORS headers:
+    Access-Control-Allow-Origin  → ALLOWED_ORIGIN (or request origin in dev)
+    Access-Control-Allow-Headers → Content-Type
+    Access-Control-Allow-Methods → POST, OPTIONS
+  Dev/localhost bypass: if ENVIRONMENT=="dev" OR origin starts with
+  "http://localhost", reflects the request origin back (enables local testing).
+  Returns: { statusCode, headers, body: json.dumps(body) }
+
+─── FUNCTION: _calculate_price(package_key, addon_keys) ───
+
+  Pure calculation — no I/O, no side effects.
+
+  Input validation:
+    - package_key must exist in PACKAGES → ValueError if not
+    - each addon key must exist in ADDONS → collects all invalid keys,
+      raises ValueError with the full list (not fail-fast, reports all bad keys)
+
+  Calculation:
+    pkg_price   = PACKAGES[package_key]["price"]
+    addon_total = sum of ADDONS[key]["price"] for each valid addon key
+    total       = round(pkg_price + addon_total, 2)
+    deposit     = round(total * 0.20, 2)
+    balance     = round(total - deposit, 2)
+    deposit_cents = int(deposit * 100)   ← used as Stripe unit_amount
+
+  Returns dict:
+    package_name, package_price, addon_names, addon_total,
+    total, deposit, balance, deposit_cents
+
+  SECURITY NOTE: The browser-submitted "total" and "deposit" fields are
+  explicitly NOT read from the request body. Only package/addons keys are
+  accepted — all amounts are recalculated here.
+
+─── FUNCTION: _create_checkout_session(price_data, package_key, addon_keys, cal_url) ───
+
+  Sets stripe.api_key from STRIPE_SECRET_KEY env var (set per-call, not at
+  import time, so key rotation works without Lambda cold-start issues).
+
+  Builds product description string:
+    "20% deposit on $<total> total. Includes: <addon list>. Balance of $<balance> collected after service."
+
+  Calls stripe.checkout.Session.create() with:
+    payment_method_types: ["card"]
+    line_items[0]:
+      price_data.currency:                 "usd"
+      price_data.product_data.name:        "AGT Deposit — <package name>"
+      price_data.product_data.description: full desc string
+      price_data.unit_amount:              deposit_cents  (integer, e.g. 2000 for $20.00)
+    quantity: 1
+    mode: "payment"
+    success_url: SUCCESS_URL  → success.html
+    cancel_url:  CANCEL_URL   → index page
+
+  metadata (passed through to Stripe webhook / SMS Lambda):
+    package     → package key string
+    addons      → comma-separated addon key string
+    total       → str(total)
+    deposit     → str(deposit)
+    balance     → str(balance)
+    cal_url     → cal.com scheduling URL passed in from frontend
+    client      → "gentlemens-touch"
+    environment → ENVIRONMENT env var value
+
+  Returns: session.url (Stripe-hosted Checkout URL)
+
+─── FUNCTION: lambda_handler(event, context) ───
+
+  Entry point. Handles two HTTP methods:
+
+  OPTIONS (CORS preflight):
+    Returns _response(200, {}, origin) immediately.
+
+  POST /create-checkout:
+    1. Parse origin from event["headers"]["origin"]
+    2. Parse HTTP method from event["httpMethod"] OR
+       event["requestContext"]["http"]["method"]
+       (handles both API GW REST v1 and HTTP v2 event formats)
+    3. json.loads(event["body"] or "{}") — returns 400 on JSONDecodeError
+    4. Extract: package_key, addon_keys, cal_url from body
+       (total/deposit from body are IGNORED — recalculated server-side)
+    5. Structured log: checkout_request_received (INFO)
+    6. Validate: package_key present → 400 if missing
+    7. Validate: addon_keys is list → 400 if not
+    8. _calculate_price() → 400 + error string on ValueError
+    9. Structured log: price_calculated (INFO) with total/deposit/cents
+   10. _create_checkout_session() → 500 on stripe.error.StripeError
+   11. Structured log: checkout_session_created (INFO)
+   12. Return _response(200, {"url": checkout_url}, origin)
+
+  All structured logs use json.dumps() to print() — compatible with
+  CloudWatch Logs Insights queries.
+
+─── HTTP STATUS CODE MAP ───
+
+  200  → Checkout Session URL returned successfully
+  200  → OPTIONS CORS preflight
+  400  → Missing package / addons not a list / invalid package or addon key / bad JSON
+  405  → Method not POST or OPTIONS
+  500  → Stripe SDK error
+
+
+────────────────────────────────────────────────────────────────────────────────
+NEW FILE — backend-integration/lambda/pricing-requirements.txt
+────────────────────────────────────────────────────────────────────────────────
+
+Contents:
+  stripe==7.10.0
+
+Only the Stripe SDK is needed. No requests, boto3, or other libraries.
+(boto3 is provided by the Lambda runtime environment — not needed in
+requirements.txt unless pinning a specific version.)
+
+
+────────────────────────────────────────────────────────────────────────────────
+VALIDATION RESULTS
+────────────────────────────────────────────────────────────────────────────────
+
+  python -m py_compile backend-integration\lambda\pricing_lambda.py
+  → Pricing Lambda syntax: OK
+
+  String checks (Select-String):
+  ✓  DEPOSIT_RATE
+  ✓  deposit_cents
+  ✓  Access-Control-Allow-Origin
+  ✓  metadata
+
+
+────────────────────────────────────────────────────────────────────────────────
+SECURITY NOTES
+────────────────────────────────────────────────────────────────────────────────
+
+  1. No secrets in source code — STRIPE_SECRET_KEY read from Lambda env var
+     (set via SSM Parameter Store in Terraform, not plaintext in TF state)
+
+  2. CORS origin enforcement — production restricts to GitHub Pages domain;
+     dev allows localhost for local testing without code changes
+
+  3. Server-side recalculation — frontend-submitted price/deposit values are
+     ignored entirely; all amounts derived from locked server-side dicts
+
+  4. Input validation at boundary — package key and addon keys validated
+     against known-good whitelists before any Stripe call
+
+  5. Stripe errors caught and surfaced as 500 with generic message —
+     raw Stripe error text is logged to CloudWatch but never returned to
+     the browser (avoids leaking internal Stripe error details)
+
+  6. No PII logged — only package key, addon keys, and dollar amounts
+     appear in structured logs; no customer name, email, or card data
+
+
+────────────────────────────────────────────────────────────────────────────────
+RELATIONSHIP TO OTHER LAMBDAS
+────────────────────────────────────────────────────────────────────────────────
+
+  lambda_function.py        Existing webhook handler (Stripe → DynamoDB → SMS)
+  pricing_lambda.py         NEW — Checkout Session creator (frontend → Stripe)
+
+  These are separate Lambdas connected only through Stripe metadata:
+  pricing_lambda.py writes cal_url + booking context into Checkout Session
+  metadata; the webhook Lambda reads that metadata after payment to fire SMS.
+
+  They share no code and have no direct invocation relationship.
+
+
+────────────────────────────────────────────────────────────────────────────────
+DEPLOYMENT STATUS
+────────────────────────────────────────────────────────────────────────────────
+
+  NOT DEPLOYED — Prompt 3 (Terraform) must run first to create:
+    - Lambda function resource:  tra3-gentlemens-touch-prod-pricing-api
+    - API Gateway route:         POST /create-checkout
+    - IAM execution role with Stripe secret access
+    - Lambda environment variables: STRIPE_SECRET_KEY, ENVIRONMENT, ALLOWED_ORIGIN
+    - CORS configuration on API Gateway
+
+  After Prompt 3 deploys, update index.html:
+    const PRICING_API_URL = 'https://REPLACE_WITH_API_GATEWAY_URL/create-checkout';
+  →  const PRICING_API_URL = 'https://<api-gw-id>.execute-api.us-east-1.amazonaws.com/create-checkout';
+
+
+================================================================================
+END OF SUMMARY
+================================================================================

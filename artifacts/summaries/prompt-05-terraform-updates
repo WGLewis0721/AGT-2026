@@ -1,0 +1,159 @@
+You are working in the repo WGLewis0721/AGT-2026 on branch agt-website-v2.
+Working directory: C:\Users\Willi\OneDrive\Documents\agt-website
+
+Make exactly these changes in this exact order. Do not skip steps.
+Do not run terraform apply. Do not merge branches.
+You are working on branch agt-website-v2
+Refer to the docs before proceeding (C:\Users\Willi\OneDrive\Documents\agt-website\docs)
+Print chnages to a tehcnical report in a text file
+
+---
+
+STEP 1 — Clear stale Terraform state lock
+
+The previous terraform apply was interrupted and left a lock in DynamoDB.
+Clear it before doing anything else:
+
+  cd backend-integration\terraform
+
+  terraform force-unlock 40f18c2a-09d4-427f-7c92-059b914572c4
+
+When prompted to confirm, type: yes
+
+Expected output: "Terraform state has been successfully unlocked!"
+If the lock is already gone, that is fine — continue to Step 2.
+
+---
+
+STEP 2 — Run terraform apply (prod)
+
+Still in backend-integration\terraform:
+
+  terraform apply `
+    -var-file="..\clients\gentlemens-touch\prod.tfvars" `
+    -auto-approve
+
+Wait for apply to complete fully before continuing.
+
+Expected: No errors. Output will show resources created/updated.
+The pricing Lambda (tra3-gentlemens-touch-prod-pricing-api) should
+appear as created or updated in the plan output.
+
+If apply fails with any error other than a lock error, stop and
+report the full error message. Do not attempt to fix Terraform errors
+without reporting them first.
+
+---
+
+STEP 3 — Verify pricing Lambda is live
+
+  aws lambda get-function-configuration `
+    --function-name tra3-gentlemens-touch-prod-pricing-api `
+    --query "[State, LastUpdateStatus]" `
+    --output text
+
+Expected output: Active    Successful
+
+If State is not Active or LastUpdateStatus is not Successful, stop
+and report the full output before continuing.
+
+---
+
+STEP 4 — Confirm pricing API URL
+
+  terraform output pricing_api_url
+
+Expected output:
+  "https://c4eki550u8.execute-api.us-east-1.amazonaws.com/create-checkout"
+
+If the output is a different URL, use that URL in Step 5 instead.
+Report whatever URL is returned.
+
+---
+
+STEP 5 — Update PRICING_API_URL in index.html
+
+  cd C:\Users\Willi\OneDrive\Documents\agt-website
+
+Find this exact line in index.html:
+
+  const PRICING_API_URL = 'https://REPLACE_WITH_API_GATEWAY_URL/create-checkout';
+
+Replace it with:
+
+  const PRICING_API_URL = 'https://c4eki550u8.execute-api.us-east-1.amazonaws.com/create-checkout';
+
+If Step 4 returned a different URL, use that URL instead.
+
+After the change, verify it landed:
+
+  Select-String -Path index.html -Pattern "PRICING_API_URL" | Select-Object -First 3
+
+All 3 results must show the real URL, not the placeholder.
+If REPLACE_WITH_API_GATEWAY_URL still appears anywhere, the replacement
+did not work — fix it before continuing.
+
+---
+
+STEP 6 — Quick end-to-end smoke test of pricing API
+
+Test the live pricing Lambda directly before merging:
+
+  $Body = @{
+    package = "sm_detail"
+    addons  = @("pet_hair", "wax")
+    cal_url = "https://cal.com/william-g.-lewis-ai51kb/mobile-detail-appointment-service-1"
+    client  = "gentlemens-touch"
+  } | ConvertTo-Json
+
+  $Response = Invoke-RestMethod `
+    -Uri "https://c4eki550u8.execute-api.us-east-1.amazonaws.com/create-checkout" `
+    -Method POST `
+    -ContentType "application/json" `
+    -Body $Body
+
+  Write-Host "Checkout URL: $($Response.url)"
+
+Expected: Returns a URL starting with https://checkout.stripe.com/
+
+If the response is an error, report the full error before continuing.
+Do not proceed to Step 7 if this test fails.
+
+---
+
+STEP 7 — Commit and push
+
+  git add index.html
+  git commit -m "fix: wire pricing API URL — pricing engine complete"
+  git push origin agt-website-v2
+
+Verify push succeeded and report the commit hash.
+
+---
+
+STEP 8 — Verify no REPLACE_WITH_API_GATEWAY_URL remains in the branch
+
+  git grep "REPLACE_WITH_API_GATEWAY_URL" index.html
+
+Must return no output. If it returns anything, the placeholder was
+not replaced — fix before reporting done.
+
+---
+
+DO NOT merge agt-website-v2 into main yet.
+DO NOT run terraform apply again.
+DO NOT deploy dev environment — prod only for this step.
+
+---
+
+DEFINITION OF DONE
+
+- [ ] Stale state lock cleared
+- [ ] terraform apply completed with no errors
+- [ ] tra3-gentlemens-touch-prod-pricing-api is Active / Successful
+- [ ] terraform output pricing_api_url returns real URL
+- [ ] index.html PRICING_API_URL updated with real URL
+- [ ] No REPLACE_WITH_API_GATEWAY_URL remaining in index.html
+- [ ] Smoke test returns a valid Stripe checkout.stripe.com URL
+- [ ] Changes committed and pushed to agt-website-v2
+- [ ] Commit hash reported

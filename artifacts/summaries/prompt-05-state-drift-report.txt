@@ -1,0 +1,212 @@
+TECHNICAL REPORT — TERRAFORM STATE DRIFT & DEPLOYMENT LATENCY
+AGT / TRA3 Platform | March 30, 2026
+Session: Prompt 05 — Multi-Origin CORS Deploy
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1. WHAT HAPPENED
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Goal: deploy a pricing_lambda.py code change (multi-origin CORS) by rebuilding
+the zip, uploading to S3, and running `terraform apply`.
+
+Expected apply time: ~30 seconds.
+Actual time to complete: ~25 minutes across multiple retries.
+
+Root causes: two distinct problems, documented below.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2. PROBLEM A — RESOURCE STATE DRIFT (aws_lambda_permission)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+SYMPTOM
+  Error: adding Lambda Permission (tra3-gentlemens-touch-prod-booking-webhook/
+  AllowAPIGatewayInvoke): ResourceConflictException: The statement id
+  (AllowAPIGatewayInvoke) provided already exists.
+
+  Error: adding Lambda Permission (tra3-gentlemens-touch-prod-cost-report/
+  AllowDailyCostReportInvoke): ResourceConflictException: The statement id
+  (AllowDailyCostReportInvoke) provided already exists.
+
+CAUSE
+  A previous session's `terraform apply` wrote both Lambda permission resources
+  to AWS but terminated (or timed out) before the state lock was released and
+  the state file was updated. This left the resources orphaned from the state
+  file.
+
+  On the next apply, Terraform sees them as "to create" and hits a 409 conflict
+  because the resources already exist in AWS.
+
+  Additionally, the AllowAPIGatewayInvoke permission was originally attached to
+  an old API Gateway ID (rv67tkxd5b) — a now-deleted gateway from an earlier
+  session — making it doubly stale: present in AWS but pointing at a dead ARN.
+
+HOW IT WAS FIXED (this session)
+  1. terraform import aws_lambda_permission.api_gateway
+        "tra3-gentlemens-touch-prod-booking-webhook/AllowAPIGatewayInvoke"
+     -> Imported successfully. Terraform detected the source_arn mismatch
+        (rv67tkxd5b vs c4eki550u8) and scheduled a replace.
+
+  2. aws_lambda_permission.cost_report_schedule[0] was already partially in
+     state from the timed-out apply. Re-import returned "Resource already
+     managed by Terraform" — no action needed.
+
+  3. Final apply: Terraform destroyed the stale AllowAPIGatewayInvoke
+     permission and recreated it pointing at the correct API Gateway.
+     Apply complete. Resources: 1 added, 0 changed, 1 destroyed.
+
+TIME COST OF THIS PROBLEM: ~15 minutes (multiple failed applies + import work)
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3. PROBLEM B — LAMBDA PERMISSION CREATION HANGING FOR 4-5 MINUTES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+SYMPTOM
+  aws_lambda_permission.api_gateway: Still creating... [4m20s elapsed]
+  aws_lambda_permission.cost_report_schedule[0]: Still creating... [4m20s elapsed]
+  (Both eventually failed with the 409 above — the extended wait was Terraform
+   retrying the AddPermission API call internally before surfacing the error.)
+
+CAUSE
+  aws_lambda_permission creates a resource-based IAM policy statement on a
+  Lambda function. When the function has a code deployment in flight
+  (UpdateFunctionCode / UpdateFunctionConfiguration), AWS serializes the
+  AddPermission call behind the active update.
+
+  In this session, pricing_api was being updated simultaneously. Terraform
+  attempted to create permissions on booking-webhook and cost-reporter at the
+  same time, but IAM propagation and internal Lambda control-plane serialization
+  added a multi-minute queue time before surfacing the final 409.
+
+  Secondary factor: the 19.6 MB zip (stripe vendored into the package) adds
+  cold-publish latency compared to a lean deployment that uses a shared layer.
+
+TIME COST OF THIS PROBLEM: ~5 minutes per failed apply attempt
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4. WILL MOVING DEPLOY TO S3 FIX THIS?
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+SHORT ANSWER: No.
+
+CURRENT DEPLOYMENT FLOW
+  1. pip install stripe -t pricing-build/         (slow, ~3 min local)
+  2. Compress-Archive pricing-build/ -> .zip
+  3. aws s3 cp pricing_lambda.zip s3://...         (upload ~3 MB compressed)
+  4. terraform apply
+     -> reads filebase64sha256("../lambda/pricing_lambda.zip") locally
+     -> compares hash to deployed source_code_hash
+     -> triggers Lambda UpdateFunctionCode sourced from S3
+     -> concurrently tries to create Lambda permissions (conflict)
+
+THE ZIP IS ALREADY ON S3
+  pricing-lambda.tf already references S3:
+    s3_bucket        = local.s3_bucket
+    s3_key           = local.pricing_zip_s3_key
+    source_code_hash = filebase64sha256("../lambda/pricing_lambda.zip")
+
+  The Lambda function is already deployed from S3. Changing where the zip is
+  built or stored does not affect the sequence of Terraform API calls.
+
+WHAT "MOVING DEPLOY TO S3" CANNOT FIX
+  - State drift caused by an interrupted apply: the state file is stored in
+    S3 (s3://tra3-394281571385-deployments/terraform-state/...) — it already
+    IS S3-backed. The drift is a timing/interruption problem, not a storage
+    problem.
+  - The 409 ResourceConflictException: this is caused by Terraform attempting
+    to create resources that already exist in AWS. S3 location of the zip has
+    no effect on that.
+  - The 4+ minute permission creation hang: this is caused by Lambda control-
+    plane serialization during concurrent UpdateFunctionCode + AddPermission
+    calls. Not related to where the zip is stored.
+
+VERDICT
+  Moving deploy to S3 does not prevent or fix resource state drift.
+  The zip is already sourced from S3. The drift was caused by a prior apply
+  that wrote AWS resources but did not successfully commit the Terraform state
+  file back, leaving the two out of sync.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+5. WHAT ACTUALLY FIXES THIS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+FIX 1 — Targeted apply for code-only changes (highest leverage)
+  When only modifying Lambda code (not infrastructure), skip Terraform entirely
+  for the Lambda function update:
+
+    terraform apply -target=aws_lambda_function.pricing_api \
+      -var-file=prod.tfvars -auto-approve
+
+  This touches only the Lambda function resource and does not trigger the
+  permission creation path. Eliminates the conflict and reduces apply time
+  to ~10 seconds.
+
+FIX 2 — Direct Lambda update for pure code changes (fastest, zero drift risk)
+  For a code change with no infrastructure change, bypass Terraform entirely:
+
+    aws s3 cp pricing_lambda.zip s3://BUCKET/KEY
+    aws lambda update-function-code \
+      --function-name tra3-gentlemens-touch-prod-pricing-api \
+      --s3-bucket tra3-394281571385-deployments \
+      --s3-key functions/gentlemens-touch/prod/pricing_lambda.zip
+    aws lambda wait function-updated \
+      --function-name tra3-gentlemens-touch-prod-pricing-api
+
+  Total time: ~15 seconds. No state file touched. No permission conflicts.
+  Reserve `terraform apply` for infrastructure changes (new routes, new IAM,
+  env var changes, new resources).
+
+FIX 3 — Import guard in deploy script
+  Add a pre-apply terraform import block to deploy.ps1 that checks for and
+  imports known drift-prone resources before running apply. Prevents the
+  interrupted-apply drift pattern from blocking future deploys.
+
+FIX 4 — Reduce zip size
+  Extract stripe into the shared dependency layer (layer.zip / requirements.txt)
+  instead of vendoring it into pricing_lambda.zip. This reduces the zip from
+  19.6 MB to <100 KB, cutting build time from ~3 minutes to ~3 seconds and
+  reducing Lambda cold-publish latency, which reduces the window for
+  serialization conflicts.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+6. RECOMMENDED DEPLOY STRATEGY GOING FORWARD
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  CHANGE TYPE                           DEPLOY METHOD
+  ──────────────────────────────────    ──────────────────────────────────────
+  Lambda code only, no infra change     aws lambda update-function-code  (~15s)
+  Lambda env vars changed               terraform apply -target=aws_lambda_function.*
+  New routes / resources / IAM          terraform apply (full)
+  State drift detected (409 conflict)   terraform import -> terraform apply
+
+  Candidate new script:
+    backend-integration/scripts/deploy-code.ps1
+
+  Responsibilities:
+    1. Rebuild zip (pip install + Compress-Archive)
+    2. aws s3 cp -> S3
+    3. aws lambda update-function-code
+    4. aws lambda wait function-updated
+    5. Print State + LastUpdateStatus
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+7. SESSION OUTCOME
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Commit:      04caff6  (branch: agt-website-v2)
+  Message:     feat: multi-origin CORS support for Live Server local development
+  Lambda:      Active / Successful
+  Smoke tests: http://localhost:5500      -> Stripe Checkout URL  PASS
+               https://wglewis0721.github.io -> Stripe Checkout URL  PASS
+  State:       Clean — terraform plan shows no pending changes
+
+  Files changed in commit:
+    backend-integration/lambda/pricing_lambda.py
+    backend-integration/lambda/pricing_lambda.zip
+    backend-integration/clients/gentlemens-touch/prod.tfvars
+    backend-integration/clients/gentlemens-touch/dev.tfvars

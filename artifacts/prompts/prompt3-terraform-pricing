@@ -1,0 +1,412 @@
+# PROMPT 3 OF 3 — Terraform Infrastructure for Pricing Lambda
+# Tool: VS Code Copilot (needs AWS credentials)
+# Files: backend-integration/terraform/ (multiple files)
+# Repo: WGLewis0721/AGT-2026
+# Run AFTER Prompts 1 and 2. This deploys everything.
+
+---
+
+## CONTEXT
+
+This prompt adds the TRA3 Pricing API infrastructure alongside the
+existing webhook Lambda. It creates:
+
+  - New Lambda function: tra3-gentlemens-touch-{env}-pricing-api
+  - New IAM role for pricing Lambda (separate from webhook role)
+  - New API Gateway route: POST /create-checkout
+  - New S3 paths for pricing Lambda artifacts
+  - New CloudWatch log group for pricing Lambda
+  - New Terraform variables for pricing Lambda config
+
+Existing resources (webhook Lambda, webhook route, existing IAM)
+are NOT modified. This is additive only.
+
+---
+
+## CHANGE 1 — terraform/variables.tf — Add pricing Lambda variables
+
+Add these new variables to variables.tf AFTER the existing variables.
+Do not modify any existing variable blocks.
+
+```hcl
+# ─── Pricing API Lambda ──────────────────────────────────────────────────────
+
+variable "pricing_lambda_handler" {
+  description = "Handler for pricing Lambda"
+  type        = string
+  default     = "pricing_lambda.lambda_handler"
+}
+
+variable "pricing_lambda_runtime" {
+  description = "Runtime for pricing Lambda"
+  type        = string
+  default     = "python3.11"
+}
+
+variable "pricing_lambda_timeout" {
+  description = "Timeout in seconds for pricing Lambda"
+  type        = number
+  default     = 10
+}
+
+variable "pricing_lambda_memory" {
+  description = "Memory in MB for pricing Lambda"
+  type        = number
+  default     = 128
+}
+
+variable "allowed_origin" {
+  description = "Allowed CORS origin for pricing API"
+  type        = string
+  default     = "https://wglewis0721.github.io"
+}
+```
+
+---
+
+## CHANGE 2 — terraform/pricing-lambda.tf — Create new file
+
+Create a NEW file: backend-integration/terraform/pricing-lambda.tf
+
+This file is entirely new — it does not modify any existing .tf files.
+
+IMPORTANT — before adding the locals block below, run this check:
+
+```powershell
+Select-String -Path backend-integration\terraform\*.tf -Pattern "^locals" -SimpleMatch
+```
+
+If a locals block already exists in any .tf file, add the two new
+local values (pricing_function_name, pricing_zip_s3_key) to that
+existing block instead of creating a new one. Terraform merges locals
+across files but will error on duplicate block declarations in some
+versions. If no locals block exists anywhere, create the new block
+as shown below.
+
+```hcl
+# ─── TRA3 Pricing API Lambda ─────────────────────────────────────────────────
+# Separate from the webhook Lambda. Handles Stripe Checkout Session creation.
+
+locals {
+  pricing_function_name = "tra3-${var.client}-${var.environment}-pricing-api"
+  pricing_zip_s3_key    = "functions/${var.client}/${var.environment}/pricing_lambda.zip"
+}
+
+# ─── IAM Role ────────────────────────────────────────────────────────────────
+
+resource "aws_iam_role" "pricing_lambda_role" {
+  name = "tra3-${var.client}-${var.environment}-pricing-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Action    = "sts:AssumeRole"
+      Effect    = "Allow"
+      Principal = { Service = "lambda.amazonaws.com" }
+    }]
+  })
+
+  tags = {
+    Project     = "TRA3"
+    Client      = var.client
+    Environment = var.environment
+    ManagedBy   = "Terraform"
+  }
+}
+
+resource "aws_iam_role_policy_attachment" "pricing_lambda_logs" {
+  role       = aws_iam_role.pricing_lambda_role.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+}
+
+# ─── CloudWatch Log Group ─────────────────────────────────────────────────────
+
+resource "aws_cloudwatch_log_group" "pricing_lambda_log_group" {
+  name              = "/aws/lambda/${local.pricing_function_name}"
+  retention_in_days = 14
+
+  tags = {
+    Project     = "TRA3"
+    Client      = var.client
+    Environment = var.environment
+    ManagedBy   = "Terraform"
+  }
+}
+
+# ─── S3 Upload — Pricing Lambda Zip ─────────────────────────────────────────
+
+resource "aws_s3_object" "pricing_lambda_zip" {
+  bucket = aws_s3_bucket.deployments.id
+  key    = local.pricing_zip_s3_key
+  source = "${path.module}/../lambda/pricing_lambda.zip"
+  etag   = filemd5("${path.module}/../lambda/pricing_lambda.zip")
+}
+
+# ─── Lambda Function ─────────────────────────────────────────────────────────
+
+resource "aws_lambda_function" "pricing_api" {
+  function_name = local.pricing_function_name
+  role          = aws_iam_role.pricing_lambda_role.arn
+  handler       = var.pricing_lambda_handler
+  runtime       = var.pricing_lambda_runtime
+  timeout       = var.pricing_lambda_timeout
+  memory_size   = var.pricing_lambda_memory
+
+  s3_bucket        = aws_s3_bucket.deployments.id
+  s3_key           = local.pricing_zip_s3_key
+  source_code_hash = aws_s3_object.pricing_lambda_zip.etag
+
+  layers = [aws_lambda_layer_version.dependencies.arn]
+
+  environment {
+    variables = {
+      STRIPE_SECRET_KEY = var.stripe_secret_key
+      ENVIRONMENT       = var.environment
+      ALLOWED_ORIGIN    = var.allowed_origin
+    }
+  }
+
+  tags = {
+    Project     = "TRA3"
+    Client      = var.client
+    Environment = var.environment
+    ManagedBy   = "Terraform"
+  }
+
+  lifecycle {
+    replace_triggered_by = [aws_s3_object.pricing_lambda_zip]
+  }
+}
+
+# ─── API Gateway Integration ──────────────────────────────────────────────────
+
+resource "aws_apigatewayv2_integration" "pricing_integration" {
+  api_id                 = aws_apigatewayv2_api.webhook_api.id
+  integration_type       = "AWS_PROXY"
+  integration_uri        = aws_lambda_function.pricing_api.invoke_arn
+  payload_format_version = "2.0"
+}
+
+# POST /create-checkout route
+resource "aws_apigatewayv2_route" "create_checkout" {
+  api_id    = aws_apigatewayv2_api.webhook_api.id
+  route_key = "POST /create-checkout"
+  target    = "integrations/${aws_apigatewayv2_integration.pricing_integration.id}"
+}
+
+# OPTIONS /create-checkout route (CORS preflight)
+resource "aws_apigatewayv2_route" "create_checkout_options" {
+  api_id    = aws_apigatewayv2_api.webhook_api.id
+  route_key = "OPTIONS /create-checkout"
+  target    = "integrations/${aws_apigatewayv2_integration.pricing_integration.id}"
+}
+
+# Lambda permission for API Gateway
+resource "aws_lambda_permission" "pricing_api_gateway" {
+  statement_id  = "AllowAPIGatewayInvokePricing"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.pricing_api.function_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "${aws_apigatewayv2_api.webhook_api.execution_arn}/*/*"
+
+  lifecycle {
+    replace_triggered_by = [aws_lambda_function.pricing_api]
+  }
+}
+
+# ─── Outputs ─────────────────────────────────────────────────────────────────
+
+output "pricing_api_url" {
+  description = "URL for the TRA3 Pricing API create-checkout endpoint"
+  value       = "${aws_apigatewayv2_stage.default.invoke_url}/create-checkout"
+}
+
+output "pricing_lambda_name" {
+  description = "Pricing Lambda function name"
+  value       = aws_lambda_function.pricing_api.function_name
+}
+```
+
+---
+
+## CHANGE 3 — clients/gentlemens-touch/prod.tfvars
+
+Add this line to prod.tfvars (gitignored — edit locally):
+
+```hcl
+allowed_origin = "https://wglewis0721.github.io"
+```
+
+Add the same to dev.tfvars:
+
+```hcl
+allowed_origin = "https://wglewis0721.github.io"
+```
+
+---
+
+## BUILD PRICING LAMBDA ZIP
+
+Before deploying, build the pricing Lambda zip:
+
+```powershell
+# Build pricing Lambda zip (stripe only — no requests needed)
+$BuildDir = "backend-integration\lambda\pricing-build"
+New-Item -ItemType Directory -Force -Path $BuildDir | Out-Null
+Copy-Item backend-integration\lambda\pricing_lambda.py $BuildDir\
+pip install stripe -t $BuildDir --quiet --break-system-packages
+Compress-Archive -Path "$BuildDir\*" `
+  -DestinationPath "backend-integration\lambda\pricing_lambda.zip" -Force
+Remove-Item -Recurse -Force $BuildDir
+Write-Host "Pricing Lambda zip built"
+```
+
+---
+
+## DEPLOY
+
+```powershell
+cd backend-integration\terraform
+
+# Format check
+terraform fmt -check
+
+# Validate
+terraform validate
+
+# Deploy dev first
+terraform apply `
+  -var-file="..\clients\gentlemens-touch\dev.tfvars" `
+  -auto-approve
+
+# Verify dev pricing Lambda
+aws lambda get-function-configuration `
+  --function-name tra3-gentlemens-touch-dev-pricing-api `
+  --query "[State, LastUpdateStatus]" `
+  --output text
+
+# Deploy prod
+terraform apply `
+  -var-file="..\clients\gentlemens-touch\prod.tfvars" `
+  -auto-approve
+
+# Verify prod pricing Lambda
+aws lambda get-function-configuration `
+  --function-name tra3-gentlemens-touch-prod-pricing-api `
+  --query "[State, LastUpdateStatus]" `
+  --output text
+
+# Get the pricing API URL (needed for index.html update)
+terraform output pricing_api_url
+
+cd ..\..\..
+```
+
+---
+
+## CHANGE 4 — index.html — Update PRICING_API_URL placeholder
+
+After terraform output pricing_api_url shows the URL, update index.html.
+
+Find this line in the initiateCheckout() function:
+
+  'https://PRICING_API_URL/create-checkout',
+
+Replace PRICING_API_URL with the actual API Gateway base URL from
+terraform output. It will look like:
+
+  'https://rv67tkxd5b.execute-api.us-east-1.amazonaws.com/create-checkout',
+
+Note: The existing API Gateway is reused — just adding a new route.
+The base URL is the same as the existing webhook endpoint.
+
+Commit this change:
+
+```powershell
+git add index.html
+git commit -m "fix: update pricing API URL in checkout flow"
+git push origin main
+```
+
+---
+
+## END-TO-END TEST
+
+Test the full flow:
+
+```powershell
+# Test pricing API directly (dev)
+$DevUrl = "https://uzjsi37ffd.execute-api.us-east-1.amazonaws.com/create-checkout"
+$Body = @{
+  package = "sm_detail"
+  addons  = @("pet_hair", "wax")
+  total   = 140
+  deposit = 28
+  cal_url = "https://cal.com/william-g.-lewis-ai51kb/mobile-detail-appointment-service-1"
+  client  = "gentlemens-touch"
+} | ConvertTo-Json
+
+$Response = Invoke-RestMethod -Uri $DevUrl -Method POST `
+  -ContentType "application/json" -Body $Body
+Write-Host "Checkout URL: $($Response.url)"
+```
+
+Expected: Returns a Stripe Checkout URL.
+Open the URL in browser — should show Stripe checkout for $28.00.
+
+Then check CloudWatch for dev pricing Lambda:
+  /aws/lambda/tra3-gentlemens-touch-dev-pricing-api
+  Should show: checkout_request_received → price_calculated →
+               checkout_session_created
+
+---
+
+## COMMIT INFRASTRUCTURE
+
+```powershell
+git add backend-integration\terraform\pricing-lambda.tf
+git add backend-integration\terraform\variables.tf
+git commit -m "feat: TRA3 pricing API infrastructure - separate Lambda + API Gateway route"
+git push origin main
+```
+
+---
+
+## DEFINITION OF DONE
+
+- [ ] pricing-lambda.tf created with Lambda, IAM, CloudWatch, API Gateway integration
+- [ ] POST /create-checkout route added to existing API Gateway
+- [ ] OPTIONS /create-checkout route added for CORS preflight
+- [ ] allowed_origin variable added to variables.tf
+- [ ] allowed_origin added to dev.tfvars and prod.tfvars
+- [ ] pricing_lambda.zip built (stripe only, no requests)
+- [ ] terraform fmt passes
+- [ ] terraform validate passes
+- [ ] Dev pricing Lambda Active + Successful
+- [ ] Prod pricing Lambda Active + Successful
+- [ ] terraform output pricing_api_url returns valid URL
+- [ ] Direct API test returns Stripe Checkout URL
+- [ ] CloudWatch shows full log chain for test request
+- [ ] PRICING_API_URL updated in index.html with real URL
+- [ ] All changes committed and pushed
+
+---
+
+## AFTER ALL 3 PROMPTS — FINAL VERIFICATION
+
+Full end-to-end flow test:
+1. Visit https://wglewis0721.github.io/AGT-2026/
+2. Select Medium Vehicle
+3. Toggle Pet Hair + Wax
+4. Verify: Total $190, Deposit $38
+5. Click "Book Now — Pay $38 Deposit"
+6. Waiver modal appears — agree
+7. Stripe Checkout opens for exactly $38
+8. Complete payment with test card 4242 4242 4242 4242
+9. Redirected to success.html
+10. Countdown from 3 appears
+11. Auto-redirected to Cal.com for MD Detail
+12. Check SMS — detailer gets booking details with $38 deposit + $152 balance
+13. Check SMS — customer gets confirmation with $38 deposit + $152 balance
+
+If all 13 steps pass — the dynamic pricing engine is live.

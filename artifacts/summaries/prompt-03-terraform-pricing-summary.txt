@@ -1,0 +1,135 @@
+PROMPT 03 — TERRAFORM INFRASTRUCTURE FOR PRICING LAMBDA
+========================================================
+Completed: 2026-03-30
+Branch: agt-website-v2 (not yet committed — awaiting user directive)
+
+OBJECTIVE
+---------
+Provision all AWS infrastructure required to run the pricing Lambda created in
+Prompt 02. Integrate it into the existing TRA3 Terraform stack without breaking
+existing resources. Produce deployable client tfvars for AGT (gentlemens-touch).
+
+FILES MODIFIED
+--------------
+
+1. backend-integration/terraform/variables.tf
+   - Added 5 new variable declarations at end of file:
+     · pricing_lambda_handler   (default: "pricing_lambda.lambda_handler")
+     · pricing_lambda_runtime   (default: "python3.11")
+     · pricing_lambda_timeout   (default: 10 seconds)
+     · pricing_lambda_memory    (default: 128 MB)
+     · allowed_origin           (default: "https://wglewis0721.github.io")
+
+2. backend-integration/terraform/s3.tf
+   - Added 2 new locals to the existing locals {} block (auto-formatted by
+     terraform fmt):
+     · pricing_function_name = "${local.name_prefix}-pricing-api"
+     · pricing_zip_s3_key    = "functions/${var.client_name}/${var.environment}/pricing_lambda.zip"
+
+FILES CREATED
+-------------
+
+3. backend-integration/terraform/pricing-lambda.tf
+   AWS resources:
+   · aws_iam_role.pricing_lambda_role
+       Name: ${local.name_prefix}-pricing-role
+       Assume-role policy: lambda.amazonaws.com
+       Tags: local.common_tags
+   · aws_iam_role_policy_attachment.pricing_lambda_logs
+       Attaches AWSLambdaBasicExecutionRole (managed policy)
+   · aws_cloudwatch_log_group.pricing_lambda_log_group
+       Path: /aws/lambda/${local.pricing_function_name}
+       Retention: var.log_retention days
+       Tags: local.common_tags
+   · aws_lambda_function.pricing_api
+       Function name: local.pricing_function_name
+       S3 bucket: local.s3_bucket (bootstrapped externally — not TF-managed)
+       S3 key: local.pricing_zip_s3_key
+       source_code_hash: filebase64sha256("../lambda/pricing_lambda.zip")
+       Runtime/handler/timeout/memory: from var.pricing_lambda_*
+       Layer: aws_lambda_layer_version.dependencies.arn
+       Environment variables:
+           STRIPE_SECRET_KEY → data.aws_ssm_parameter.stripe_secret_key.value
+           ENVIRONMENT       → var.environment
+           ALLOWED_ORIGIN    → var.allowed_origin
+       Tags: local.common_tags
+   · aws_apigatewayv2_integration.pricing_integration
+       API: aws_apigatewayv2_api.booking_api.id  ← corrected from prompt
+       Type: AWS_PROXY, payload format: 2.0
+   · aws_apigatewayv2_route.create_checkout
+       Route: POST /create-checkout
+   · aws_apigatewayv2_route.create_checkout_options
+       Route: OPTIONS /create-checkout  (CORS preflight — Lambda handles header)
+   · aws_lambda_permission.pricing_api_gateway
+       Statement ID: AllowAPIGatewayInvokePricing
+       Source ARN: ${booking_api.execution_arn}/*/*
+   Outputs:
+   · pricing_api_url    — full POST endpoint URL
+   · pricing_lambda_name — logical function name
+
+4. backend-integration/clients/gentlemens-touch/prod.tfvars
+   Production configuration for AGT client:
+   · client_name       = "gentlemens-touch"
+   · environment       = "prod"
+   · domain_url        = "https://wglewis0721.github.io/AGT-2026"
+   · allowed_origin    = "https://wglewis0721.github.io"
+   · billing_report_email = "<FILL_IN_BEFORE_DEPLOY>"
+   · SSM paths under /tra3/gentlemens-touch/prod/
+   · All var.* defaults match pricing Lambda variables
+
+5. backend-integration/clients/gentlemens-touch/dev.tfvars
+   Dev configuration for AGT client:
+   · Same structure as prod; environment = "dev"
+   · No billing_report_email (billing disabled in non-prod)
+   · SSM paths under /tra3/gentlemens-touch/dev/
+   · allowed_origin = "http://localhost:5500" (local dev)
+
+6. backend-integration/lambda/pricing_lambda.zip
+   Deployable Lambda artifact:
+   · Built via: pip install stripe==7.10.0 -t build-dir + Compress-Archive
+   · Size: 3008.4 KB (includes stripe library + pricing_lambda.py)
+   · Matches source_code_hash referenced in pricing-lambda.tf
+
+CORRECTIONS APPLIED (vs. prompt template)
+------------------------------------------
+The prompt's terraform template contained several mismatches with the live
+codebase. All were corrected before writing files:
+
+  PROMPT HAD                            CORRECTED TO
+  ─────────────────────────────────────────────────────────────────────
+  aws_apigatewayv2_api.webhook_api      aws_apigatewayv2_api.booking_api
+  var.client                            var.client_name
+  var.stripe_secret_key                 data.aws_ssm_parameter.stripe_secret_key.value
+  aws_s3_bucket.deployments.id          local.s3_bucket
+  aws_s3_object resource (TF-managed)   Removed — deploy.ps1 handles S3 uploads
+  lifecycle replace_triggered_by S3     Removed — no S3 object resource
+  New standalone locals {} block        Added to existing locals in s3.tf
+  source_code_hash = s3_object.etag     filebase64sha256("../lambda/pricing_lambda.zip")
+
+QUALITY GATES
+-------------
+· terraform fmt -check → EXIT 0  (s3.tf auto-reformatted by `terraform fmt`)
+· terraform validate   → 2 pre-existing errors in lambda.tf (booking_intent.zip)
+                         and layer.tf (layer.zip) — both zip files have never
+                         existed locally; pre-date this work entirely.
+                         pricing-lambda.tf references ../lambda/pricing_lambda.zip
+                         which DOES exist — no new errors introduced.
+
+PENDING (requires live deploy)
+------------------------------
+· Run: terraform output pricing_api_url
+· Update index.html line ~3720:
+    const PRICING_API_URL = 'https://REPLACE_WITH_API_GATEWAY_URL/create-checkout';
+  Replace placeholder with actual API Gateway invoke URL output.
+
+DEPLOY COMMAND (when ready)
+----------------------------
+cd backend-integration\terraform
+terraform init
+terraform apply -var-file="..\clients\gentlemens-touch\prod.tfvars"
+
+Prerequisites:
+  1. Fill in billing_report_email in prod.tfvars
+  2. Confirm SSM parameters are populated for /tra3/gentlemens-touch/prod/
+  3. Upload pricing_lambda.zip to S3 via deploy.ps1 before terraform apply
+     (deploy script uploads all zip files to local.s3_bucket)
