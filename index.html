@@ -3797,6 +3797,14 @@
       const data = await response.json();
 
       sessionStorage.setItem('agt_cal_url', CAL_URLS[selectedPackage]);
+      sessionStorage.setItem('agt_package', selectedPackage);
+      sessionStorage.setItem('agt_addons', [...selectedAddons].join(','));
+
+      const { deposit: dep, total: tot } = _calcOrder();
+      const balance = Math.round((tot - dep) * 100) / 100;
+      sessionStorage.setItem('agt_deposit', dep.toFixed(2));
+      sessionStorage.setItem('agt_balance', balance.toFixed(2));
+
       window.location.href = data.url;
 
     } catch (err) {
