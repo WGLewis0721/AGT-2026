@@ -31,3 +31,9 @@ backend-integration/cost-reporter/cost_reporter.zip
 *.tfvars
 !backend-integration/clients/example-client/dev.tfvars
 !backend-integration/clients/example-client/prod.tfvars
+fix-lambda*.ps1
+*.png
+*.docx
+*.csv
+AGT-2026/
+artifacts/
