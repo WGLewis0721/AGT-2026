@@ -61,17 +61,15 @@ $sharedDir = Join-Path $backendDir "shared"
 $apiDir = Join-Path $repoRoot "api"
 $costReporterDir = Join-Path $backendDir "cost-reporter"
 $webhookZipPath = Join-Path $lambdaDir "lambda_function.zip"
-$bookingIntentZipPath = Join-Path $apiDir "booking_intent.zip"
-$checkoutZipPath = Join-Path $apiDir "create_checkout_session.zip"
+$pricingZipPath = Join-Path $lambdaDir "pricing_lambda.zip"
 $costReporterZipPath = Join-Path $costReporterDir "cost_reporter.zip"
 $terraformDir = Join-Path $backendDir "terraform"
 $varsFile = Join-Path $backendDir "clients/$Client/$Environment.tfvars"
 $workspaceName = if ($Environment -eq "prod") { "default" } else { $Environment }
-$backendKey = "terraform-state/$Client/terraform.tfstate"
+$backendKey = "terraform-state/$Client/$Environment/terraform.tfstate"
 
 $webhookSource = Join-Path $lambdaDir "lambda_function.py"
-$bookingIntentSource = Join-Path $apiDir "booking_intent.py"
-$checkoutSource = Join-Path $apiDir "create_checkout_session.py"
+$pricingSource = Join-Path $lambdaDir "pricing_lambda.py"
 $sharedSource = Join-Path $sharedDir "booking_common.py"
 $costReporterSource = Join-Path $costReporterDir "cost_reporter_handler.py"
 
@@ -101,20 +99,14 @@ try {
         $webhookSource,
         $sharedSource
     )
-    New-ZipFromFiles -DestinationPath $bookingIntentZipPath -Files @(
-        $bookingIntentSource,
-        $sharedSource
-    )
-    New-ZipFromFiles -DestinationPath $checkoutZipPath -Files @(
-        $checkoutSource,
-        $sharedSource
+    New-ZipFromFiles -DestinationPath $pricingZipPath -Files @(
+        $pricingSource
     )
     New-ZipFromFiles -DestinationPath $costReporterZipPath -Files @(
         $costReporterSource
     )
     Write-Host "Webhook package created: $webhookZipPath" -ForegroundColor Green
-    Write-Host "Booking intent package created: $bookingIntentZipPath" -ForegroundColor Green
-    Write-Host "Checkout session package created: $checkoutZipPath" -ForegroundColor Green
+    Write-Host "Pricing Lambda package created: $pricingZipPath" -ForegroundColor Green
     Write-Host "Cost reporter package created: $costReporterZipPath" -ForegroundColor Green
 
     Write-Host "Step 2 - Upload Lambda packages" -ForegroundColor Cyan
@@ -125,14 +117,9 @@ try {
             S3Key = "functions/$Client/$Environment/lambda_function.zip"
         },
         @{
-            Label = "Booking intent Lambda"
-            ZipPath = $bookingIntentZipPath
-            S3Key = "functions/$Client/$Environment/booking_intent.zip"
-        },
-        @{
-            Label = "Checkout session Lambda"
-            ZipPath = $checkoutZipPath
-            S3Key = "functions/$Client/$Environment/create_checkout_session.zip"
+            Label = "Pricing Lambda"
+            ZipPath = $pricingZipPath
+            S3Key = "functions/$Client/$Environment/pricing_lambda.zip"
         },
         @{
             Label = "Cost reporter Lambda"
@@ -192,19 +179,16 @@ try {
     & terraform apply -auto-approve "-var=client_name=$Client" "-var=environment=$Environment" "-var-file=../clients/$Client/$Environment.tfvars"
     Assert-LastExitCode "terraform apply"
 
-    $bookingIntentUrl = ((@(& terraform output -raw booking_intent_url)) -join "").Trim()
-    Assert-LastExitCode "terraform output booking_intent_url"
-    $checkoutUrl = ((@(& terraform output -raw create_checkout_session_url)) -join "").Trim()
-    Assert-LastExitCode "terraform output create_checkout_session_url"
     $webhookUrl = ((@(& terraform output -raw webhook_url)) -join "").Trim()
     Assert-LastExitCode "terraform output webhook_url"
+    $pricingUrl = ((@(& terraform output -raw pricing_api_url)) -join "").Trim()
+    Assert-LastExitCode "terraform output pricing_api_url"
 
     Write-Host "Deployment finished successfully." -ForegroundColor Green
     Write-Host "" -ForegroundColor White
     Write-Host "Endpoints:" -ForegroundColor White
-    Write-Host "  booking-intent:          $bookingIntentUrl" -ForegroundColor White
-    Write-Host "  create-checkout-session: $checkoutUrl" -ForegroundColor White
-    Write-Host "  webhook:                 $webhookUrl" -ForegroundColor White
+    Write-Host "  webhook:      $webhookUrl" -ForegroundColor White
+    Write-Host "  pricing API:  $pricingUrl" -ForegroundColor White
 }
 finally {
     Set-Location $repoRoot

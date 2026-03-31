@@ -19,6 +19,7 @@ jsconfig.json
 backend-integration/lambda/build/
 backend-integration/lambda/booking-lambda.zip
 backend-integration/lambda/lambda_function.zip
+backend-integration/lambda/pricing_lambda.zip
 backend-integration/layer/layer-build/
 backend-integration/layer/layer.zip
 backend-integration/layer/.requirements.hash
