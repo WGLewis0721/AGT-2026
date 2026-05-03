@@ -1965,6 +1965,132 @@
   }
   @media (max-width: 768px) { .service-area { padding: 60px 20px; } }
 
+  /* ─── FLEET IMAGE ─── */
+  .fleet-image {
+    width: 100%;
+    height: auto;
+    border-radius: 8px;
+    object-fit: cover;
+  }
+
+  /* ─── FLEET SECTION ─── */
+  .fleet-section {
+    background: var(--black-soft);
+    border-top: 1px solid var(--black-border);
+  }
+
+  .fleet-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 80px;
+    align-items: center;
+    margin-top: 60px;
+  }
+
+  .fleet-text-col { order: 1; }
+  .fleet-image-col { order: 2; }
+
+  .fleet-body {
+    font-size: 14px;
+    line-height: 2;
+    color: var(--white-muted);
+    font-weight: 300;
+    margin-bottom: 0;
+  }
+
+  .fleet-standards {
+    margin-top: 32px;
+    padding-top: 32px;
+    border-top: 1px solid var(--black-border);
+  }
+
+  .fleet-standards-title {
+    font-size: 10px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 16px;
+    font-weight: 600;
+  }
+
+  .fleet-standards p {
+    font-size: 13px;
+    color: var(--white-muted);
+    line-height: 1.9;
+    font-weight: 300;
+    margin-bottom: 16px;
+  }
+
+  .fleet-standards-list {
+    list-style: none;
+    margin-bottom: 28px;
+  }
+
+  .fleet-standards-list li {
+    font-size: 12px;
+    color: var(--white-muted);
+    padding: 9px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    font-weight: 300;
+    line-height: 1.6;
+  }
+
+  .fleet-standards-list li::before {
+    content: '✦';
+    color: var(--gold);
+    font-size: 8px;
+    margin-top: 4px;
+    flex-shrink: 0;
+  }
+
+  .fleet-img-placeholder {
+    aspect-ratio: 4/3;
+    background: linear-gradient(135deg, #161616 0%, #1a1a1a 50%, #0f0f0f 100%);
+    border: 1px solid var(--black-border);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .fleet-img-placeholder p {
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--white-muted);
+    font-weight: 500;
+    opacity: 0.5;
+  }
+
+  @media (max-width: 1024px) {
+    .fleet-layout { grid-template-columns: 1fr; gap: 48px; }
+    .fleet-image-col { order: -1; }
+  }
+
+  @media (max-width: 768px) {
+    .fleet-section { padding: 60px 20px; }
+  }
+
+  /* ─── DETAILING CTA SECTION ─── */
+  .detailing-cta-section {
+    background: var(--black);
+    border-top: 1px solid var(--black-border);
+    text-align: center;
+  }
+
+  .detailing-cta-section .section-label { justify-content: center; }
+  .detailing-cta-section .section-label::before { display: none; }
+
+  @media (max-width: 768px) {
+    .detailing-cta-section { padding: 60px 20px; }
+  }
+
 </style>
 </head>
 <body>
@@ -1980,6 +2106,7 @@
     <li><a href="#how-it-works">How It Works</a></li>
     <li><a href="#faq">FAQ</a></li>
     <li><a href="#service-area">Service Area</a></li>
+    <li><a href="/AGT-2026/fleet.html">Fleet</a></li>
     <li><a href="#booking">Contact</a></li>
   </ul>
   <a href="tel:3342948228" style="color:var(--gold);font-size:12px;letter-spacing:2px;text-decoration:none;font-weight:600;display:none" id="navPhone">(334) 294-8228</a>
@@ -2003,6 +2130,7 @@
     <div class="hero-actions">
       <a href="#booking" class="btn-gold">Book Appointment</a>
       <a href="#packages" class="btn-outline">View Packages</a>
+      <a href="/AGT-2026/fleet.html" class="btn-outline" style="border-color:rgba(201,168,76,0.35);color:var(--white-muted);font-size:10px;letter-spacing:2px;">Fleet Services</a>
     </div>
     <div class="hero-phone" style="margin-top: 36px;">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 014.69 6.11 19.79 19.79 0 011.62 2.52 2 2 0 013.69.5h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L7.91 8.15a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
@@ -2038,6 +2166,49 @@
     <div class="stat-label">Years in Business</div>
   </div>
 </div>
+
+<!-- ─── FLEET WASHING ─── -->
+<section class="fleet-section" id="fleet">
+  <div class="section-label fade-in">Commercial Services</div>
+  <h2 class="section-title fade-in">Fleet Washing for <em>Businesses</em></h2>
+  <p class="fleet-body fade-in" style="max-width:560px">Keep your fleet clean, professional, and ready for the road with reliable on-site service.</p>
+  <div class="fleet-layout">
+    <div class="fleet-text-col fade-in">
+      <p style="font-size:14px;line-height:2;color:var(--white-muted);font-weight:300;margin-bottom:0">We provide custom fleet washing solutions for delivery vehicles, service trucks, and business fleets. Flexible scheduling and recurring service available.</p>
+
+      <!-- Built for Commercial Standards -->
+      <div class="fleet-standards">
+        <div class="fleet-standards-title">Built for Commercial Standards</div>
+        <p>Our fleet washing program is designed to meet DOT and municipal cleanliness expectations while minimizing operational disruption. We understand that clean vehicles represent your brand on the road — and we treat every unit accordingly.</p>
+        <ul class="fleet-standards-list">
+          <li>Heated pressure washers and high-GPM systems for thorough, efficient cleaning</li>
+          <li>Professional-grade detergents and conditioning agents safe for commercial-grade paint and decals</li>
+          <li>Responsible wash practices — we're mindful of runoff and environmental impact</li>
+          <li>Fast, systematic service designed to keep your vehicles in service rotation with minimal downtime</li>
+          <li>Flexible recurring schedules — weekly, bi-weekly, or monthly service agreements available</li>
+        </ul>
+        <a href="/AGT-2026/fleet.html" class="btn-outline" style="display:inline-block">Learn More</a>
+      </div>
+    </div>
+    <div class="fleet-image-col fade-in">
+      <img src="assets/fleet-hero.jpg" alt="AGT Fleet Washing Service" class="fleet-image" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+      <div class="fleet-img-placeholder" style="display:none">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="rgba(201,168,76,0.3)" stroke-width="1"><rect x="1" y="3" width="22" height="13" rx="2"/><path d="M5 21h14M12 17v4"/></svg>
+        <p>Fleet Image Coming Soon</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── INDIVIDUAL DETAILING CTA ─── -->
+<section class="detailing-cta-section" id="detailing">
+  <div class="fade-in">
+    <div class="section-label">For Your Vehicle</div>
+    <h2 class="section-title">Individual Detailing <em>Services</em></h2>
+    <p style="font-size:13px;color:var(--white-muted);max-width:500px;margin:0 auto 40px;line-height:1.8;font-weight:300">Premium detailing packages tailored to your vehicle. Choose your service, select a time, and book instantly.</p>
+    <a href="#booking" class="btn-gold">Book Now</a>
+  </div>
+</section>
 
 <!-- ─── ABOUT ─── -->
 <section class="about" id="about">
@@ -2161,7 +2332,7 @@
         <li>Dashboard &amp; console wipe-down</li>
         <li>Door jamb cleaning</li>
       </ul>
-      <button class="btn-package" onclick="openBookingModal('https://cal.com/william-g.-lewis-ai51kb/mobile-detail-appointment-service-1', 'https://buy.stripe.com/9B6bJ2ahTf73cDH1Qp1ZS00')">Book &amp; Pay Deposit &rarr;</button>
+      <button class="btn-package" onclick="selectAndScroll('sm_detail')">Select Package &rarr;</button>
     </div>
     <!-- Medium -->
     <div class="package-card featured fade-in">
@@ -2177,7 +2348,7 @@
         <li>Tire dressing application</li>
         <li>Door pocket &amp; crevice detailing</li>
       </ul>
-      <button class="btn-package" onclick="openBookingModal('https://cal.com/william-g.-lewis-ai51kb/mobile-detail-appointment-service-2')">Book &amp; Pay Deposit &rarr;</button>
+      <button class="btn-package" onclick="selectAndScroll('md_detail')">Select Package &rarr;</button>
     </div>
     <!-- Large -->
     <div class="package-card fade-in">
@@ -2193,7 +2364,7 @@
         <li>Full door jamb degreasing</li>
         <li>Third-row &amp; cargo area detail</li>
       </ul>
-      <button class="btn-package" onclick="openBookingModal('https://cal.com/william-g.-lewis-ai51kb/mobile-detail-appointment-service-3')">Book &amp; Pay Deposit &rarr;</button>
+      <button class="btn-package" onclick="selectAndScroll('lg_detail')">Select Package &rarr;</button>
     </div>
   </div>
 </section>
@@ -2314,13 +2485,13 @@
       <div class="how-step-num">Step 02</div>
       <div class="how-step-icon">📅</div>
       <div class="how-step-title">Pick a Date &amp; Time</div>
-      <p class="how-step-desc">Choose your date and time, then pay your deposit securely online. Your booking is confirmed instantly — no waiting for manual verification.</p>
+      <p class="how-step-desc">Pay your deposit securely online, then choose your appointment date and time. Your booking is confirmed instantly.</p>
     </div>
     <div class="how-step fade-in">
       <div class="how-step-num">Step 03</div>
       <div class="how-step-icon">📍</div>
       <div class="how-step-title">We Come To You</div>
-      <p class="how-step-desc">Your detailer arrives fully equipped at your home, office, or any location.</p>
+      <p class="how-step-desc">Your detailer arrives fully equipped. The remaining balance is collected on-site when the job is done to your satisfaction.</p>
     </div>
     <div class="how-step fade-in">
       <div class="how-step-num">Step 04</div>
@@ -3161,69 +3332,299 @@
     .progress-step .step-label { font-size: 8px; }
     .progress-bar { top: 60px; }
   }
+
+  /* ─── PRICING ENGINE UI ─── */
+  .booking-engine {
+    max-width: 1080px;
+    margin: 0 auto;
+  }
+
+  .booking-section-label {
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--gold);
+    font-weight: 600;
+    margin-bottom: 24px;
+    font-family: 'Montserrat', sans-serif;
+  }
+
+  .pkg-card {
+    background: var(--black-card);
+    border: 1px solid var(--black-border);
+    padding: 32px 24px;
+    cursor: pointer;
+    transition: border-color 0.25s, transform 0.25s, background 0.25s;
+    position: relative;
+  }
+
+  .pkg-card .pkg-check {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    color: var(--gold);
+    font-size: 18px;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .pkg-card.selected .pkg-check {
+    opacity: 1;
+  }
+
+  .pkg-card:hover {
+    border-color: rgba(201,168,76,0.4);
+    transform: translateY(-2px);
+  }
+
+  .pkg-card.selected {
+    border-color: var(--gold);
+    background: rgba(201,168,76,0.04);
+  }
+
+  .addon-pills-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-bottom: 40px;
+  }
+
+  .addon-pill {
+    border: 1px solid var(--black-border);
+    padding: 14px 16px;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .addon-pill:hover {
+    border-color: rgba(201,168,76,0.4);
+  }
+
+  .addon-pill.active {
+    border-color: var(--gold);
+    background: rgba(201,168,76,0.06);
+  }
+
+  .addon-pill-name {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--white);
+    font-family: 'Montserrat', sans-serif;
+    letter-spacing: 0.5px;
+  }
+
+  .addon-pill.active .addon-pill-name {
+    color: var(--gold);
+  }
+
+  .addon-pill-price {
+    font-size: 11px;
+    color: var(--white-muted);
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 300;
+  }
+
+  .addon-pill.active .addon-pill-price {
+    color: var(--gold);
+  }
+
+  .price-summary {
+    background: var(--black-soft);
+    border: 1px solid var(--black-border);
+    border-top: 2px solid var(--gold);
+    padding: 32px;
+    max-width: 560px;
+    margin: 0 auto;
+  }
+
+  .price-summary-lines {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .summary-line {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 300;
+    color: var(--white-soft);
+  }
+
+  .summary-divider {
+    border-top: 1px solid var(--black-border);
+    margin: 8px 0;
+  }
+
+  .summary-total {
+    font-weight: 500;
+    font-size: 14px;
+  }
+
+  .summary-deposit {
+    color: var(--gold);
+    font-weight: 600;
+    font-size: 16px;
+  }
+
+  #checkout-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  #checkout-btn:not(:disabled) {
+    opacity: 1;
+    cursor: pointer;
+  }
+
+  @media (max-width: 1024px) {
+    .addon-pills-grid { grid-template-columns: repeat(3, 1fr); }
+  }
+
+  @media (max-width: 768px) {
+    .addon-pills-grid { grid-template-columns: repeat(2, 1fr); }
+    .price-summary { padding: 24px 20px; }
+  }
 </style>
 
 <section class="booking-funnel" id="booking">
   <div class="section-label" style="justify-content:center">Book Your Service</div>
-  <h2 class="section-title" style="text-align:center;">Schedule Your <em>Appointment</em></h2>
+  <h2 class="section-title" style="text-align:center;">Build Your <em>Detail Package</em></h2>
   <p style="text-align:center; color:#888; font-family:'Montserrat',sans-serif; font-size:14px; margin-bottom:48px; max-width:600px; margin-left:auto; margin-right:auto;">
-    Choose your package below. You'll sign our service agreement and pay your deposit securely via Stripe — all in one flow.
+    Select your package, choose any add-ons, and pay your 20% deposit securely. Your appointment is confirmed instantly.
   </p>
 
-  <div class="packages-grid" style="max-width:1000px; margin:0 auto 48px;">
-    <div class="package-card fade-in" style="cursor:pointer;" onclick="openBookingModal('https://cal.com/william-g.-lewis-ai51kb/mobile-detail-appointment-service-1', 'https://buy.stripe.com/9B6bJ2ahTf73cDH1Qp1ZS00')">
-      <div class="package-size">Small Vehicle</div>
-      <div class="package-name">Full Luxury Detail</div>
-      <div class="package-time">⏱ ~90 minutes</div>
-      <div class="package-price">$100</div>
-      <div class="package-price-note">20% deposit = $20</div>
-      <div class="package-divider"></div>
-      <ul class="package-features">
-        <li>Hand wash &amp; bug removal</li>
-        <li>Vacuum &amp; wipe interior</li>
-        <li>Window cleaning (int/ext)</li>
-        <li>Wheel &amp; tire cleaning</li>
-        <li>Dashboard treatment</li>
-      </ul>
-      <button class="btn-gold" type="button" style="width:100%; margin-top:20px;" onclick="event.stopPropagation(); openBookingModal('https://cal.com/william-g.-lewis-ai51kb/mobile-detail-appointment-service-1', 'https://buy.stripe.com/9B6bJ2ahTf73cDH1Qp1ZS00')">Book Now — Small Vehicle</button>
+  <div class="booking-engine">
+
+    <!-- Part A: Package Selector -->
+    <div class="booking-section-label">Step 1 — Choose Your Package</div>
+    <div class="packages-grid" style="margin-bottom:48px;">
+      <div class="pkg-card fade-in" data-pkg="sm_detail" onclick="selectPackage('sm_detail')">
+        <div class="pkg-check">✦</div>
+        <div class="package-size">Small Vehicle</div>
+        <div class="package-name">Full Luxury Detail</div>
+        <div class="package-time">⏱ ~90 minutes</div>
+        <div class="package-price">$100</div>
+        <div class="package-divider"></div>
+        <ul class="package-features">
+          <li>Hand wash &amp; bug removal</li>
+          <li>Full interior vacuum</li>
+          <li>Interior &amp; exterior windows</li>
+          <li>Wheel &amp; tire cleaning</li>
+          <li>Dashboard &amp; console wipe-down</li>
+        </ul>
+      </div>
+      <div class="pkg-card fade-in" data-pkg="md_detail" onclick="selectPackage('md_detail')">
+        <div class="pkg-check">✦</div>
+        <div class="package-size">Medium Vehicle <span style="background:var(--gold);color:var(--black);font-size:9px;font-weight:700;letter-spacing:1px;padding:3px 8px;border-radius:2px;vertical-align:middle;margin-left:8px">Most Popular</span></div>
+        <div class="package-name">Full Luxury Detail</div>
+        <div class="package-time">⏱ ~120 minutes</div>
+        <div class="package-price">$150</div>
+        <div class="package-divider"></div>
+        <ul class="package-features">
+          <li>Everything in Small</li>
+          <li>Deeper seat &amp; carpet extraction</li>
+          <li>Tire dressing application</li>
+          <li>Door pocket &amp; crevice detailing</li>
+        </ul>
+      </div>
+      <div class="pkg-card fade-in" data-pkg="lg_detail" onclick="selectPackage('lg_detail')">
+        <div class="pkg-check">✦</div>
+        <div class="package-size">Large / SUV / Truck</div>
+        <div class="package-name">Full Luxury Detail</div>
+        <div class="package-time">⏱ ~150–180 minutes</div>
+        <div class="package-price">$200</div>
+        <div class="package-divider"></div>
+        <ul class="package-features">
+          <li>Everything in Medium</li>
+          <li>Extended steam on surfaces</li>
+          <li>Full door jamb degreasing</li>
+          <li>Third-row &amp; cargo area detail</li>
+        </ul>
+      </div>
     </div>
 
-    <div class="package-card featured fade-in" style="cursor:pointer; border-color:#C9A84C;" onclick="openBookingModal('https://cal.com/william-g.-lewis-ai51kb/mobile-detail-appointment-service-2')">
-      <div class="package-size">Medium Vehicle <span style="background:#C9A84C; color:#000; font-size:10px; padding:2px 8px; border-radius:20px; margin-left:8px; font-family:'Montserrat',sans-serif;">Most Popular</span></div>
-      <div class="package-name">Full Luxury Detail</div>
-      <div class="package-time">⏱ ~120 minutes</div>
-      <div class="package-price">$150</div>
-      <div class="package-price-note">20% deposit = $30</div>
-      <div class="package-divider"></div>
-      <ul class="package-features">
-        <li>Everything in Small</li>
-        <li>Deeper seat &amp; carpet extraction</li>
-        <li>Tire dressing application</li>
-        <li>Door pocket &amp; crevice detailing</li>
-      </ul>
-      <button class="btn-gold" type="button" style="width:100%; margin-top:20px;" onclick="event.stopPropagation(); openBookingModal('https://cal.com/william-g.-lewis-ai51kb/mobile-detail-appointment-service-2')">Book Now — Medium Vehicle</button>
+    <!-- Part B: Add-on Toggles -->
+    <div class="booking-section-label">Step 2 — Add Premium Services <span style="color:var(--white-muted);font-weight:300;font-size:10px;letter-spacing:1px">(Optional)</span></div>
+    <div class="addon-pills-grid">
+      <div class="addon-pill" data-addon="pet_hair" onclick="toggleAddon('pet_hair')">
+        <span class="addon-pill-name">Pet Hair Removal</span>
+        <span class="addon-pill-price">+$20</span>
+      </div>
+      <div class="addon-pill" data-addon="shampooing" onclick="toggleAddon('shampooing')">
+        <span class="addon-pill-name">Interior Shampooing</span>
+        <span class="addon-pill-price">+$15</span>
+      </div>
+      <div class="addon-pill" data-addon="upholstery" onclick="toggleAddon('upholstery')">
+        <span class="addon-pill-name">Upholstery Shampoo</span>
+        <span class="addon-pill-price">+$15</span>
+      </div>
+      <div class="addon-pill" data-addon="wax" onclick="toggleAddon('wax')">
+        <span class="addon-pill-name">Hand Wax Upgrade</span>
+        <span class="addon-pill-price">+$20</span>
+      </div>
+      <div class="addon-pill" data-addon="steam" onclick="toggleAddon('steam')">
+        <span class="addon-pill-name">Steam Cleaning</span>
+        <span class="addon-pill-price">+$10</span>
+      </div>
+      <div class="addon-pill" data-addon="polishing" onclick="toggleAddon('polishing')">
+        <span class="addon-pill-name">Machine Polishing</span>
+        <span class="addon-pill-price">+$20</span>
+      </div>
+      <div class="addon-pill" data-addon="headlights" onclick="toggleAddon('headlights')">
+        <span class="addon-pill-name">Headlight Restoration</span>
+        <span class="addon-pill-price">+$15</span>
+      </div>
+      <div class="addon-pill" data-addon="odor" onclick="toggleAddon('odor')">
+        <span class="addon-pill-name">Odor Removal</span>
+        <span class="addon-pill-price">+$10</span>
+      </div>
+      <div class="addon-pill" data-addon="engine_bay" onclick="toggleAddon('engine_bay')">
+        <span class="addon-pill-name">Engine Bay Cleaning</span>
+        <span class="addon-pill-price">+$15</span>
+      </div>
+      <div class="addon-pill" data-addon="leather" onclick="toggleAddon('leather')">
+        <span class="addon-pill-name">Leather Treatment</span>
+        <span class="addon-pill-price">+$15</span>
+      </div>
     </div>
 
-    <div class="package-card fade-in" style="cursor:pointer;" onclick="openBookingModal('https://cal.com/william-g.-lewis-ai51kb/mobile-detail-appointment-service-3')">
-      <div class="package-size">Large / SUV / Truck</div>
-      <div class="package-name">Full Luxury Detail</div>
-      <div class="package-time">⏱ ~150 minutes</div>
-      <div class="package-price">$200</div>
-      <div class="package-price-note">20% deposit = $40</div>
-      <div class="package-divider"></div>
-      <ul class="package-features">
-        <li>Everything in Medium</li>
-        <li>Extended steam on surfaces</li>
-        <li>Full door jamb degreasing</li>
-        <li>Third-row &amp; cargo area detail</li>
-      </ul>
-      <button class="btn-gold" type="button" style="width:100%; margin-top:20px;" onclick="event.stopPropagation(); openBookingModal('https://cal.com/william-g.-lewis-ai51kb/mobile-detail-appointment-service-3')">Book Now — Large Vehicle</button>
+    <!-- Part C: Price Summary + Checkout -->
+    <div class="price-summary">
+      <div class="price-summary-lines">
+        <div class="summary-line summary-pkg-line" id="pkg-line" style="display:none;">
+          <span id="pkg-line-name">—</span>
+          <span id="pkg-line-price">—</span>
+        </div>
+        <div id="addon-lines"></div>
+        <div class="summary-divider"></div>
+        <div class="summary-line summary-total">
+          <span>Total</span>
+          <span id="total-amount">$0.00</span>
+        </div>
+        <div class="summary-line summary-deposit">
+          <span>Deposit (20%)</span>
+          <span id="deposit-amount">$0.00</span>
+        </div>
+      </div>
+      <button
+        id="checkout-btn"
+        class="btn-gold"
+        disabled
+        onclick="openBookingModal('', '')"
+        style="width:100%; margin-top:24px; padding:18px; font-size:13px; letter-spacing:2px;"
+      >Select a Package to Continue</button>
+      <p style="text-align:center; font-size:11px; color:#555; margin-top:12px; font-family:'Montserrat',sans-serif; line-height:1.6;">
+        You'll review our service agreement before checkout. Secure payment via Stripe.
+      </p>
     </div>
+
   </div>
-
-  <p style="text-align:center; color:#666; font-family:'Montserrat',sans-serif; font-size:13px; max-width:560px; margin:0 auto;">
-    After selecting your package, you'll be taken to our booking page to choose your date, time, and pay your deposit securely via Stripe. Your appointment is confirmed instantly.
-  </p>
 </section>
 
 <!-- ─── SERVICE AREA ─── -->
@@ -3397,9 +3798,21 @@
   let pendingCalUrl = '';
   let pendingStripeUrl = '';
 
-  function toggleAddon(el) {
-    if (el) {
-      el.classList.toggle('selected');
+  function toggleAddon(keyOrEl) {
+    if (typeof keyOrEl === 'string') {
+      // Pricing engine addon pill
+      if (selectedAddons.has(keyOrEl)) {
+        selectedAddons.delete(keyOrEl);
+      } else {
+        selectedAddons.add(keyOrEl);
+      }
+      document.querySelectorAll('.addon-pill').forEach(pill => {
+        pill.classList.toggle('active', selectedAddons.has(pill.dataset.addon));
+      });
+      updatePriceSummary();
+    } else {
+      // Legacy addon card (el is a DOM element)
+      if (keyOrEl) keyOrEl.classList.toggle('selected');
     }
   }
 
@@ -3423,21 +3836,14 @@
   }
 
   function agreeAndBook() {
-    if (pendingCalUrl) {
-      window.open(pendingCalUrl, '_blank', 'noopener');
-      const stripeUrl = pendingStripeUrl;
-      pendingCalUrl = '';
-      pendingStripeUrl = '';
-      const modal = document.getElementById('waiver-modal');
-      if (modal) modal.classList.remove('open');
-      document.body.style.overflow = '';
-      if (stripeUrl) {
-        window.location.href = stripeUrl;
-      }
-    } else {
-      const modal = document.getElementById('waiver-modal');
-      if (modal) modal.classList.remove('open');
-      document.body.style.overflow = '';
+    const modal = document.getElementById('waiver-modal');
+    if (modal) modal.classList.remove('open');
+    pendingCalUrl    = '';
+    pendingStripeUrl = '';
+    document.body.style.overflow = '';
+    // If coming from pricing engine, initiate checkout
+    if (selectedPackage) {
+      initiateCheckout();
     }
   }
 
@@ -3453,6 +3859,137 @@
   document.getElementById('waiver-modal').addEventListener('click', function(e) {
     if (e.target === this) closeWaiverModal();
   });
+
+  // ─── PRICING ENGINE ────────────────────────────────────────────────────
+
+  const PACKAGES = {
+    sm_detail: { name: 'Small Vehicle Detail',  price: 100 },
+    md_detail: { name: 'Medium Vehicle Detail', price: 150 },
+    lg_detail: { name: 'Large / SUV / Truck',   price: 200 },
+  };
+
+  const ADDONS = {
+    pet_hair:   { name: 'Pet Hair Removal',      price: 20 },
+    shampooing: { name: 'Interior Shampooing',   price: 15 },
+    upholstery: { name: 'Upholstery Shampoo',    price: 15 },
+    wax:        { name: 'Hand Wax Upgrade',      price: 20 },
+    steam:      { name: 'Steam Cleaning',        price: 10 },
+    polishing:  { name: 'Machine Polishing',     price: 20 },
+    headlights: { name: 'Headlight Restoration', price: 15 },
+    odor:       { name: 'Odor Removal',          price: 10 },
+    engine_bay: { name: 'Engine Bay Cleaning',   price: 15 },
+    leather:    { name: 'Leather Treatment',     price: 15 },
+  };
+
+  const CAL_URLS = {
+    sm_detail: 'https://cal.com/william-g.-lewis-ai51kb/mobile-detail-appointment-service-1',
+    md_detail: 'https://cal.com/william-g.-lewis-ai51kb/mobile-detail-appointment-service-2',
+    lg_detail: 'https://cal.com/william-g.-lewis-ai51kb/mobile-detail-appointment-service-3',
+  };
+
+  const DEPOSIT_RATE    = 0.20;
+  const PRICING_API_URL = 'https://c4eki550u8.execute-api.us-east-1.amazonaws.com/create-checkout';
+
+  let selectedPackage = null;
+  let selectedAddons  = new Set();
+
+  function selectPackage(key) {
+    selectedPackage = key;
+    document.querySelectorAll('.pkg-card').forEach(card => {
+      card.classList.toggle('selected', card.dataset.pkg === key);
+    });
+    const pkgLine = document.getElementById('pkg-line');
+    const pkgLineName = document.getElementById('pkg-line-name');
+    const pkgLinePrice = document.getElementById('pkg-line-price');
+    if (pkgLine) pkgLine.style.display = 'flex';
+    if (pkgLineName) pkgLineName.textContent = PACKAGES[key].name;
+    if (pkgLinePrice) pkgLinePrice.textContent = '$' + PACKAGES[key].price.toFixed(2);
+    updatePriceSummary();
+  }
+
+  function _calcOrder() {
+    const pkgPrice   = selectedPackage ? PACKAGES[selectedPackage].price : 0;
+    const addonTotal = [...selectedAddons].reduce(
+      (sum, key) => sum + ADDONS[key].price, 0
+    );
+    const total   = pkgPrice + addonTotal;
+    const deposit = Math.round(total * DEPOSIT_RATE * 100) / 100;
+    return { total, deposit };
+  }
+
+  function updatePriceSummary() {
+    const { total, deposit } = _calcOrder();
+    const depositEl    = document.getElementById('deposit-amount');
+    const totalEl      = document.getElementById('total-amount');
+    const checkoutBtn  = document.getElementById('checkout-btn');
+    const addonLinesEl = document.getElementById('addon-lines');
+
+    if (totalEl)   totalEl.textContent   = '$' + total.toFixed(2);
+    if (depositEl) depositEl.textContent = '$' + deposit.toFixed(2);
+
+    if (checkoutBtn) {
+      checkoutBtn.disabled    = !selectedPackage;
+      checkoutBtn.textContent = selectedPackage
+        ? 'Book Now — Pay $' + deposit.toFixed(2) + ' Deposit'
+        : 'Select a Package to Continue';
+    }
+
+    if (addonLinesEl) {
+      addonLinesEl.innerHTML = [...selectedAddons].map(key =>
+        '<div class="summary-line">' +
+          '<span>' + ADDONS[key].name + '</span>' +
+          '<span>$' + ADDONS[key].price.toFixed(2) + '</span>' +
+        '</div>'
+      ).join('');
+    }
+  }
+
+  async function initiateCheckout() {
+    if (!selectedPackage) return;
+    const { total, deposit } = _calcOrder();
+    const btn = document.getElementById('checkout-btn');
+    btn.disabled    = true;
+    btn.textContent = 'Preparing your checkout...';
+
+    try {
+      const response = await fetch(PRICING_API_URL, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({
+          package: selectedPackage,
+          addons:  [...selectedAddons],
+          cal_url: CAL_URLS[selectedPackage],
+          client:  'gentlemens-touch',
+        }),
+      });
+
+      if (!response.ok) throw new Error('Checkout creation failed');
+
+      const data = await response.json();
+
+      sessionStorage.setItem('agt_cal_url', CAL_URLS[selectedPackage]);
+      sessionStorage.setItem('agt_package', selectedPackage);
+      sessionStorage.setItem('agt_addons', [...selectedAddons].join(','));
+
+      const { deposit: dep, total: tot } = _calcOrder();
+      const balance = Math.round((tot - dep) * 100) / 100;
+      sessionStorage.setItem('agt_deposit', dep.toFixed(2));
+      sessionStorage.setItem('agt_balance', balance.toFixed(2));
+
+      window.location.href = data.url;
+
+    } catch (err) {
+      console.error('Checkout error:', err);
+      btn.disabled    = false;
+      btn.textContent = 'Book Now — Pay $' + deposit.toFixed(2) + ' Deposit';
+      alert('Something went wrong. Please try again or call (334) 652-2601.');
+    }
+  }
+
+  function selectAndScroll(key) {
+    selectPackage(key);
+    document.getElementById('booking').scrollIntoView({ behavior: 'smooth' });
+  }
 
   // ─── FIX 6: FAQ ACCORDION ───
   function toggleFaq(btn) {

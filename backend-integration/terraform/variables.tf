@@ -94,3 +94,35 @@ variable "log_retention" {
   type        = number
   default     = 14
 }
+
+# ─── Pricing API Lambda ──────────────────────────────────────────────────────
+
+variable "pricing_lambda_handler" {
+  description = "Handler for pricing Lambda"
+  type        = string
+  default     = "pricing_lambda.lambda_handler"
+}
+
+variable "pricing_lambda_runtime" {
+  description = "Runtime for pricing Lambda"
+  type        = string
+  default     = "python3.11"
+}
+
+variable "pricing_lambda_timeout" {
+  description = "Timeout in seconds for pricing Lambda"
+  type        = number
+  default     = 10
+}
+
+variable "pricing_lambda_memory" {
+  description = "Memory in MB for pricing Lambda"
+  type        = number
+  default     = 128
+}
+
+variable "allowed_origin" {
+  description = "Allowed CORS origin for pricing API"
+  type        = string
+  default     = "https://wglewis0721.github.io"
+}
