@@ -960,13 +960,35 @@
     .nav-logo img { height: 52px; }
     .badge-grid { grid-template-columns: 1fr; }
   }
+
+  /* ─── UTILITY ─── */
+  .nav-logo-img { height: 90px; }
+  .nav-phone-scroll {
+    color: var(--gold);
+    font-size: 12px;
+    letter-spacing: 2px;
+    text-decoration: none;
+    font-weight: 600;
+    display: none;
+  }
+  .fleet-types-header-body {
+    font-size: 13px;
+    color: var(--white-muted);
+    line-height: 1.8;
+    font-weight: 300;
+    max-width: 520px;
+  }
+  .btn-cta-full {
+    width: 100%;
+    text-align: center;
+  }
 </style>
 </head>
 <body>
 
 <!-- ─── NAV ─── -->
 <nav id="mainNav">
-  <a href="/AGT-2026/" class="nav-logo"><img src="images/photo-10.png" alt="A Gentlemen's Touch Logo" style="height:90px;"></a>
+  <a href="/AGT-2026/" class="nav-logo"><img src="images/photo-10.png" alt="A Gentlemen's Touch Logo" class="nav-logo-img"></a>
   <ul class="nav-links">
     <li><a href="/AGT-2026/#about">About</a></li>
     <li><a href="/AGT-2026/#services">Services</a></li>
@@ -975,7 +997,7 @@
     <li><a href="/AGT-2026/fleet.html" class="active">Fleet</a></li>
     <li><a href="/AGT-2026/#booking">Contact</a></li>
   </ul>
-  <a href="tel:3342948228" style="color:var(--gold);font-size:12px;letter-spacing:2px;text-decoration:none;font-weight:600;display:none" id="navPhone">(334) 294-8228</a>
+  <a href="tel:3342948228" class="nav-phone-scroll" id="navPhone">(334) 294-8228</a>
   <a href="tel:3342948228" class="nav-cta">Call for a Quote</a>
   <button class="hamburger" onclick="toggleMenu()" aria-label="Menu">
     <span></span><span></span><span></span>
@@ -1024,7 +1046,7 @@
   <div class="fleet-types-header fade-in">
     <div class="section-label">What We Wash</div>
     <h2 class="section-title">Every Type of <em>Commercial Vehicle</em></h2>
-    <p style="font-size:13px;color:var(--white-muted);line-height:1.8;font-weight:300;max-width:520px">From compact delivery vans to heavy-duty semis and municipal equipment — AGT has the equipment and experience to keep your fleet looking its best.</p>
+    <p class="fleet-types-header-body">From compact delivery vans to heavy-duty semis and municipal equipment — AGT has the equipment and experience to keep your fleet looking its best.</p>
   </div>
 
   <div class="fleet-cards">
@@ -1245,8 +1267,8 @@
     <p class="cta-banner-sub">Call or email for a free, no-obligation fleet quote. We serve Montgomery, Prattville, Millbrook, and surrounding Autauga and Elmore County areas.</p>
   </div>
   <div class="cta-banner-actions fade-in">
-    <a href="tel:3342948228" class="btn-gold" style="width:100%;text-align:center">📞 (334) 294-8228</a>
-    <a href="mailto:gentlemenstouch5@gmail.com" class="btn-outline" style="width:100%;text-align:center">Email Us</a>
+    <a href="tel:3342948228" class="btn-gold btn-cta-full">📞 (334) 294-8228</a>
+    <a href="mailto:gentlemenstouch5@gmail.com" class="btn-outline btn-cta-full">Email Us</a>
     <div class="cta-contact-row">
       <span class="cta-contact-item">Mon–Sat 8AM–6PM</span>
     </div>
