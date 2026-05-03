@@ -2048,24 +2048,26 @@
 
   .fleet-img-placeholder {
     aspect-ratio: 4/3;
-    background: linear-gradient(135deg, #161616 0%, #1a1a1a 50%, #0f0f0f 100%);
-    border: 1px solid var(--black-border);
+    background:
+      repeating-linear-gradient(-45deg, transparent, transparent 28px, rgba(201,168,76,0.03) 28px, rgba(201,168,76,0.03) 56px),
+      linear-gradient(135deg, #111 0%, #181818 50%, #0d0d0d 100%);
+    border: 1px solid rgba(201,168,76,0.14);
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 14px;
-    border-radius: 8px;
+    gap: 18px;
+    border-radius: 4px;
     overflow: hidden;
+    position: relative;
   }
 
   .fleet-img-placeholder p {
-    font-size: 10px;
-    letter-spacing: 3px;
+    font-size: 9px;
+    letter-spacing: 4px;
     text-transform: uppercase;
-    color: var(--white-muted);
-    font-weight: 500;
-    opacity: 0.5;
+    color: rgba(201,168,76,0.45);
+    font-weight: 600;
   }
 
   @media (max-width: 1024px) {
@@ -2112,12 +2114,24 @@
   .fleet-hero-visual-placeholder {
     width: 100%;
     height: 100%;
-    background: linear-gradient(135deg, #111 0%, #1a1a1a 50%, #0d0d0d 100%);
+    background:
+      repeating-linear-gradient(-45deg, transparent, transparent 36px, rgba(201,168,76,0.025) 36px, rgba(201,168,76,0.025) 72px),
+      linear-gradient(160deg, #0d0d0d 0%, #161616 50%, #0a0a0a 100%);
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
-    font-size: 56px;
-    opacity: 0.15;
+    gap: 14px;
+  }
+
+  .fleet-hero-ph-icon { font-size: 48px; opacity: 0.18; }
+
+  .fleet-hero-ph-label {
+    font-size: 9px;
+    letter-spacing: 5px;
+    text-transform: uppercase;
+    color: rgba(201,168,76,0.35);
+    font-weight: 600;
   }
 
   .fleet-hero-overlay {
@@ -2252,11 +2266,23 @@
     width: 100%;
     height: 100%;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
-    font-size: 40px;
-    background: linear-gradient(135deg, #111 0%, #1c1c1c 100%);
-    opacity: 0.5;
+    gap: 12px;
+    background:
+      repeating-linear-gradient(-45deg, transparent, transparent 28px, rgba(201,168,76,0.025) 28px, rgba(201,168,76,0.025) 56px),
+      linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 100%);
+  }
+
+  .fleet-svc-ph-icon { font-size: 36px; opacity: 0.3; }
+
+  .fleet-svc-ph-label {
+    font-size: 9px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: rgba(201,168,76,0.4);
+    font-weight: 600;
   }
 
   .fleet-service-label {
@@ -2414,7 +2440,10 @@
   <!-- A: Hero-style visual banner -->
   <div class="fleet-hero-visual">
     <img src="assets/fleet-hero.jpg" alt="AGT Fleet Washing" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
-    <div class="fleet-hero-visual-placeholder" style="display:none">🚚</div>
+    <div class="fleet-hero-visual-placeholder" style="display:none">
+      <span class="fleet-hero-ph-icon">🚚</span>
+      <span class="fleet-hero-ph-label">Fleet Washing</span>
+    </div>
     <div class="fleet-hero-overlay">
       <div class="fleet-hero-overlay-eyebrow">Commercial Fleet Services</div>
       <div class="fleet-hero-overlay-title">Fleet Washing</div>
@@ -2446,7 +2475,13 @@
     <div class="fleet-image-col fade-in">
       <img src="assets/fleet-hero.jpg" alt="AGT Fleet Washing Service" class="fleet-image" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
       <div class="fleet-img-placeholder" style="display:none">
-        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="rgba(201,168,76,0.3)" stroke-width="1"><rect x="1" y="3" width="22" height="13" rx="2"/><path d="M5 21h14M12 17v4"/></svg>
+        <svg width="56" height="36" viewBox="0 0 56 36" fill="none" stroke="rgba(201,168,76,0.38)" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="1" y="7" width="34" height="21" rx="2"/>
+          <path d="M35 13h14l5 8v7H35V13z"/>
+          <circle cx="11" cy="30" r="4"/>
+          <circle cx="45" cy="30" r="4"/>
+          <line x1="1" y1="19" x2="35" y2="19"/>
+        </svg>
         <p>Fleet Image Coming Soon</p>
       </div>
     </div>
@@ -2485,19 +2520,27 @@
   <div class="fleet-service-grid">
     <div class="fleet-service-item fade-in">
       <img src="assets/box-truck.jpg" alt="Box Truck and Delivery Van Fleet Washing" class="fleet-service-img" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
-      <div class="fleet-service-placeholder" style="display:none">🚚</div>
+      <div class="fleet-service-placeholder" style="display:none">
+        <span class="fleet-svc-ph-icon">🚚</span>
+        <span class="fleet-svc-ph-label">Box Trucks &amp; Vans</span>
+      </div>
       <div class="fleet-service-label">Box Trucks &amp; Vans</div>
     </div>
     <div class="fleet-service-item fade-in">
       <img src="assets/semi-truck.jpg" alt="Semi-Truck and 18-Wheeler Fleet Washing" class="fleet-service-img" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
-      <div class="fleet-service-placeholder" style="display:none">🚛</div>
+      <div class="fleet-service-placeholder" style="display:none">
+        <span class="fleet-svc-ph-icon">🚛</span>
+        <span class="fleet-svc-ph-label">Semi-Trucks &amp; 18-Wheelers</span>
+      </div>
       <div class="fleet-service-label">Semi-Trucks &amp; 18-Wheelers</div>
     </div>
     <div class="fleet-service-item fade-in">
       <img src="assets/garbage-truck.jpg" alt="Municipal and Sanitation Fleet Washing" class="fleet-service-img" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
-      <div class="fleet-service-placeholder" style="display:none">🚛</div>
+      <div class="fleet-service-placeholder" style="display:none">
+        <span class="fleet-svc-ph-icon">🚛</span>
+        <span class="fleet-svc-ph-label">Municipal &amp; Sanitation</span>
+      </div>
       <div class="fleet-service-label">Municipal &amp; Sanitation</div>
-    </div>
   </div>
 
   <!-- D: CTA strip -->
