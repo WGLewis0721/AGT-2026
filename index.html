@@ -2091,6 +2091,247 @@
     .detailing-cta-section { padding: 60px 20px; }
   }
 
+  /* ─── FLEET HERO VISUAL (inside fleet section) ─── */
+  .fleet-hero-visual {
+    position: relative;
+    width: 100%;
+    height: 300px;
+    overflow: hidden;
+    margin-bottom: 60px;
+    background: #0d0d0d;
+  }
+
+  .fleet-hero-visual img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    opacity: 0.45;
+  }
+
+  .fleet-hero-visual-placeholder {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #111 0%, #1a1a1a 50%, #0d0d0d 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 56px;
+    opacity: 0.15;
+  }
+
+  .fleet-hero-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 0 20px;
+    background: linear-gradient(to bottom, rgba(10,10,10,0.25) 0%, rgba(10,10,10,0.65) 100%);
+  }
+
+  .fleet-hero-overlay-eyebrow {
+    font-size: 10px;
+    letter-spacing: 5px;
+    text-transform: uppercase;
+    color: var(--gold);
+    font-weight: 600;
+    margin-bottom: 10px;
+  }
+
+  .fleet-hero-overlay-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(48px, 8vw, 90px);
+    letter-spacing: 6px;
+    color: var(--white);
+    line-height: 1;
+    margin-bottom: 14px;
+  }
+
+  .fleet-hero-overlay-body {
+    font-size: 12px;
+    color: var(--white-muted);
+    font-weight: 300;
+    max-width: 440px;
+    line-height: 1.8;
+    letter-spacing: 1px;
+  }
+
+  @media (max-width: 768px) {
+    .fleet-hero-visual { height: 220px; margin-bottom: 40px; }
+    .fleet-hero-overlay-title { font-size: clamp(36px, 12vw, 64px); }
+  }
+
+  /* ─── FLEET FEATURE ROW ─── */
+  .fleet-feature-row {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 2px;
+    margin-top: 64px;
+    padding-top: 64px;
+    border-top: 1px solid var(--black-border);
+  }
+
+  .fleet-feature-item {
+    background: var(--black-card);
+    border: 1px solid var(--black-border);
+    padding: 28px 20px;
+    text-align: center;
+    transition: border-color 0.2s;
+  }
+
+  .fleet-feature-item:hover { border-color: rgba(201,168,76,0.25); }
+
+  .fleet-feature-icon {
+    font-size: 24px;
+    margin-bottom: 12px;
+  }
+
+  .fleet-feature-title {
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--gold);
+    font-weight: 700;
+    margin-bottom: 8px;
+    line-height: 1.4;
+  }
+
+  .fleet-feature-desc {
+    font-size: 11px;
+    color: var(--white-muted);
+    font-weight: 300;
+    line-height: 1.7;
+  }
+
+  @media (max-width: 1024px) {
+    .fleet-feature-row { grid-template-columns: repeat(3, 1fr); }
+  }
+
+  @media (max-width: 768px) {
+    .fleet-feature-row { grid-template-columns: 1fr 1fr; gap: 8px; padding-top: 40px; margin-top: 40px; }
+  }
+
+  @media (max-width: 420px) {
+    .fleet-feature-row { grid-template-columns: 1fr; }
+  }
+
+  /* ─── FLEET SERVICE GRID ─── */
+  .fleet-service-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2px;
+    margin-top: 64px;
+  }
+
+  .fleet-service-item {
+    position: relative;
+    overflow: hidden;
+    background: var(--black-card);
+    border: 1px solid var(--black-border);
+    aspect-ratio: 4/3;
+  }
+
+  .fleet-service-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    opacity: 0.65;
+    transition: transform 0.4s ease, opacity 0.3s;
+  }
+
+  .fleet-service-item:hover .fleet-service-img {
+    transform: scale(1.04);
+    opacity: 0.82;
+  }
+
+  .fleet-service-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 40px;
+    background: linear-gradient(135deg, #111 0%, #1c1c1c 100%);
+    opacity: 0.5;
+  }
+
+  .fleet-service-label {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    background: linear-gradient(to top, rgba(10,10,10,0.92) 0%, transparent 100%);
+    padding: 24px 16px 14px;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--white-soft);
+    font-weight: 600;
+    font-family: 'Montserrat', sans-serif;
+  }
+
+  @media (max-width: 768px) {
+    .fleet-service-grid { grid-template-columns: 1fr; margin-top: 40px; }
+  }
+
+  /* ─── FLEET CTA STRIP ─── */
+  .fleet-cta-strip {
+    margin-top: 64px;
+    background: rgba(201,168,76,0.04);
+    border: 1px solid rgba(201,168,76,0.15);
+    padding: 48px 40px;
+    text-align: center;
+  }
+
+  .fleet-cta-strip-headline {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(24px, 3vw, 40px);
+    font-weight: 300;
+    color: var(--white-soft);
+    margin-bottom: 12px;
+    line-height: 1.2;
+  }
+
+  .fleet-cta-strip-headline em { font-style: italic; color: var(--gold); }
+
+  .fleet-cta-strip-sub {
+    font-size: 12px;
+    color: var(--white-muted);
+    font-weight: 300;
+    letter-spacing: 1px;
+    line-height: 1.8;
+    max-width: 480px;
+    margin: 0 auto 32px;
+  }
+
+  .fleet-cta-strip-actions {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .fleet-cta-phone {
+    font-size: 11px;
+    color: var(--white-muted);
+    letter-spacing: 1px;
+    font-weight: 400;
+  }
+
+  .fleet-cta-phone a {
+    color: var(--gold);
+    text-decoration: none;
+    font-weight: 600;
+  }
+
+  @media (max-width: 768px) {
+    .fleet-cta-strip { padding: 36px 20px; margin-top: 40px; }
+    .fleet-cta-strip-actions { flex-direction: column; }
+  }
+
 </style>
 </head>
 <body>
@@ -2169,6 +2410,18 @@
 
 <!-- ─── FLEET WASHING ─── -->
 <section class="fleet-section" id="fleet">
+
+  <!-- A: Hero-style visual banner -->
+  <div class="fleet-hero-visual">
+    <img src="assets/fleet-hero.jpg" alt="AGT Fleet Washing" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+    <div class="fleet-hero-visual-placeholder" style="display:none">🚚</div>
+    <div class="fleet-hero-overlay">
+      <div class="fleet-hero-overlay-eyebrow">Commercial Fleet Services</div>
+      <div class="fleet-hero-overlay-title">Fleet Washing</div>
+      <p class="fleet-hero-overlay-body">Keep your fleet moving forward — professional on-site washing for commercial vehicles of all sizes.</p>
+    </div>
+  </div>
+
   <div class="section-label fade-in">Commercial Services</div>
   <h2 class="section-title fade-in">Fleet Washing for <em>Businesses</em></h2>
   <p class="fleet-body fade-in" style="max-width:560px">Keep your fleet clean, professional, and ready for the road with reliable on-site service.</p>
@@ -2198,6 +2451,65 @@
       </div>
     </div>
   </div>
+
+  <!-- B: Feature / capability row -->
+  <div class="fleet-feature-row">
+    <div class="fleet-feature-item fade-in">
+      <div class="fleet-feature-icon">🏗</div>
+      <div class="fleet-feature-title">Built for Commercial Standards</div>
+      <p class="fleet-feature-desc">DOT and municipal cleanliness expectations met on every job.</p>
+    </div>
+    <div class="fleet-feature-item fade-in">
+      <div class="fleet-feature-icon">♻️</div>
+      <div class="fleet-feature-title">Environmentally Responsible</div>
+      <p class="fleet-feature-desc">Mindful runoff management and eco-aware wash practices on every site.</p>
+    </div>
+    <div class="fleet-feature-item fade-in">
+      <div class="fleet-feature-icon">⚙️</div>
+      <div class="fleet-feature-title">Top-of-the-Line Equipment</div>
+      <p class="fleet-feature-desc">Heated pressure washers and high-GPM systems built for fleet-scale work.</p>
+    </div>
+    <div class="fleet-feature-item fade-in">
+      <div class="fleet-feature-icon">🧴</div>
+      <div class="fleet-feature-title">Safe, Powerful Cleaners</div>
+      <p class="fleet-feature-desc">Professional-grade detergents safe for commercial paint, decals, and wraps.</p>
+    </div>
+    <div class="fleet-feature-item fade-in">
+      <div class="fleet-feature-icon">⚡</div>
+      <div class="fleet-feature-title">Fast &amp; Efficient Service</div>
+      <p class="fleet-feature-desc">Systematic service that keeps your vehicles in operation with minimal downtime.</p>
+    </div>
+  </div>
+
+  <!-- C: Service visual grid -->
+  <div class="fleet-service-grid">
+    <div class="fleet-service-item fade-in">
+      <img src="assets/box-truck.jpg" alt="Box Truck and Delivery Van Fleet Washing" class="fleet-service-img" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+      <div class="fleet-service-placeholder" style="display:none">🚚</div>
+      <div class="fleet-service-label">Box Trucks &amp; Vans</div>
+    </div>
+    <div class="fleet-service-item fade-in">
+      <img src="assets/semi-truck.jpg" alt="Semi-Truck and 18-Wheeler Fleet Washing" class="fleet-service-img" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+      <div class="fleet-service-placeholder" style="display:none">🚛</div>
+      <div class="fleet-service-label">Semi-Trucks &amp; 18-Wheelers</div>
+    </div>
+    <div class="fleet-service-item fade-in">
+      <img src="assets/garbage-truck.jpg" alt="Municipal and Sanitation Fleet Washing" class="fleet-service-img" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+      <div class="fleet-service-placeholder" style="display:none">🚛</div>
+      <div class="fleet-service-label">Municipal &amp; Sanitation</div>
+    </div>
+  </div>
+
+  <!-- D: CTA strip -->
+  <div class="fleet-cta-strip fade-in">
+    <div class="fleet-cta-strip-headline">Clean Fleet. Strong Impression.<br><em>Every Mile.</em></div>
+    <p class="fleet-cta-strip-sub">Schedule your fleet wash today or contact us for a custom quote tailored to your operation size and schedule.</p>
+    <div class="fleet-cta-strip-actions">
+      <a href="/AGT-2026/fleet.html" class="btn-gold">Learn More</a>
+      <span class="fleet-cta-phone">Or call: <a href="tel:3342948228">(334) 294-8228</a></span>
+    </div>
+  </div>
+
 </section>
 
 <!-- ─── INDIVIDUAL DETAILING CTA ─── -->
