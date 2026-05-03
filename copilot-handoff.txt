@@ -1,0 +1,238 @@
+================================================================================
+AGT-2026 — FRONTEND BOOKING FLOW ANALYSIS & VS CODE COPILOT HANDOFF
+Repo: WGLewis0721/AGT-2026  |  File analysed: /index.html  |  Date: 2026-03-30
+================================================================================
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1. SELECTOR MAP
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+PACKAGE SELECTION
+─────────────────
+Element type   : Section wrapper
+Selector       : section#packages          (marketing/pricing section ~line 2139)
+                 section#booking           (funnel duplicate ~line 3166)
+
+Individual cards (no unique IDs, positional only):
+  .package-card                            — all three size cards
+  .package-card.featured                   — Medium / "Most Popular" card
+
+Data-bearing child elements inside each .package-card:
+  .package-size      → "Small Vehicle" | "Medium Vehicle" | "Large Vehicle / SUV / Truck"
+  .package-name      → "Full Luxury Detail"
+  .package-price     → "$100" | "$150" | "$200"
+  .package-time      → approximate duration string
+  .package-price-note→ deposit note e.g. "20% deposit = $20"
+
+CTA buttons per card:
+  section#packages  → button.btn-package  (one per card)
+  section#booking   → button.btn-gold     (one per card, event.stopPropagation() guarded)
+
+Booking payload embedded as onclick args (no data-* attributes):
+  Small   → openBookingModal('https://cal.com/.../service-1',
+                             'https://buy.stripe.com/9B6bJ2ahTf73cDH1Qp1ZS00')
+  Medium  → openBookingModal('https://cal.com/.../service-2')   ← no Stripe URL yet
+  Large   → openBookingModal('https://cal.com/.../service-3')   ← no Stripe URL yet
+
+
+ADDON SELECTION
+───────────────
+Section wrapper : section#addons
+Individual cards: .addon-card   (8 total, no unique IDs)
+Toggle state    : .addon-card.selected   (CSS class toggled on click)
+
+Addon names (from onclick second arg, rendered in .addon-name):
+  'Steam Cleaning' | 'Interior Shampooing' | 'Hand Wax Upgrade' |
+  'Machine Polishing' | 'Headlight Restoration' | 'Leather Treatment' |
+  'Odor Removal' | 'Engine Bay Cleaning'
+
+NOTE: Current JS signature is toggleAddon(el) — only one param used.
+The name string passed as second arg in HTML is silently discarded.
+
+
+"BOOK NOW" ENTRY POINTS
+────────────────────────
+Anchor links (scroll only, no booking logic triggered):
+  a.nav-cta[href="#booking"]               — top nav
+  a.btn-gold[href="#booking"]              — hero section
+  a.btn-outline[href="#packages"]          — hero "View Packages"
+  a[href="#booking"]  inside #mobile-cta-bar — sticky mobile bar
+
+Functional booking triggers (open waiver modal → then Cal.com):
+  button.btn-package  (section#packages)   onclick → openBookingModal(url, stripeUrl)
+  button.btn-gold     (section#booking)    onclick → openBookingModal(url, stripeUrl)
+  .package-card[onclick]  (section#booking)  card-level click → openBookingModal()
+
+Waiver modal controls:
+  div#waiver-modal                         — modal container (class 'open' shows it)
+  button#waiver-agree-btn  .waiver-agree-btn  onclick → agreeAndBook()
+  button.waiver-close      onclick → closeWaiverModal()
+  backdrop click           → closeWaiverModal()
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2. EVENT FLOW
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+User action                  Handler             Effect
+────────────────────────────────────────────────────────────────────────────────
+Click .btn-package or
+  .btn-gold in booking funnel → openBookingModal(calUrl, stripeUrl)
+                                  pendingCalUrl    = calUrl
+                                  pendingStripeUrl = stripeUrl || ''
+                                  #waiver-modal.classList.add('open')
+                                  document.body.style.overflow = 'hidden'
+
+Click .addon-card            → toggleAddon(el)
+                                  el.classList.toggle('selected')
+                                  (visual only; not persisted anywhere)
+
+Click #waiver-agree-btn      → agreeAndBook()
+                                  window.open(pendingCalUrl, '_blank')  // Cal.com
+                                  if (pendingStripeUrl)
+                                    window.location.href = stripeUrl    // Stripe
+                                  close modal + clear state
+
+Click .waiver-close or
+  modal backdrop             → closeWaiverModal()
+                                  modal.classList.remove('open')
+                                  pendingCalUrl = pendingStripeUrl = ''
+
+Footer "Waiver & Terms" link → openWaiverOnly()
+                                  pendingCalUrl = '' (agree btn hidden)
+                                  modal opens in read-only mode
+
+CRITICAL GAP: Selected addons (.addon-card.selected) are NEVER read or
+forwarded to Cal.com / Stripe. There is no booking object anywhere in the
+current JS — only two module-level strings (pendingCalUrl, pendingStripeUrl).
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3. BOOKING OBJECT MAPPING (current → desired)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Field              Source element / value           How to read it
+──────────────────────────────────────────────────────────────────────────────
+package.size       .package-size   (text)           el.closest('.package-card')
+                                                      .querySelector('.package-size')
+                                                      .textContent.trim()
+                   OR: derive from calUrl path segment
+                     service-1 → 'small'
+                     service-2 → 'medium'
+                     service-3 → 'large'
+
+package.name       .package-name   (text)           same card lookup
+package.basePrice  .package-price  (text → number)  parseFloat(text.replace('$',''))
+package.duration   .package-time   (text)            text content
+package.calUrl     openBookingModal first arg        pendingCalUrl
+package.stripeUrl  openBookingModal second arg       pendingStripeUrl
+
+addons[]           .addon-card.selected             Array.from(
+                                                      document.querySelectorAll(
+                                                        '.addon-card.selected'))
+                                                     .map(el => el.querySelector(
+                                                        '.addon-name').textContent.trim())
+
+NOTE: No customer name, address, phone, or vehicle plate are captured on this
+page. All PII collection is deferred entirely to the Cal.com booking form.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4. VS CODE COPILOT HANDOFF PROMPT (LLM-Optimised)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Copy-paste the block below verbatim into VS Code Copilot Chat:
+
+────────────────────────────────────────────────────────────────────────────────
+CONTEXT
+You are working in the AGT-2026 repo on a single-file static site: index.html.
+Zero dependencies. Vanilla JS ES2020. No bundler. No framework.
+All CSS is in one <style> block in <head>. All JS is in one <script> block
+before </body>. Do NOT add external scripts, CDN links, or build steps.
+
+Design tokens (CSS vars already defined):
+  --black: #0a0a0a | --black-card: #161616 | --gold: #C9A84C
+  --gold-light: #E8C96B | --white-soft: #F0EDE8 | --white-muted: #9A9A9A
+
+CURRENT STATE OF BOOKING FLOW (verified by static analysis)
+1. Package cards (.package-card) in section#packages and section#booking each
+   call openBookingModal(calUrl, stripeUrl) via inline onclick.
+2. openBookingModal stores calUrl → pendingCalUrl, stripeUrl → pendingStripeUrl,
+   then opens #waiver-modal (adds class 'open').
+3. #waiver-agree-btn calls agreeAndBook() which does:
+     window.open(pendingCalUrl, '_blank')
+     if (pendingStripeUrl) window.location.href = pendingStripeUrl
+4. Addon cards (.addon-card) in section#addons toggle class 'selected' via
+   toggleAddon(el). Selected addons are NEVER read or forwarded. This is a gap.
+5. No structured booking object exists. State = two module-level strings.
+
+TASK — implement the following minimal changes (edit index.html only):
+
+A. ADD data-* ATTRIBUTES to .package-card elements (both sections)
+   Add to each card's opening div tag:
+     data-package-size="small|medium|large"
+     data-package-price="100|150|200"
+     data-cal-url="<existing calUrl already in onclick>"
+     data-stripe-url="<existing stripeUrl or empty>"
+   Do NOT remove existing onclick attributes.
+
+B. REFACTOR openBookingModal to build a booking object
+   Replace the two module-level variables with one object:
+     let pendingBooking = { packageSize:'', packagePrice:0,
+                            calUrl:'', stripeUrl:'', addons:[] };
+   Update openBookingModal(calUrl, stripeUrl, size, price) to populate it.
+   Update all callers (six onclick attributes) to pass size + price args.
+   After storing pendingBooking, read selected addons:
+     pendingBooking.addons = Array.from(
+       document.querySelectorAll('.addon-card.selected'))
+       .map(el => el.querySelector('.addon-name').textContent.trim());
+
+C. PASS addons to Cal.com via URL query param
+   In agreeAndBook(), before window.open, append addons to calUrl:
+     const url = new URL(pendingBooking.calUrl);
+     if (pendingBooking.addons.length)
+       url.searchParams.set('notes',
+         'Add-ons requested: ' + pendingBooking.addons.join(', '));
+     window.open(url.toString(), '_blank', 'noopener');
+
+D. SHOW selected addons in the waiver modal confirmation area
+   Inside #waiver-modal .waiver-modal-card, above the <ol>, add a hidden
+   <div id="waiver-booking-summary"> styled with:
+     background: rgba(201,168,76,0.08); border: 1px solid rgba(201,168,76,0.2);
+     border-radius: 4px; padding: 16px; margin-bottom: 20px; font-size: 13px;
+     font-family: 'Montserrat', sans-serif; color: var(--white-soft);
+   Populate it in openBookingModal before showing the modal:
+     const summary = document.getElementById('waiver-booking-summary');
+     summary.innerHTML = `<strong style="color:var(--gold)">
+       ${pendingBooking.packageSize} Package — $${pendingBooking.packagePrice}
+       </strong>${pendingBooking.addons.length
+         ? '<br>Add-ons: ' + pendingBooking.addons.join(' · ') : ''}`;
+     summary.style.display = 'block';
+   Hide it in closeWaiverModal() and agreeAndBook().
+
+E. RESET addon selection after booking
+   At the end of agreeAndBook(), add:
+     document.querySelectorAll('.addon-card.selected')
+       .forEach(el => el.classList.remove('selected'));
+
+CONSTRAINTS
+- Keep all existing onclick="..." attributes unchanged (or update args only).
+- Do not add any new functions beyond what is described.
+- Do not alter CSS beyond adding the waiver-booking-summary rule.
+- Do not change the Cal.com or Stripe URLs.
+- Preserve the existing closeWaiverModal / openWaiverOnly functions.
+- No PII is captured on-page; all customer data collection stays in Cal.com.
+- After changes, pendingCalUrl / pendingStripeUrl references must be replaced
+  everywhere with pendingBooking.calUrl / pendingBooking.stripeUrl.
+
+ACCEPTANCE CRITERIA
+□ Clicking a package card then "I Agree & Continue" opens Cal.com with
+  ?notes=Add-ons+requested:+<names> appended when addons are selected.
+□ The waiver modal shows the chosen package size + price + addon names.
+□ After agreeAndBook(), all .addon-card.selected classes are cleared.
+□ No console errors. No regressions in waiver-only mode (openWaiverOnly).
+────────────────────────────────────────────────────────────────────────────────
+
+================================================================================
+END OF HANDOFF DOCUMENT
+================================================================================

@@ -1,6 +1,13 @@
 fix-lambda*.ps1
-*.png
 *.docx
 *.csv
 AGT-2026/
 artifacts/
+wix/
+
+# Build artifacts
+*.zip
+__pycache__/
+.terraform/
+.terraform.lock.hcl
+.vscode/
