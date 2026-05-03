@@ -1,34 +1,36 @@
 # A Gentlemen's Touch — AGT Mobile Detailing
 
-## Version 2 Development
-
-This repository now includes an AI-driven development system.
-
-Key files:
-- docs/system-context.md (architecture and rules)
-- docs/skills/ (reusable AI task modules)
-- docs/vscode-handoff-prompt.md (execution prompt for local development)
-
-All new development occurs in:
-AGT-website-v2-branch
-
-main is production and must remain stable.
-
----
-
-https://wglewis0721.github.io/AGT-2026/
+**[Live Site →](https://wglewis0721.github.io/AGT-2026/)**
 
 Static marketing and booking website for **A Gentlemen's Touch (AGT)**, a luxury mobile car detailing business.
 
 **Design:** Deep black backgrounds (`#0a0a0a`), gold accents (`#C9A84C`), editorial luxury aesthetic.
 Fonts: Cormorant Garamond (display/serif), Bebas Neue (logo/headings), Montserrat (body/UI).
-Inspired by high-end automotive culture and white-glove service.
-
-> **Wix Velo app** (the legacy multi-page Wix integration) has been moved to the [`wix/`](./wix/) directory and is kept for reference only. Active development continues here on the static site.
 
 ---
 
-## Page Structure
+## Repository Structure
+
+This repo has two independent layers. Do not mix code between them.
+
+```
+AGT-2026/
+├── index.html              ← Static marketing + booking funnel (zero dependencies)
+├── success.html            ← Post-checkout success page
+├── assets/                 ← Static images for the landing page
+├── images/                 ← Photo assets (portfolio, logo)
+├── wix/                    ← Wix Velo multi-page application (reference)
+├── api/                    ← Lambda source for booking-intent and create-checkout
+├── backend-integration/    ← TRA3 serverless backend (Terraform, Lambda, Stripe webhook)
+├── docs/                   ← System context and AI skill definitions
+└── scripts/                ← Developer utilities (ai_audit.py)
+```
+
+> The Wix Velo app (`wix/`) is kept for reference. Active development continues on the static site.
+
+---
+
+## Page Structure (`index.html`)
 
 | Section | ID | Purpose |
 |---|---|---|
@@ -37,8 +39,25 @@ Inspired by high-end automotive culture and white-glove service.
 | What We Offer | `#services` | Service category overview |
 | Full Luxury Detail Packages | `#packages` | Package cards with pricing |
 | Add-On Services | `#addons` | À-la-carte add-on pills |
+| Fleet Washing | `#fleet` | Commercial fleet cleaning offering |
 | Before & After | `#portfolio` | Photo portfolio gallery |
 | Schedule Your Appointment | `#booking` | 4-step booking funnel |
+
+---
+
+## Services & Pricing
+
+**Detail packages** (20% deposit collected at booking):
+
+| Package | Full Price | Deposit |
+|---|---|---|
+| Small Vehicle Detail | $100 | $20 |
+| Medium Vehicle Detail | $150 | $30 |
+| Large Vehicle Detail | $200 | $40 |
+
+**Add-ons:** Engine Bay Cleaning (+$40), Odor Elimination (+$30), Headlight Restoration (+$50), Tire Shine & Dressing (+$15), Pet Hair Removal (+$25).
+
+**Fleet Washing** — commercial fleet cleaning; contact directly to book.
 
 ---
 
@@ -76,31 +95,33 @@ All images live in the `images/` folder.
 | `images/photo-4.jpeg` | Portfolio — Wheel and Tire Detail |
 | `images/photo-5.jpeg` | Portfolio — Engine Bay Clean |
 
-### Replacing the Logo
-
-Drop your new PNG into `images/` and update these `src` attributes in `index.html`:
-
-```html
-<!-- Nav logo -->
-<img src="images/photo-10.png" style="height:48px;" alt="AGT Logo" />
-
-<!-- Hero logo -->
-<img src="images/photo-10.png" style="width:180px;" alt="AGT" />
-```
-
 ---
 
 ## Booking Flow
-Booking is handled via Cal.com with Stripe deposit payment built in.
-Three separate Cal.com event types correspond to each vehicle size:
+
+Booking is handled via Cal.com with Stripe deposit payment.
+
+Three Cal.com event types correspond to each vehicle size:
 - Small: https://cal.com/william-g.-lewis-ai51kb/mobile-detail-appointment-service-1
 - Medium: https://cal.com/william-g.-lewis-ai51kb/mobile-detail-appointment-service-2
 - Large: https://cal.com/william-g.-lewis-ai51kb/mobile-detail-appointment-service-3
 
+**Full booking lifecycle:**
+
+```
+Frontend → POST /booking-intent  → DynamoDB (draft booking created)
+        → POST /create-checkout  → Stripe Checkout Session returned
+        → Customer pays deposit
+        → Stripe webhook  ─┐
+          Cal.com webhook  ─┴→ Lambda → DynamoDB (confirmed) → SMS to detailer + customer
+```
+
 ---
+
 ## Adding or Updating Services
 
 Package cards and add-ons are written directly in `index.html` inside `#packages` and `#addons`.
+
 To add a new package card:
 
 ```html
@@ -111,6 +132,8 @@ To add a new package card:
 </div>
 ```
 
+Pricing is also validated in the backend — update `PACKAGE_CATALOG` in `backend-integration/shared/booking_common.py` to match any price changes.
+
 ---
 
 ## Tech Stack
@@ -118,19 +141,59 @@ To add a new package card:
 - **HTML5 / CSS3 / ES2020** — zero-dependency static site; no build step, no framework
 - **[Cal.com](https://cal.com)** — scheduling embed (`mobile-detail-appointment`, `month_view` layout)
 - **Google Fonts** — Cormorant Garamond, Bebas Neue, Montserrat
-- **Infrastructure** — AWS Lambda, API Gateway, S3, CloudWatch · Terraform IaC · TRA3 booking automation
+- **AWS Lambda (Python 3.11)** — booking intent, Stripe checkout creation, Stripe/Cal.com webhooks, cost reporting
+- **AWS DynamoDB** — booking records (source of truth)
+- **AWS API Gateway (HTTP)** — routes: `POST /booking-intent`, `POST /create-checkout`, `POST /webhook`
+- **AWS SSM Parameter Store** — all secrets (Stripe keys, Textbelt key, phone numbers)
+- **Stripe** — deposit checkout sessions + webhook confirmation
+- **Textbelt** — SMS notifications to detailer and customer
+- **Terraform** — all AWS infrastructure as code, isolated `dev` / `prod` environments
 
-## Booking Backend Automation (TRA3)
+---
+
+## Booking Backend (TRA3)
 
 Production-ready AWS serverless infrastructure in [`backend-integration/`](./backend-integration):
 
-- **Stripe** — collects deposit at Cal.com booking time
-- **AWS Lambda** — processes Stripe webhooks, calculates balance due
-- **Textbelt** — sends SMS to detailer and customer on every booking
-- **Terraform** — all infrastructure as code, dev/prod environments
+| Component | Purpose |
+|---|---|
+| `lambda/lambda_function.py` | Stripe + Cal.com webhook handler — confirms booking, sends SMS |
+| `lambda/pricing_lambda.py` | `POST /create-checkout` — builds Stripe Checkout sessions |
+| `api/booking_intent.py` | `POST /booking-intent` — validates payload, writes draft to DynamoDB |
+| `api/create_checkout_session.py` | `POST /create-checkout` — looks up booking, creates Stripe session |
+| `cost-reporter/cost_reporter_handler.py` | Daily AWS cost report via SNS email (optional) |
+| `shared/booking_common.py` | Shared pricing catalog, DynamoDB helpers, normalizers |
+| `terraform/` | All AWS resources (Lambda, API Gateway, DynamoDB, IAM, CloudWatch, S3, SSM) |
 
-See [`backend-integration/README.md`](./backend-integration/README.md) for setup and deployment.
+See [`backend-integration/README.md`](./backend-integration/README.md) for full AWS setup, Stripe webhook configuration, and the operator runbook.
 
+---
+
+## Wix Velo App (`wix/`)
+
+A full multi-page Wix application connected to Wix site `685cc33b-0e63-481d-9422-d4bafcc7f070`, kept here for reference.
+
+```bash
+cd wix
+npm install       # also runs `wix sync-types` via postinstall
+npm run dev       # opens the Wix Local Editor
+npm run lint      # eslint .
+```
+
+See [`wix/README.md`](./wix/README.md) for full page inventory and booking flow details.
+
+---
+
+## System Docs
+
+| File | Purpose |
+|---|---|
+| `docs/system-context.md` | Core architecture rules and constraints |
+| `docs/skills/frontend.md` | Frontend conventions |
+| `docs/skills/lambda.md` | Lambda conventions |
+| `docs/skills/stripe.md` | Stripe conventions |
+
+---
 
 ## Contact
 
