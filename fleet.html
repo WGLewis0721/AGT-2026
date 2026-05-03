@@ -1,0 +1,1377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fleet Washing — A Gentlemen's Touch</title>
+<meta name="description" content="Commercial fleet washing for businesses in the Montgomery, AL area. Delivery vehicles, service trucks, semis, and municipal fleets. Flexible scheduling and recurring service available.">
+<link rel="icon" type="image/png" href="images/photo-10.png">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400&family=Bebas+Neue&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --black: #0a0a0a;
+    --black-soft: #111111;
+    --black-card: #161616;
+    --black-border: #1e1e1e;
+    --gold: #C9A84C;
+    --gold-light: #E8C96B;
+    --gold-dark: #9A7A2E;
+    --white: #FFFFFF;
+    --white-soft: #F0EDE8;
+    --white-muted: #9A9A9A;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--black);
+    color: var(--white);
+    font-family: 'Montserrat', sans-serif;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 9999;
+    opacity: 0.4;
+  }
+
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: var(--black); }
+  ::-webkit-scrollbar-thumb { background: var(--gold); border-radius: 2px; }
+
+  /* ─── NAV ─── */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 1000;
+    padding: 24px 60px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: linear-gradient(180deg, rgba(10,10,10,0.98) 0%, transparent 100%);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid rgba(201,168,76,0.1);
+    transition: all 0.3s ease;
+  }
+
+  nav.scrolled {
+    padding: 16px 60px;
+    background: rgba(10,10,10,0.98);
+    border-bottom: 1px solid rgba(201,168,76,0.25);
+  }
+
+  .nav-logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 30px;
+    letter-spacing: 3px;
+    color: var(--white);
+    text-decoration: none;
+  }
+
+  .nav-links {
+    display: flex;
+    gap: 40px;
+    list-style: none;
+  }
+
+  .nav-links a {
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--white-muted);
+    text-decoration: none;
+    transition: color 0.3s;
+    font-weight: 500;
+  }
+
+  .nav-links a:hover,
+  .nav-links a.active { color: var(--gold); }
+
+  .nav-cta {
+    background: transparent;
+    border: 1px solid var(--gold);
+    color: var(--gold);
+    padding: 10px 28px;
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.3s;
+  }
+
+  .nav-cta:hover {
+    background: var(--gold);
+    color: var(--black);
+  }
+
+  .hamburger {
+    display: none;
+    flex-direction: column;
+    gap: 5px;
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 4px;
+  }
+
+  .hamburger span {
+    width: 24px;
+    height: 1px;
+    background: var(--white);
+    transition: all 0.3s;
+  }
+
+  /* ─── BUTTONS ─── */
+  .btn-gold {
+    background: var(--gold);
+    color: var(--black);
+    padding: 16px 40px;
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.3s;
+    display: inline-block;
+  }
+
+  .btn-gold:hover {
+    background: var(--gold-light);
+    transform: translateY(-2px);
+    box-shadow: 0 12px 40px rgba(201,168,76,0.3);
+  }
+
+  .btn-outline {
+    background: transparent;
+    color: var(--white);
+    padding: 16px 40px;
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 600;
+    border: 1px solid rgba(255,255,255,0.25);
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.3s;
+    display: inline-block;
+  }
+
+  .btn-outline:hover {
+    border-color: var(--gold);
+    color: var(--gold);
+  }
+
+  /* ─── SECTION SHARED ─── */
+  .section-label {
+    font-size: 10px;
+    letter-spacing: 5px;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 16px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .section-label::before {
+    content: '';
+    width: 30px;
+    height: 1px;
+    background: var(--gold);
+    flex-shrink: 0;
+  }
+
+  .section-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(36px, 5vw, 64px);
+    font-weight: 300;
+    line-height: 1.1;
+    letter-spacing: -1px;
+    margin-bottom: 24px;
+  }
+
+  .section-title em {
+    font-style: italic;
+    color: var(--gold);
+  }
+
+  /* ─── FADE IN ─── */
+  .fade-in {
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity 0.7s ease, transform 0.7s ease;
+  }
+
+  .fade-in.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* ─── HERO ─── */
+  .hero {
+    min-height: 80vh;
+    display: flex;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+    background: var(--black);
+    padding-top: 100px;
+  }
+
+  .hero-bg {
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 80% 60% at 70% 50%, rgba(201,168,76,0.07) 0%, transparent 60%),
+      radial-gradient(ellipse 40% 40% at 20% 80%, rgba(201,168,76,0.04) 0%, transparent 50%),
+      linear-gradient(135deg, #0a0a0a 0%, #111111 50%, #0d0d0d 100%);
+  }
+
+  .hero-bg::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg width='60' height='52' viewBox='0 0 60 52' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 0 L60 17.3 L60 34.6 L30 52 L0 34.6 L0 17.3 Z' fill='none' stroke='rgba(201,168,76,0.06)' stroke-width='1'/%3E%3C/svg%3E");
+    background-size: 60px 52px;
+    opacity: 0.8;
+  }
+
+  .hero-content {
+    position: relative;
+    z-index: 2;
+    padding: 0 60px;
+    max-width: 800px;
+    animation: heroFadeIn 1.2s ease forwards;
+  }
+
+  @keyframes heroFadeIn {
+    from { opacity: 0; transform: translateY(40px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .hero-eyebrow {
+    font-size: 11px;
+    letter-spacing: 6px;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-weight: 500;
+  }
+
+  .hero-eyebrow::before {
+    content: '';
+    width: 40px;
+    height: 1px;
+    background: var(--gold);
+  }
+
+  .hero-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(56px, 8vw, 100px);
+    font-weight: 300;
+    line-height: 0.95;
+    letter-spacing: -2px;
+    margin-bottom: 32px;
+  }
+
+  .hero-title em {
+    font-style: italic;
+    color: var(--gold);
+  }
+
+  .hero-sub {
+    font-size: 13px;
+    letter-spacing: 2px;
+    line-height: 1.9;
+    color: var(--white-muted);
+    max-width: 480px;
+    margin-bottom: 48px;
+    font-weight: 300;
+  }
+
+  .hero-actions {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  /* ─── STATS BAR ─── */
+  .stats-bar {
+    background: var(--black-soft);
+    border-top: 1px solid var(--black-border);
+    border-bottom: 1px solid var(--black-border);
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    padding: 0;
+  }
+
+  .stat {
+    padding: 32px;
+    text-align: center;
+    border-right: 1px solid var(--black-border);
+  }
+
+  .stat:last-child { border-right: none; }
+
+  .stat-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 48px;
+    color: var(--gold);
+    letter-spacing: 2px;
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+
+  .stat-label {
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--white-muted);
+    font-weight: 500;
+  }
+
+  /* ─── FLEET TYPES ─── */
+  .fleet-types {
+    padding: 100px 60px;
+    background: var(--black);
+  }
+
+  .fleet-types-header {
+    max-width: 640px;
+    margin-bottom: 64px;
+  }
+
+  .fleet-cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2px;
+  }
+
+  .fleet-card {
+    background: var(--black-card);
+    border: 1px solid var(--black-border);
+    padding: 40px 32px;
+    transition: all 0.3s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .fleet-card::before {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--gold);
+    transform: scaleX(0);
+    transition: transform 0.3s;
+  }
+
+  .fleet-card:hover::before { transform: scaleX(1); }
+
+  .fleet-card:hover {
+    border-color: rgba(201,168,76,0.25);
+    background: #1a1a1a;
+  }
+
+  .fleet-card-img {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    margin-bottom: 28px;
+    display: block;
+  }
+
+  .fleet-card-img-placeholder {
+    width: 100%;
+    height: 200px;
+    background:
+      repeating-linear-gradient(-45deg, transparent, transparent 24px, rgba(201,168,76,0.03) 24px, rgba(201,168,76,0.03) 48px),
+      linear-gradient(160deg, #101010 0%, #1a1a1a 50%, #0e0e0e 100%);
+    border: 1px solid rgba(201,168,76,0.15);
+    border-top: 2px solid rgba(201,168,76,0.22);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 28px;
+    font-size: 34px;
+  }
+
+  .fleet-card-img-placeholder span {
+    font-size: 9px;
+    letter-spacing: 3px;
+    color: rgba(201,168,76,0.45);
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+
+  .fleet-card-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 48px;
+    color: rgba(201,168,76,0.12);
+    letter-spacing: 2px;
+    line-height: 1;
+    margin-bottom: 12px;
+  }
+
+  .fleet-card-name {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 26px;
+    font-weight: 400;
+    margin-bottom: 12px;
+    color: var(--white-soft);
+  }
+
+  .fleet-card-desc {
+    font-size: 13px;
+    color: var(--white-muted);
+    line-height: 1.8;
+    font-weight: 300;
+  }
+
+  .fleet-card-features {
+    list-style: none;
+    margin-top: 20px;
+  }
+
+  .fleet-card-features li {
+    font-size: 12px;
+    color: var(--white-muted);
+    padding: 6px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-weight: 300;
+    line-height: 1.5;
+  }
+
+  .fleet-card-features li::before {
+    content: '✓';
+    color: var(--gold);
+    font-size: 10px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  /* ─── WHY AGT ─── */
+  .why-agt {
+    padding: 100px 60px;
+    background: var(--black-soft);
+    border-top: 1px solid var(--black-border);
+    border-bottom: 1px solid var(--black-border);
+  }
+
+  .why-agt-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 80px;
+    align-items: start;
+    margin-top: 64px;
+  }
+
+  .why-agt-text p {
+    font-size: 14px;
+    color: var(--white-muted);
+    line-height: 2;
+    font-weight: 300;
+    margin-bottom: 24px;
+  }
+
+  .standards-list {
+    list-style: none;
+    margin-top: 32px;
+  }
+
+  .standards-list li {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+    padding: 20px 0;
+    border-bottom: 1px solid var(--black-border);
+  }
+
+  .standards-list li:first-child { border-top: 1px solid var(--black-border); }
+
+  .standards-icon {
+    width: 36px;
+    height: 36px;
+    background: rgba(201,168,76,0.08);
+    border: 1px solid rgba(201,168,76,0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .standards-content strong {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--white-soft);
+    margin-bottom: 4px;
+    letter-spacing: 0.5px;
+  }
+
+  .standards-content span {
+    font-size: 12px;
+    color: var(--white-muted);
+    font-weight: 300;
+    line-height: 1.6;
+  }
+
+  .why-agt-visual {
+    position: sticky;
+    top: 120px;
+  }
+
+  .why-agt-card {
+    background: var(--black-card);
+    border: 1px solid rgba(201,168,76,0.15);
+    padding: 40px;
+  }
+
+  .why-agt-card-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 28px;
+    font-weight: 400;
+    margin-bottom: 24px;
+    color: var(--white-soft);
+  }
+
+  .why-agt-card-title em { color: var(--gold); font-style: italic; }
+
+  .why-agt-card-body {
+    font-size: 13px;
+    color: var(--white-muted);
+    line-height: 1.9;
+    font-weight: 300;
+    margin-bottom: 32px;
+  }
+
+  .badge-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .badge {
+    background: rgba(201,168,76,0.05);
+    border: 1px solid rgba(201,168,76,0.12);
+    padding: 16px;
+    text-align: center;
+  }
+
+  .badge-icon { font-size: 22px; margin-bottom: 8px; }
+
+  .badge-label {
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--white-muted);
+    font-weight: 600;
+  }
+
+  /* ─── PRICING ─── */
+  .pricing {
+    padding: 100px 60px;
+    background: var(--black);
+    text-align: center;
+  }
+
+  .pricing-header { margin-bottom: 64px; }
+
+  .pricing-header .section-label { justify-content: center; }
+
+  .pricing-header p {
+    font-size: 13px;
+    color: var(--white-muted);
+    max-width: 520px;
+    margin: 0 auto;
+    line-height: 1.8;
+    font-weight: 300;
+  }
+
+  .pricing-cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2px;
+    max-width: 960px;
+    margin: 0 auto 48px;
+  }
+
+  .pricing-card {
+    background: var(--black-card);
+    border: 1px solid var(--black-border);
+    padding: 40px 28px;
+    text-align: left;
+    transition: all 0.3s;
+  }
+
+  .pricing-card.featured {
+    border-color: rgba(201,168,76,0.3);
+    position: relative;
+  }
+
+  .pricing-card.featured::before {
+    content: 'MOST COMMON';
+    position: absolute;
+    top: -1px; right: 20px;
+    background: var(--gold);
+    color: var(--black);
+    font-size: 9px;
+    letter-spacing: 2px;
+    font-weight: 700;
+    padding: 5px 12px;
+    font-family: 'Montserrat', sans-serif;
+  }
+
+  .pricing-card:hover { border-color: rgba(201,168,76,0.2); }
+
+  .pricing-type {
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--gold);
+    font-weight: 600;
+    margin-bottom: 12px;
+  }
+
+  .pricing-name {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 24px;
+    font-weight: 400;
+    color: var(--white-soft);
+    margin-bottom: 8px;
+  }
+
+  .pricing-range {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 40px;
+    color: var(--gold);
+    letter-spacing: 1px;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+
+  .pricing-note {
+    font-size: 11px;
+    color: var(--white-muted);
+    letter-spacing: 1px;
+    margin-bottom: 24px;
+    font-weight: 300;
+  }
+
+  .pricing-divider {
+    height: 1px;
+    background: var(--black-border);
+    margin-bottom: 20px;
+  }
+
+  .pricing-features {
+    list-style: none;
+    margin-bottom: 28px;
+  }
+
+  .pricing-features li {
+    font-size: 12px;
+    color: var(--white-muted);
+    padding: 7px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-weight: 300;
+    line-height: 1.5;
+  }
+
+  .pricing-features li::before {
+    content: '✓';
+    color: var(--gold);
+    font-size: 10px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .pricing-cta-note {
+    font-size: 12px;
+    color: var(--white-muted);
+    line-height: 1.8;
+    font-weight: 300;
+    max-width: 540px;
+    margin: 0 auto;
+  }
+
+  /* ─── CTA BANNER ─── */
+  .cta-banner {
+    padding: 80px 60px;
+    background: linear-gradient(135deg, rgba(201,168,76,0.08) 0%, rgba(201,168,76,0.02) 100%);
+    border-top: 1px solid rgba(201,168,76,0.15);
+    border-bottom: 1px solid rgba(201,168,76,0.15);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 40px;
+  }
+
+  .cta-banner-text .section-label { margin-bottom: 12px; }
+
+  .cta-banner-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(32px, 4vw, 52px);
+    font-weight: 300;
+    line-height: 1.1;
+    margin-bottom: 16px;
+  }
+
+  .cta-banner-title em { font-style: italic; color: var(--gold); }
+
+  .cta-banner-sub {
+    font-size: 13px;
+    color: var(--white-muted);
+    font-weight: 300;
+    line-height: 1.7;
+    max-width: 440px;
+  }
+
+  .cta-banner-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    flex-shrink: 0;
+    align-items: center;
+  }
+
+  .cta-contact-row {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .cta-contact-item {
+    font-size: 12px;
+    letter-spacing: 1px;
+    color: var(--white-muted);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .cta-contact-item a {
+    color: var(--gold);
+    text-decoration: none;
+    font-weight: 600;
+    transition: color 0.2s;
+  }
+
+  .cta-contact-item a:hover { color: var(--gold-light); }
+
+  /* ─── FOOTER ─── */
+  footer {
+    background: var(--black-soft);
+    border-top: 1px solid var(--black-border);
+    padding: 80px 60px 40px;
+  }
+
+  .footer-top {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr;
+    gap: 60px;
+    margin-bottom: 48px;
+  }
+
+  .footer-brand .logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 24px;
+    letter-spacing: 3px;
+    margin-bottom: 16px;
+  }
+
+  .footer-brand .logo span { color: var(--gold); }
+
+  .footer-brand p {
+    font-size: 12px;
+    color: var(--white-muted);
+    line-height: 1.8;
+    font-weight: 300;
+    max-width: 260px;
+  }
+
+  .footer-col h5 {
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--white-soft);
+    margin-bottom: 20px;
+    font-weight: 600;
+  }
+
+  .footer-col ul { list-style: none; }
+
+  .footer-col ul li {
+    margin-bottom: 10px;
+  }
+
+  .footer-col ul li a,
+  .footer-col ul li span {
+    font-size: 12px;
+    color: var(--white-muted);
+    text-decoration: none;
+    transition: color 0.2s;
+    font-weight: 300;
+  }
+
+  .footer-col ul li a:hover { color: var(--gold); }
+
+  .footer-bottom {
+    border-top: 1px solid var(--black-border);
+    padding-top: 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .footer-bottom p {
+    font-size: 11px;
+    color: var(--white-muted);
+    letter-spacing: 1px;
+    font-weight: 300;
+  }
+
+  .social-links { display: flex; gap: 12px; }
+
+  .social-link {
+    width: 36px;
+    height: 36px;
+    border: 1px solid var(--black-border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--white-muted);
+    text-decoration: none;
+    transition: all 0.2s;
+  }
+
+  .social-link:hover {
+    border-color: var(--gold);
+    color: var(--gold);
+  }
+
+  /* ─── MOBILE CTA BAR ─── */
+  #mobile-cta-bar {
+    display: none;
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    z-index: 900;
+    background: rgba(10,10,10,0.97);
+    border-top: 1px solid rgba(201,168,76,0.2);
+    padding: 12px 20px;
+    gap: 12px;
+    justify-content: center;
+  }
+
+  #mobile-cta-bar a {
+    flex: 1;
+    text-align: center;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    font-weight: 700;
+    padding: 14px;
+    text-decoration: none;
+    transition: all 0.2s;
+  }
+
+  #mobile-cta-bar a:first-child {
+    background: transparent;
+    color: var(--white-muted);
+    border: 1px solid var(--black-border);
+  }
+
+  #mobile-cta-bar a:last-child {
+    background: var(--gold);
+    color: var(--black);
+  }
+
+  /* ─── RESPONSIVE ─── */
+  @media (max-width: 1024px) {
+    nav { padding: 20px 30px; }
+    nav.scrolled { padding: 14px 30px; }
+    .nav-links { gap: 24px; }
+    .hero-content { padding: 0 30px; }
+    .fleet-types { padding: 80px 30px; }
+    .fleet-cards { grid-template-columns: 1fr; }
+    .why-agt { padding: 80px 30px; }
+    .why-agt-layout { grid-template-columns: 1fr; gap: 48px; }
+    .why-agt-visual { position: static; }
+    .pricing { padding: 80px 30px; }
+    .pricing-cards { grid-template-columns: 1fr; max-width: 480px; }
+    .cta-banner { flex-direction: column; text-align: center; padding: 60px 30px; }
+    .cta-banner-sub { max-width: 100%; }
+    .cta-contact-row { justify-content: center; }
+    .stats-bar { grid-template-columns: repeat(2, 1fr); }
+    .stat { border-right: none; border-bottom: 1px solid var(--black-border); padding: 20px; }
+    .stat:nth-child(odd) { border-right: 1px solid var(--black-border); }
+    .stat:nth-child(3), .stat:nth-child(4) { border-bottom: none; }
+    .footer-top { grid-template-columns: 1fr 1fr; gap: 40px; }
+  }
+
+  @media (max-width: 768px) {
+    .nav-links { display: none; }
+    .nav-cta { display: none; }
+    .hamburger { display: flex; }
+    nav { padding: 14px 20px; }
+    nav.scrolled { padding: 10px 20px; }
+    .hero { padding-top: 80px; }
+    .hero-content { padding: 0 20px; }
+    .hero-title { font-size: clamp(40px, 10vw, 64px); }
+    .fleet-types { padding: 60px 20px; }
+    .why-agt { padding: 60px 20px; }
+    .pricing { padding: 60px 20px; }
+    .cta-banner { padding: 60px 20px; }
+    footer { padding: 60px 20px 32px; }
+    .footer-top { grid-template-columns: 1fr; gap: 32px; }
+    .footer-bottom { flex-direction: column; text-align: center; gap: 16px; }
+    #mobile-cta-bar { display: flex; }
+    body { padding-bottom: 72px; }
+    .btn-gold, .btn-outline, nav a { min-height: 44px; }
+    .hamburger { min-width: 44px; min-height: 44px; align-items: center; justify-content: center; }
+    .social-link { width: 44px; height: 44px; }
+    .nav-logo img { height: 52px; }
+    .badge-grid { grid-template-columns: 1fr; }
+  }
+
+  /* ─── UTILITY ─── */
+  .nav-logo-img { height: 90px; }
+  .nav-phone-scroll {
+    color: var(--gold);
+    font-size: 12px;
+    letter-spacing: 2px;
+    text-decoration: none;
+    font-weight: 600;
+    display: none;
+  }
+  .fleet-types-header-body {
+    font-size: 13px;
+    color: var(--white-muted);
+    line-height: 1.8;
+    font-weight: 300;
+    max-width: 520px;
+  }
+  .btn-cta-full {
+    width: 100%;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<!-- ─── NAV ─── -->
+<nav id="mainNav">
+  <a href="/AGT-2026/" class="nav-logo"><img src="images/photo-10.png" alt="A Gentlemen's Touch Logo" class="nav-logo-img"></a>
+  <ul class="nav-links">
+    <li><a href="/AGT-2026/#about">About</a></li>
+    <li><a href="/AGT-2026/#services">Services</a></li>
+    <li><a href="/AGT-2026/#packages">Packages</a></li>
+    <li><a href="/AGT-2026/#service-area">Service Area</a></li>
+    <li><a href="/AGT-2026/fleet.html" class="active">Fleet</a></li>
+    <li><a href="/AGT-2026/#booking">Contact</a></li>
+  </ul>
+  <a href="tel:3342948228" class="nav-phone-scroll" id="navPhone">(334) 294-8228</a>
+  <a href="tel:3342948228" class="nav-cta">Call for a Quote</a>
+  <button class="hamburger" onclick="toggleMenu()" aria-label="Menu">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+
+<!-- ─── HERO ─── -->
+<section class="hero" id="home">
+  <div class="hero-bg"></div>
+  <div class="hero-content">
+    <div class="hero-eyebrow">Commercial Services</div>
+    <h1 class="hero-title">
+      Fleet Washing<br>
+      for <em>Businesses</em>
+    </h1>
+    <p class="hero-sub">Custom on-site fleet washing for delivery vehicles, service trucks, and commercial fleets. Flexible scheduling. Professional results. Montgomery, AL and surrounding areas.</p>
+    <div class="hero-actions">
+      <a href="tel:3342948228" class="btn-gold">Call for a Quote</a>
+      <a href="#fleet-types" class="btn-outline">Our Fleet Services</a>
+    </div>
+  </div>
+</section>
+
+<!-- ─── STATS ─── -->
+<div class="stats-bar">
+  <div class="stat">
+    <div class="stat-num">100+</div>
+    <div class="stat-label">Commercial Units Serviced</div>
+  </div>
+  <div class="stat">
+    <div class="stat-num">3</div>
+    <div class="stat-label">Years in Business</div>
+  </div>
+  <div class="stat">
+    <div class="stat-num">5★</div>
+    <div class="stat-label">Client Satisfaction</div>
+  </div>
+  <div class="stat">
+    <div class="stat-num">24/7</div>
+    <div class="stat-label">Flexible Scheduling</div>
+  </div>
+</div>
+
+<!-- ─── FLEET TYPES ─── -->
+<section class="fleet-types" id="fleet-types">
+  <div class="fleet-types-header fade-in">
+    <div class="section-label">What We Wash</div>
+    <h2 class="section-title">Every Type of <em>Commercial Vehicle</em></h2>
+    <p class="fleet-types-header-body">From compact delivery vans to heavy-duty semis and municipal equipment — AGT has the equipment and experience to keep your fleet looking its best.</p>
+  </div>
+
+  <div class="fleet-cards">
+
+    <!-- Box Trucks / Delivery Vans -->
+    <div class="fleet-card fade-in">
+      <img
+        src="assets/box-truck.jpg"
+        alt="Box truck and delivery van fleet washing"
+        class="fleet-card-img"
+        onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"
+      >
+      <div class="fleet-card-img-placeholder" style="display:none">
+        🚚
+        <span>Box Truck / Delivery Van</span>
+      </div>
+      <div class="fleet-card-num">01</div>
+      <div class="fleet-card-name">Box Trucks &amp; Delivery Vans</div>
+      <p class="fleet-card-desc">High-pressure exterior wash, wheel and undercarriage cleaning, and logo/decal-safe detergents. Keep your delivery fleet looking professional on every route.</p>
+      <ul class="fleet-card-features">
+        <li>Exterior pressure wash &amp; rinse</li>
+        <li>Wheel well and undercarriage wash</li>
+        <li>Decal and wrap-safe detergents</li>
+        <li>On-site at your facility</li>
+      </ul>
+    </div>
+
+    <!-- Semi-Trucks -->
+    <div class="fleet-card fade-in">
+      <img
+        src="assets/semi-truck.jpg"
+        alt="Semi-truck and 18-wheeler fleet washing"
+        class="fleet-card-img"
+        onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"
+      >
+      <div class="fleet-card-img-placeholder" style="display:none">
+        🚛
+        <span>Semi-Truck / 18-Wheeler</span>
+      </div>
+      <div class="fleet-card-num">02</div>
+      <div class="fleet-card-name">Semi-Trucks &amp; 18-Wheelers</div>
+      <p class="fleet-card-desc">Full tractor-trailer washing including cab, sleeper, trailer exterior, fuel tanks, and fifth wheel. We work around your dispatch schedule to minimize downtime.</p>
+      <ul class="fleet-card-features">
+        <li>Cab and sleeper exterior wash</li>
+        <li>Trailer wash and rinse</li>
+        <li>Fuel tank and chrome brightening</li>
+        <li>Schedule around dispatch windows</li>
+      </ul>
+    </div>
+
+    <!-- Municipal / Sanitation -->
+    <div class="fleet-card fade-in">
+      <img
+        src="assets/garbage-truck.jpg"
+        alt="Municipal and sanitation fleet washing"
+        class="fleet-card-img"
+        onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"
+      >
+      <div class="fleet-card-img-placeholder" style="display:none">
+        🚛
+        <span>Municipal / Sanitation Fleet</span>
+      </div>
+      <div class="fleet-card-num">03</div>
+      <div class="fleet-card-name">Municipal &amp; Sanitation Fleets</div>
+      <p class="fleet-card-desc">Heavy-duty degreasing and sanitizing wash for garbage trucks, street sweepers, and other municipal equipment — meeting DOT and city cleanliness standards.</p>
+      <ul class="fleet-card-features">
+        <li>Heavy-duty degreasing treatment</li>
+        <li>Sanitizing wash protocol</li>
+        <li>DOT cleanliness compliance</li>
+        <li>Recurring weekly or bi-weekly plans</li>
+      </ul>
+    </div>
+
+  </div>
+</section>
+
+<!-- ─── WHY AGT ─── -->
+<section class="why-agt" id="why-agt">
+  <div class="fade-in">
+    <div class="section-label">Our Commitment</div>
+    <h2 class="section-title">Built for <em>Commercial Standards</em></h2>
+  </div>
+
+  <div class="why-agt-layout">
+    <div class="why-agt-text fade-in">
+      <p>Our fleet washing program is designed to meet DOT and municipal cleanliness expectations while minimizing operational disruption. We understand that clean vehicles represent your brand on the road — and we treat every unit accordingly.</p>
+      <p>We bring everything we need to your location. No facility drop-off, no wait queues — just professional results delivered on your schedule.</p>
+
+      <ul class="standards-list">
+        <li>
+          <div class="standards-icon">💧</div>
+          <div class="standards-content">
+            <strong>High-GPM Heated Pressure Systems</strong>
+            <span>Professional heated pressure washers for thorough, efficient cleaning on even the dirtiest commercial equipment.</span>
+          </div>
+        </li>
+        <li>
+          <div class="standards-icon">🧴</div>
+          <div class="standards-content">
+            <strong>Commercial-Grade Detergents</strong>
+            <span>Professional-grade soaps and conditioning agents that are safe for commercial paint, decals, and wraps.</span>
+          </div>
+        </li>
+        <li>
+          <div class="standards-icon">♻️</div>
+          <div class="standards-content">
+            <strong>Responsible Wash Practices</strong>
+            <span>We are mindful of runoff and environmental impact — practicing responsible water management on every job site.</span>
+          </div>
+        </li>
+        <li>
+          <div class="standards-icon">⏱</div>
+          <div class="standards-content">
+            <strong>Minimal Operational Downtime</strong>
+            <span>Fast, systematic service designed to keep your vehicles in rotation. We work around your dispatch and operations schedule.</span>
+          </div>
+        </li>
+        <li>
+          <div class="standards-icon">📅</div>
+          <div class="standards-content">
+            <strong>Flexible Recurring Schedules</strong>
+            <span>Weekly, bi-weekly, or monthly service agreements available. Consistent care at a predictable cost.</span>
+          </div>
+        </li>
+      </ul>
+    </div>
+
+    <div class="why-agt-visual fade-in">
+      <div class="why-agt-card">
+        <div class="why-agt-card-title">Why <em>AGT</em> for Your Fleet?</div>
+        <p class="why-agt-card-body">A Gentlemen's Touch brings the same attention to detail and commitment to quality that defines our individual detailing services — scaled up for commercial fleets of any size. Your business vehicles are a direct reflection of your brand, and we treat them as such.</p>
+        <div class="badge-grid">
+          <div class="badge">
+            <div class="badge-icon">🛡</div>
+            <div class="badge-label">Fully Insured</div>
+          </div>
+          <div class="badge">
+            <div class="badge-icon">📍</div>
+            <div class="badge-label">On-Site Service</div>
+          </div>
+          <div class="badge">
+            <div class="badge-icon">✦</div>
+            <div class="badge-label">5-Star Rated</div>
+          </div>
+          <div class="badge">
+            <div class="badge-icon">📋</div>
+            <div class="badge-label">Service Contracts</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── PRICING ─── -->
+<section class="pricing" id="pricing">
+  <div class="pricing-header fade-in">
+    <div class="section-label">Fleet Pricing</div>
+    <h2 class="section-title">Custom <em>Quotes</em> for Every Fleet</h2>
+    <p>Pricing is based on fleet size, vehicle type, and service frequency. The ranges below are starting estimates — contact us for a firm quote tailored to your operation.</p>
+  </div>
+
+  <div class="pricing-cards">
+    <div class="pricing-card fade-in">
+      <div class="pricing-type">Small Fleet</div>
+      <div class="pricing-name">Up to 5 Vehicles</div>
+      <div class="pricing-range">From $50</div>
+      <div class="pricing-note">per vehicle / per wash</div>
+      <div class="pricing-divider"></div>
+      <ul class="pricing-features">
+        <li>Delivery vans &amp; service vehicles</li>
+        <li>Exterior pressure wash &amp; rinse</li>
+        <li>Wheel and tire cleaning</li>
+        <li>On-site at your location</li>
+        <li>Flexible scheduling</li>
+      </ul>
+    </div>
+
+    <div class="pricing-card featured fade-in">
+      <div class="pricing-type">Medium Fleet</div>
+      <div class="pricing-name">6–20 Vehicles</div>
+      <div class="pricing-range">From $40</div>
+      <div class="pricing-note">per vehicle / per wash</div>
+      <div class="pricing-divider"></div>
+      <ul class="pricing-features">
+        <li>Mixed vehicle types supported</li>
+        <li>Full exterior wash &amp; detail</li>
+        <li>Recurring service discount</li>
+        <li>Priority scheduling</li>
+        <li>Service contract available</li>
+      </ul>
+    </div>
+
+    <div class="pricing-card fade-in">
+      <div class="pricing-type">Large Fleet</div>
+      <div class="pricing-name">21+ Vehicles</div>
+      <div class="pricing-range">Contact Us</div>
+      <div class="pricing-note">for custom pricing</div>
+      <div class="pricing-divider"></div>
+      <ul class="pricing-features">
+        <li>Semis, box trucks, municipal</li>
+        <li>Custom service program</li>
+        <li>Dedicated account manager</li>
+        <li>Monthly billing available</li>
+        <li>DOT &amp; compliance documentation</li>
+      </ul>
+    </div>
+  </div>
+
+  <p class="pricing-cta-note fade-in">Prices vary based on vehicle size, condition, and service frequency. All quotes are free and come with no obligation. Call or email us to get started.</p>
+</section>
+
+<!-- ─── CTA BANNER ─── -->
+<section class="cta-banner" id="contact">
+  <div class="cta-banner-text fade-in">
+    <div class="section-label">Get Started</div>
+    <h2 class="cta-banner-title">Ready to Keep Your Fleet<br><em>Spotless?</em></h2>
+    <p class="cta-banner-sub">Call or email for a free, no-obligation fleet quote. We serve Montgomery, Prattville, Millbrook, and surrounding Autauga and Elmore County areas.</p>
+  </div>
+  <div class="cta-banner-actions fade-in">
+    <a href="tel:3342948228" class="btn-gold btn-cta-full">📞 (334) 294-8228</a>
+    <a href="mailto:gentlemenstouch5@gmail.com" class="btn-outline btn-cta-full">Email Us</a>
+    <div class="cta-contact-row">
+      <span class="cta-contact-item">Mon–Sat 8AM–6PM</span>
+    </div>
+  </div>
+</section>
+
+<!-- ─── FOOTER ─── -->
+<footer>
+  <div class="footer-top">
+    <div class="footer-brand">
+      <div class="logo">A <span>Gentlemen's</span> Touch</div>
+      <p>Full luxury mobile detailing delivered to your door. Premium products, meticulous care, and results that turn heads.</p>
+      <div style="margin-top:24px;font-size:12px;color:var(--gold);letter-spacing:1px">★★★★★ 5.0 Rating on Google &amp; Facebook</div>
+    </div>
+    <div class="footer-col">
+      <h5>Fleet Services</h5>
+      <ul>
+        <li><a href="#fleet-types">Box Trucks &amp; Vans</a></li>
+        <li><a href="#fleet-types">Semi-Trucks</a></li>
+        <li><a href="#fleet-types">Municipal Fleets</a></li>
+        <li><a href="#pricing">Fleet Pricing</a></li>
+        <li><a href="#contact">Get a Quote</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h5>Individual Detailing</h5>
+      <ul>
+        <li><a href="/AGT-2026/#services">Our Services</a></li>
+        <li><a href="/AGT-2026/#packages">Packages &amp; Pricing</a></li>
+        <li><a href="/AGT-2026/#booking">Book Now</a></li>
+        <li><a href="/AGT-2026/#portfolio">Portfolio</a></li>
+        <li><a href="/AGT-2026/#about">About AGT</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h5>Contact</h5>
+      <ul>
+        <li><a href="tel:3342948228">(334) 294-8228</a></li>
+        <li><a href="mailto:gentlemenstouch5@gmail.com">gentlemenstouch5@gmail.com</a></li>
+        <li><span>Montgomery, AL Area</span></li>
+        <li><span>Mon–Sat: 8AM–6PM</span></li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <p>© 2026 A Gentlemen's Touch Mobile Detailing. All rights reserved.</p>
+    <div class="social-links">
+      <a href="#" class="social-link" title="Facebook" aria-label="Facebook">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
+      </a>
+      <a href="#" class="social-link" title="Instagram" aria-label="Instagram">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+      </a>
+      <a href="#" class="social-link" title="Google" aria-label="Google">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21.35 11.1H12v2.8h5.35c-.4 1.6-1.75 4.1-5.35 4.1-3.2 0-5.8-2.65-5.8-5.9s2.6-5.9 5.8-5.9c1.8 0 3.05.8 3.75 1.45l2.55-2.5A9.5 9.5 0 0 0 12 3C7.05 3 3 7.05 3 12s4.05 9 9 9c5.2 0 8.65-3.65 8.65-8.8 0-.6-.1-1.05-.3-1.1z"/></svg>
+      </a>
+      <a href="#" class="social-link" title="TikTok" aria-label="TikTok">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.18 8.18 0 0 0 4.78 1.52V6.73a4.85 4.85 0 0 1-1.01-.04z"/></svg>
+      </a>
+    </div>
+  </div>
+</footer>
+
+<!-- ─── MOBILE CTA BAR ─── -->
+<div id="mobile-cta-bar">
+  <a href="tel:3342948228" aria-label="Call for fleet quote">📞 Call Now</a>
+  <a href="#contact" aria-label="Get a fleet quote">Get a Quote</a>
+</div>
+
+<script>
+  // ─── NAV SCROLL ───
+  window.addEventListener('scroll', () => {
+    const scrolled = window.scrollY > 60;
+    document.getElementById('mainNav').classList.toggle('scrolled', scrolled);
+    const navPhone = document.getElementById('navPhone');
+    navPhone.style.display = scrolled ? 'inline-block' : 'none';
+  });
+
+  // ─── FADE IN OBSERVER ───
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+  }, { threshold: 0.1 });
+  document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+
+  // ─── MOBILE MENU ───
+  function toggleMenu() {
+    const links = document.querySelector('.nav-links');
+    if (links.style.display === 'flex') {
+      links.style.display = 'none';
+    } else {
+      links.style.cssText = 'display:flex;flex-direction:column;position:fixed;top:70px;left:0;right:0;background:rgba(10,10,10,0.98);padding:30px;gap:20px;border-bottom:1px solid #1e1e1e;z-index:999';
+    }
+  }
+
+  document.querySelectorAll('.nav-links a').forEach(link => {
+    link.addEventListener('click', () => {
+      document.querySelector('.nav-links').style.display = 'none';
+    });
+  });
+</script>
+
+</body>
+</html>
