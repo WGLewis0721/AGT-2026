@@ -22,16 +22,18 @@ import stripe
 STRIPE_SECRET_KEY = os.environ.get("STRIPE_SECRET_KEY", "")
 ENVIRONMENT       = os.environ.get("ENVIRONMENT", "dev")
 # Supports comma-separated list of allowed origins
-# e.g. "https://wglewis0721.github.io,http://localhost:5500"
+# e.g. "https://agt-detailing.com,https://wglewis0721.github.io,http://localhost:5500"
 ALLOWED_ORIGINS = [
     o.strip()
-    for o in os.environ.get("ALLOWED_ORIGIN", "https://wglewis0721.github.io").split(",")
+    for o in os.environ.get("ALLOWED_ORIGIN", "https://agt-detailing.com").split(",")
     if o.strip()
 ]
 
-# Success and cancel URLs
-SUCCESS_URL = "https://wglewis0721.github.io/AGT-2026/success.html"
-CANCEL_URL  = "https://wglewis0721.github.io/AGT-2026/"
+# Success and cancel URLs — derived from DOMAIN_URL env var so they follow
+# the active deployment domain without requiring a code change.
+_DOMAIN_URL = os.environ.get("DOMAIN_URL", "https://agt-detailing.com").rstrip("/")
+SUCCESS_URL = f"{_DOMAIN_URL}/success.html"
+CANCEL_URL  = f"{_DOMAIN_URL}/"
 
 # ─── PRICING TABLE (server-side — source of truth) ───────────────────────────
 
