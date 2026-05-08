@@ -107,11 +107,19 @@ try {
     Remove-PathIfExists -Path $layerZip
     New-Item -ItemType Directory -Path $pythonDir -Force | Out-Null
 
+    $pipArgs = @(
+        "install", "-r", $requirementsFile, "-t", $pythonDir, "--quiet",
+        "--platform", "manylinux2014_x86_64",
+        "--implementation", "cp",
+        "--python-version", "311",
+        "--only-binary", ":all:"
+    )
+
     if (Get-Command pip -ErrorAction SilentlyContinue) {
-        & pip install -r $requirementsFile -t $pythonDir --quiet
+        & pip @pipArgs
     }
     elseif (Get-Command python -ErrorAction SilentlyContinue) {
-        & python -m pip install -r $requirementsFile -t $pythonDir --quiet
+        & python -m pip @pipArgs
     }
     else {
         throw "pip was not found. Install Python 3.11+ with pip before bootstrapping the layer."
