@@ -40,6 +40,11 @@ variable "detailer_phone_number_parameter_name" {
   type        = string
 }
 
+variable "domain_url" {
+  description = "Frontend URL used for Stripe checkout success and cancel redirects."
+  type        = string
+}
+
 variable "billing_report_email" {
   description = "Daily billing report email recipient. Leave blank to disable billing emails."
   type        = string
@@ -88,4 +93,36 @@ variable "log_retention" {
   description = "CloudWatch log retention in days."
   type        = number
   default     = 14
+}
+
+# ─── Pricing API Lambda ──────────────────────────────────────────────────────
+
+variable "pricing_lambda_handler" {
+  description = "Handler for pricing Lambda"
+  type        = string
+  default     = "pricing_lambda.lambda_handler"
+}
+
+variable "pricing_lambda_runtime" {
+  description = "Runtime for pricing Lambda"
+  type        = string
+  default     = "python3.11"
+}
+
+variable "pricing_lambda_timeout" {
+  description = "Timeout in seconds for pricing Lambda"
+  type        = number
+  default     = 10
+}
+
+variable "pricing_lambda_memory" {
+  description = "Memory in MB for pricing Lambda"
+  type        = number
+  default     = 128
+}
+
+variable "allowed_origin" {
+  description = "Allowed CORS origin for pricing API"
+  type        = string
+  default     = "https://wglewis0721.github.io"
 }

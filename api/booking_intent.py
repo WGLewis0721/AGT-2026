@@ -1,10 +1,9 @@
 import base64
 import json
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime
 
-
-VALID_PACKAGES = {"small", "medium", "large"}
+from booking_common import booking_table, normalize_addons, normalize_package, pricing_for, utc_now_iso
 
 
 def _log(event_name, **fields):
@@ -30,7 +29,6 @@ def _parse_body(event):
         raise ValueError("event must be an object")
 
     body = event.get("body", event)
-
     if body is None:
         raise ValueError("request body is required")
 
@@ -84,12 +82,20 @@ def _validate_payload(payload):
     package = payload.get("package")
     if not _is_non_empty_string(package):
         errors.append("package is required")
-    elif package not in VALID_PACKAGES:
-        errors.append("package must be one of: small, medium, large")
+    else:
+        try:
+            normalize_package(package)
+        except ValueError as exc:
+            errors.append(str(exc))
 
     addons = payload.get("addons")
     if not isinstance(addons, list):
         errors.append("addons must be an array")
+    else:
+        try:
+            normalize_addons(addons)
+        except ValueError as exc:
+            errors.append(str(exc))
 
     customer = payload.get("customer")
     if not isinstance(customer, dict):
@@ -127,15 +133,29 @@ def _validate_payload(payload):
 
 
 def _build_booking(payload):
+    package_key = normalize_package(payload["package"])
+    addon_ids = normalize_addons(payload["addons"])
+    pricing = pricing_for(package_key, addon_ids)
+    now = utc_now_iso()
+
     customer = payload["customer"]
     vehicle = payload["vehicle"]
 
-    # Ready to persist once DynamoDB wiring is added.
     return {
         "booking_id": str(uuid.uuid4()),
         "status": "draft",
-        "package": payload["package"].strip(),
-        "addons": payload["addons"],
+        "payment_status": "pending",
+        "package": package_key,
+        "package_label": pricing["package_label"],
+        "addons": addon_ids,
+        "addon_labels": pricing["addon_labels"],
+        "pricing": {
+            "package_total": pricing["package_total"],
+            "addon_total": pricing["addon_total"],
+            "total": pricing["total"],
+            "deposit": pricing["deposit"],
+            "balance_due": pricing["balance_due"],
+        },
         "customer": {
             "name": customer["name"].strip(),
             "phone": customer["phone"].strip(),
@@ -149,7 +169,8 @@ def _build_booking(payload):
         "address": payload["address"].strip(),
         "appointment_time": payload["appointment_time"],
         "waiver_accepted": True,
-        "created_at": datetime.now(timezone.utc).isoformat(),
+        "created_at": now,
+        "updated_at": now,
     }
 
 
@@ -171,12 +192,16 @@ def lambda_handler(event, context):
             )
 
         booking = _build_booking(payload)
+        booking_table().put_item(Item=booking)
+
         _log(
             "booking_intent_created",
             booking_id=booking["booking_id"],
             status=booking["status"],
             package=booking["package"],
             addon_count=len(booking["addons"]),
+            total=booking["pricing"]["total"],
+            deposit=booking["pricing"]["deposit"],
         )
 
         return _response(

@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Deposit Confirmed — A Gentlemen's Touch</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Bebas+Neue&family=Montserrat:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #0a0a0a;
+      color: #f5f5f5;
+      font-family: 'Montserrat', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 20px;
+    }
+
+    .logo {
+      font-family: 'Bebas Neue', cursive;
+      font-size: 24px;
+      letter-spacing: 4px;
+      color: #C9A84C;
+      margin-bottom: 48px;
+    }
+
+    .card {
+      background: #111;
+      border: 1px solid #222;
+      border-top: 3px solid #C9A84C;
+      padding: 48px 40px;
+      max-width: 520px;
+      width: 100%;
+      text-align: center;
+    }
+
+    .checkmark {
+      font-size: 48px;
+      margin-bottom: 24px;
+    }
+
+    h1 {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 36px;
+      font-weight: 400;
+      margin-bottom: 12px;
+    }
+
+    h1 em {
+      font-style: italic;
+      color: #C9A84C;
+    }
+
+    .subtitle {
+      color: #888;
+      font-size: 14px;
+      font-weight: 300;
+      margin-bottom: 40px;
+      line-height: 1.6;
+    }
+
+    .divider {
+      border: none;
+      border-top: 1px solid #222;
+      margin: 32px 0;
+    }
+
+    .countdown-text {
+      font-size: 13px;
+      color: #666;
+      margin-bottom: 8px;
+    }
+
+    .countdown-number {
+      font-family: 'Bebas Neue', cursive;
+      font-size: 48px;
+      color: #C9A84C;
+      letter-spacing: 4px;
+      margin-bottom: 24px;
+    }
+
+    .btn-gold {
+      display: inline-block;
+      background: #C9A84C;
+      color: #000;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      padding: 16px 40px;
+      border: none;
+      cursor: pointer;
+      text-decoration: none;
+      margin-bottom: 16px;
+      width: 100%;
+    }
+
+    .btn-ghost {
+      display: inline-block;
+      background: transparent;
+      color: #666;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 12px;
+      letter-spacing: 1px;
+      padding: 12px 24px;
+      border: 1px solid #333;
+      cursor: pointer;
+      text-decoration: none;
+      width: 100%;
+    }
+
+    .note {
+      margin-top: 32px;
+      font-size: 12px;
+      color: #555;
+      line-height: 1.7;
+    }
+
+    .note strong {
+      color: #888;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="logo">A Gentlemen's Touch</div>
+
+  <div class="card">
+    <div class="checkmark">✦</div>
+    <h1>Deposit <em>Confirmed</em></h1>
+    <p class="subtitle">
+      Your deposit has been received. Now let's lock in your appointment date and time.
+    </p>
+
+    <hr class="divider">
+
+    <p class="countdown-text">Redirecting to scheduling in</p>
+    <div class="countdown-number" id="countdown">3</div>
+
+    <a id="cal-link" class="btn-gold" href="#">
+      Book Your Appointment Now →
+    </a>
+    <a href="index.html" class="btn-ghost">Back to Home</a>
+
+    <p class="note">
+      <strong>Next step:</strong> Choose your appointment date and time on our scheduling page.
+      No additional payment is required — your deposit is already confirmed.
+      Your detailer will collect the remaining balance on-site after service.
+    </p>
+  </div>
+
+  <script>
+    // ─── DISPLAY NAME MAPS ───────────────────────────────────────────────
+    const PACKAGES = {
+      sm_detail: 'Small Vehicle Detail',
+      md_detail: 'Medium Vehicle Detail',
+      lg_detail: 'Large / SUV / Truck Detail',
+    };
+
+    const ADDONS = {
+      pet_hair:   'Pet Hair Removal',
+      shampooing: 'Interior Shampooing',
+      upholstery: 'Upholstery Shampoo',
+      wax:        'Hand Wax Upgrade',
+      steam:      'Steam Cleaning',
+      polishing:  'Machine Polishing',
+      headlights: 'Headlight Restoration',
+      odor:       'Odor Removal',
+      engine_bay: 'Engine Bay Cleaning',
+      leather:    'Leather Treatment',
+    };
+
+    const FALLBACK_URL = 'https://cal.com/william-g.-lewis-ai51kb/mobile-detail-appointment-service-1';
+
+    // ─── READ SESSION STORAGE ────────────────────────────────────────────
+    const baseCalUrl = sessionStorage.getItem('agt_cal_url') || FALLBACK_URL;
+    const packageKey = sessionStorage.getItem('agt_package') || '';
+    const addonsRaw  = sessionStorage.getItem('agt_addons') || '';
+    const deposit    = sessionStorage.getItem('agt_deposit') || '';
+    const balance    = sessionStorage.getItem('agt_balance') || '';
+
+    // ─── BUILD PREFILLED URL ─────────────────────────────────────────────
+    const serviceName = PACKAGES[packageKey] || '';
+    const addonNames  = addonsRaw
+      ? addonsRaw.split(',').map(k => ADDONS[k.trim()] || '').filter(Boolean).join(', ')
+      : '';
+
+    let calUrl = baseCalUrl;
+
+    if (serviceName || addonNames) {
+      const params = new URLSearchParams();
+      if (serviceName) params.set('service', serviceName);
+      if (addonNames)  params.set('add-ons', addonNames);
+      if (deposit && balance) {
+        params.set('notes', 'Deposit paid: $' + deposit + ' | Balance due: $' + balance);
+      }
+      calUrl = baseCalUrl + (baseCalUrl.includes('?') ? '&' : '?') + params.toString();
+    }
+
+    // ─── SET LINK + COUNTDOWN ────────────────────────────────────────────
+    document.getElementById('cal-link').href = calUrl;
+
+    let seconds = 3;
+    const countdownEl = document.getElementById('countdown');
+
+    const timer = setInterval(() => {
+      seconds--;
+      countdownEl.textContent = seconds;
+      if (seconds <= 0) {
+        clearInterval(timer);
+        window.location.href = calUrl;
+      }
+    }, 1000);
+  </script>
+
+</body>
+</html>

@@ -13,6 +13,11 @@ output "lambda_function_arn" {
   value       = aws_lambda_function.booking_webhook.arn
 }
 
+output "bookings_table_name" {
+  description = "DynamoDB bookings table name"
+  value       = aws_dynamodb_table.bookings.name
+}
+
 output "layer_arn" {
   description = "Lambda layer ARN"
   value       = aws_lambda_layer_version.dependencies.arn
