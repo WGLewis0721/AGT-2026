@@ -2675,7 +2675,7 @@
       <div class="package-size">Small Vehicle</div>
       <div class="package-name">Full Luxury Detail</div>
       <div class="package-time">⏱ Approx. 90 minutes</div>
-      <div class="package-price">$100</div>
+      <div class="package-price" data-pkg-display="sm_detail">$100</div>
       <div class="package-price-note">Starting price · Final price after inspection</div>
       <div class="package-divider"></div>
       <ul class="package-features">
@@ -2693,7 +2693,7 @@
       <div class="package-size">Medium Vehicle</div>
       <div class="package-name">Full Luxury Detail <span style="background:var(--gold);color:var(--black);font-size:9px;font-weight:700;letter-spacing:1px;padding:3px 8px;border-radius:2px;vertical-align:middle;margin-left:8px">Most Popular</span></div>
       <div class="package-time">⏱ Approx. 120 minutes</div>
-      <div class="package-price">$150</div>
+      <div class="package-price" data-pkg-display="md_detail">$150</div>
       <div class="package-price-note">Starting price · Final price after inspection</div>
       <div class="package-divider"></div>
       <ul class="package-features">
@@ -2709,7 +2709,7 @@
       <div class="package-size">Large Vehicle / SUV / Truck</div>
       <div class="package-name">Full Luxury Detail</div>
       <div class="package-time">⏱ Approx. 150–180 minutes</div>
-      <div class="package-price">$200</div>
+      <div class="package-price" data-pkg-display="lg_detail">$200</div>
       <div class="package-price-note">Starting price · Call for exact quote on oversized</div>
       <div class="package-divider"></div>
       <ul class="package-features">
@@ -4216,13 +4216,18 @@
 
   // ─── PRICING ENGINE ────────────────────────────────────────────────────
 
-  const PACKAGES = {
+  // TEST_MODE swaps to micro prices ($0.01–$1.00) and charges 100% deposit so
+  // the live Square production wiring can be validated end-to-end with minimal
+  // real-money risk before launch. Flip to false before public launch.
+  const TEST_MODE = true;
+
+  const REAL_PACKAGES = {
     sm_detail: { name: 'Small Vehicle Detail',  price: 100 },
     md_detail: { name: 'Medium Vehicle Detail', price: 150 },
     lg_detail: { name: 'Large / SUV / Truck',   price: 200 },
   };
 
-  const ADDONS = {
+  const REAL_ADDONS = {
     pet_hair:   { name: 'Pet Hair Removal',      price: 20 },
     shampooing: { name: 'Interior Shampooing',   price: 15 },
     upholstery: { name: 'Upholstery Shampoo',    price: 15 },
@@ -4235,14 +4240,46 @@
     leather:    { name: 'Leather Treatment',     price: 15 },
   };
 
+  const TEST_PACKAGES = {
+    sm_detail: { name: 'Small Vehicle Detail',  price: 0.01 },
+    md_detail: { name: 'Medium Vehicle Detail', price: 0.10 },
+    lg_detail: { name: 'Large / SUV / Truck',   price: 1.00 },
+  };
+
+  const TEST_ADDONS = Object.fromEntries(
+    Object.entries(REAL_ADDONS).map(([k, v]) => [k, { name: v.name, price: 0.01 }])
+  );
+
+  const PACKAGES = TEST_MODE ? TEST_PACKAGES : REAL_PACKAGES;
+  const ADDONS   = TEST_MODE ? TEST_ADDONS   : REAL_ADDONS;
+
   const CAL_URLS = {
     sm_detail: 'https://cal.com/william-g.-lewis-ai51kb/mobile-detail-appointment-service-1',
     md_detail: 'https://cal.com/william-g.-lewis-ai51kb/mobile-detail-appointment-service-2',
     lg_detail: 'https://cal.com/william-g.-lewis-ai51kb/mobile-detail-appointment-service-3',
   };
 
-  const DEPOSIT_RATE    = 0.20;
+  const DEPOSIT_RATE    = TEST_MODE ? 1.00 : 0.20;
   const PRICING_API_URL = 'https://c4eki550u8.execute-api.us-east-1.amazonaws.com/create-checkout';
+
+  // Render PACKAGES/ADDONS prices into the static DOM markup so the displayed
+  // prices match whatever mode we're in.
+  function _renderPriceDisplay() {
+    const fmt = (n) => '$' + Number(n).toFixed(2);
+    document.querySelectorAll('[data-pkg-display]').forEach(el => {
+      const key = el.dataset.pkgDisplay;
+      if (PACKAGES[key]) el.textContent = fmt(PACKAGES[key].price);
+    });
+    document.querySelectorAll('.pkg-card[data-pkg] .package-price').forEach(el => {
+      const key = el.closest('.pkg-card').dataset.pkg;
+      if (PACKAGES[key]) el.textContent = fmt(PACKAGES[key].price);
+    });
+    document.querySelectorAll('.addon-pill[data-addon] .addon-pill-price').forEach(el => {
+      const key = el.closest('.addon-pill').dataset.addon;
+      if (ADDONS[key]) el.textContent = '+' + fmt(ADDONS[key].price);
+    });
+  }
+  document.addEventListener('DOMContentLoaded', _renderPriceDisplay);
 
   let selectedPackage = null;
   let selectedAddons  = new Set();

@@ -48,6 +48,7 @@ resource "aws_lambda_function" "pricing_api" {
       DOMAIN_URL          = var.domain_url
       ENVIRONMENT         = var.environment
       ALLOWED_ORIGIN      = var.allowed_origin
+      TEST_MODE           = var.test_mode ? "true" : "false"
     }
   }
 

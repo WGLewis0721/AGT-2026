@@ -42,13 +42,18 @@ CANCEL_URL  = f"{_DOMAIN_URL}/"
 
 # ─── PRICING TABLE (server-side — source of truth) ───────────────────────────
 
-PACKAGES = {
+# When TEST_MODE=true, swap to micro prices and charge 100% deposit so
+# real Square production credentials can be validated end-to-end with
+# minimal real-money risk before public launch.
+TEST_MODE = os.environ.get("TEST_MODE", "false").lower() == "true"
+
+REAL_PACKAGES = {
     "sm_detail": {"name": "Small Vehicle Detail",   "price": 100.00},
     "md_detail": {"name": "Medium Vehicle Detail",  "price": 150.00},
     "lg_detail": {"name": "Large / SUV / Truck",    "price": 200.00},
 }
 
-ADDONS = {
+REAL_ADDONS = {
     "pet_hair":   {"name": "Pet Hair Removal",       "price": 20.00},
     "shampooing": {"name": "Interior Shampooing",    "price": 15.00},
     "upholstery": {"name": "Upholstery Shampoo",     "price": 15.00},
@@ -61,7 +66,19 @@ ADDONS = {
     "leather":    {"name": "Leather Treatment",      "price": 15.00},
 }
 
-DEPOSIT_RATE = 0.20  # 20%
+TEST_PACKAGES = {
+    "sm_detail": {"name": "Small Vehicle Detail",   "price": 0.01},
+    "md_detail": {"name": "Medium Vehicle Detail",  "price": 0.10},
+    "lg_detail": {"name": "Large / SUV / Truck",    "price": 1.00},
+}
+
+TEST_ADDONS = {key: {"name": value["name"], "price": 0.01}
+               for key, value in REAL_ADDONS.items()}
+
+PACKAGES = TEST_PACKAGES if TEST_MODE else REAL_PACKAGES
+ADDONS   = TEST_ADDONS   if TEST_MODE else REAL_ADDONS
+
+DEPOSIT_RATE = 1.00 if TEST_MODE else 0.20
 
 # ─── HELPERS ─────────────────────────────────────────────────────────────────
 

@@ -70,7 +70,11 @@ def _format_addons(addons) -> str:
 
 # ─── Constants ─────────────────
 
-SERVICE_PRICES = {
+# When TEST_MODE=true, mirror the micro prices used by pricing_lambda.py
+# so SMS deposit/balance amounts match what Square actually charged.
+TEST_MODE = os.environ.get("TEST_MODE", "false").lower() == "true"
+
+REAL_SERVICE_PRICES = {
     "sm detail": 100.00,
     "md detail": 150.00,
     "lg detail": 200.00,
@@ -79,6 +83,19 @@ SERVICE_PRICES = {
     "medium": 150.00,
     "large": 200.00,
 }
+
+TEST_SERVICE_PRICES = {
+    "sm detail": 0.01,
+    "md detail": 0.10,
+    "lg detail": 1.00,
+    "full detail": 0.10,
+    "small": 0.01,
+    "medium": 0.10,
+    "large": 1.00,
+}
+
+SERVICE_PRICES = TEST_SERVICE_PRICES if TEST_MODE else REAL_SERVICE_PRICES
+DEPOSIT_RATE   = 1.00 if TEST_MODE else 0.20
 
 BUSINESS_PHONE = "(334) 294-8228"
 
@@ -462,11 +479,11 @@ def _parse_calcom_booking(payload: dict) -> dict:
         addons = None
     service = _parse_calcom_service(payload, responses)
     # Square handles payment, not Cal.com. Always derive the deposit from
-    # the documented 20% policy on the package full price; payload.price is
-    # ignored because it reflects whatever was last configured on the
+    # the configured deposit rate on the package full price; payload.price
+    # is ignored because it reflects whatever was last configured on the
     # Cal.com event type, not what Square actually charged.
     full_price = _service_full_price(service)
-    deposit_paid = round(full_price * 0.20, 2) if full_price else 0.0
+    deposit_paid = round(full_price * DEPOSIT_RATE, 2) if full_price else 0.0
     return {
         "customer_name": customer_name,
         "customer_email": customer_email,

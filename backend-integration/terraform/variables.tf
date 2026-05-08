@@ -125,3 +125,9 @@ variable "square_environment" {
     error_message = "square_environment must be either sandbox or production."
   }
 }
+
+variable "test_mode" {
+  description = "When true, use micro test prices (SM $0.01 / MD $0.10 / LG $1.00, addons $0.01) and charge 100% deposit. Used to validate the live Square production wiring with minimal real-money risk before launch."
+  type        = bool
+  default     = false
+}
