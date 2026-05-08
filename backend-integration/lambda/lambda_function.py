@@ -7,7 +7,6 @@ from datetime import datetime, timezone
 
 import boto3 as _boto3
 import requests
-import stripe
 
 # CloudWatch Logs Insights - AWS Console -> CloudWatch -> Logs Insights
 # Log group: /aws/lambda/tra3-gentlemens-touch-{environment}-booking-webhook
@@ -33,8 +32,8 @@ import stripe
 # | filter @message like /calcom_webhook_received/
 # | sort @timestamp desc
 
-STRIPE_SECRET_KEY = os.environ.get("STRIPE_SECRET_KEY")
-STRIPE_WEBHOOK_SECRET = os.environ.get("STRIPE_WEBHOOK_SECRET")
+SQUARE_ACCESS_TOKEN          = os.environ.get("SQUARE_ACCESS_TOKEN", "")
+SQUARE_WEBHOOK_SIGNATURE_KEY = os.environ.get("SQUARE_WEBHOOK_SIGNATURE_KEY", "")
 CALCOM_WEBHOOK_SECRET = os.environ.get("CALCOM_WEBHOOK_SECRET", "")
 TEXTBELT_API_KEY = os.environ.get("TEXTBELT_API_KEY")
 DETAILER_PHONE = os.environ.get("DETAILER_PHONE")
@@ -90,8 +89,8 @@ def _sanitize_string(value):
     sanitized = str(value)
 
     for secret in (
-        STRIPE_SECRET_KEY,
-        STRIPE_WEBHOOK_SECRET,
+        SQUARE_ACCESS_TOKEN,
+        SQUARE_WEBHOOK_SIGNATURE_KEY,
         CALCOM_WEBHOOK_SECRET,
         TEXTBELT_API_KEY,
         DETAILER_PHONE,
@@ -222,8 +221,8 @@ def _calculate_balance_due(service: str, deposit_paid: float):
 
 def _mark_booking_confirmed(
     booking_id,
-    session_id,
-    stripe_event_id,
+    square_payment_id,
+    square_order_id,
     amount_total_cents,
     detailer_sms_status,
     customer_sms_status,
@@ -239,9 +238,9 @@ def _mark_booking_confirmed(
                 "payment_status = :payment_status, "
                 "paid_at = :paid_at, "
                 "updated_at = :updated_at, "
-                "stripe_event_id = :stripe_event_id, "
-                "stripe_checkout_session_id = :session_id, "
-                "stripe_amount_total_cents = :amount_total_cents, "
+                "square_payment_id = :square_payment_id, "
+                "square_order_id = :square_order_id, "
+                "square_amount_total_cents = :amount_total_cents, "
                 "detailer_sms_status = :detailer_sms_status, "
                 "customer_sms_status = :customer_sms_status"
             ),
@@ -253,8 +252,8 @@ def _mark_booking_confirmed(
                 ":payment_status": "paid",
                 ":paid_at": datetime.now(timezone.utc).isoformat(),
                 ":updated_at": datetime.now(timezone.utc).isoformat(),
-                ":stripe_event_id": stripe_event_id,
-                ":session_id": session_id,
+                ":square_payment_id":  square_payment_id,
+                ":square_order_id":    square_order_id,
                 ":amount_total_cents": int(amount_total_cents or 0),
                 ":detailer_sms_status": detailer_sms_status,
                 ":customer_sms_status": customer_sms_status,
@@ -559,126 +558,111 @@ def _handle_calcom_webhook(event: dict, body: str) -> dict:
     return _response(200, "Cal.com booking processed")
 
 
-# ─── Stripe Webhook ─────────────────
+# ─── Square Webhook ─────────────────
 
-def _verify_stripe_event(event: dict, body: str):
-    """Verify Stripe webhook signature. Returns (stripe_event_dict, err_response)."""
-    sig_header = _normalized_headers(event).get("stripe-signature", "")
-    stripe.api_key = STRIPE_SECRET_KEY
+def _verify_square_signature(body: str, signature: str, url: str) -> bool:
+    """Verify Square webhook signature using HMAC-SHA256."""
+    if not SQUARE_WEBHOOK_SIGNATURE_KEY or not signature:
+        return False
     try:
-        verified_event = stripe.Webhook.construct_event(body, sig_header, STRIPE_WEBHOOK_SECRET)
-        if hasattr(verified_event, "to_dict_recursive"):
-            return verified_event.to_dict_recursive(), None
-        return json.loads(body), None
-    except stripe.error.SignatureVerificationError as exc:
-        _log("ERROR", "signature_verification_failed", detail=str(exc))
-        return None, _response(400, "Invalid signature")
+        message = url + body
+        expected = hmac.new(
+            SQUARE_WEBHOOK_SIGNATURE_KEY.encode("utf-8"),
+            message.encode("utf-8"),
+            hashlib.sha256,
+        ).digest()
+        import base64
+        expected_b64 = base64.b64encode(expected).decode("utf-8")
+        return hmac.compare_digest(expected_b64, signature)
     except Exception as exc:
-        _log("ERROR", "webhook_verification_failed", detail=str(exc))
-        return None, _response(400, "Webhook error")
+        _log("ERROR", "square_sig_error", detail=str(exc))
+        return False
 
 
-def _extract_stripe_booking(session: dict) -> dict:
+def _extract_square_booking(payment: dict) -> dict:
     """
-    Extract booking fields from a Stripe Checkout Session.
-    Reads session.metadata first (set by pricing Lambda),
-    falls back to session.custom_fields (set by Cal.com Stripe integration).
+    Extract booking fields from a Square payment.completed event.
+    Reads booking context from the pipe-delimited note field written
+    by pricing_lambda.py at checkout creation time.
     """
-    metadata = session.get("metadata") or {}
-    customer_details = session.get("customer_details") or {}
+    note = payment.get("note") or ""
+    context = {}
+    for part in note.split("|"):
+        if "=" in part:
+            key, _, value = part.partition("=")
+            context[key.strip()] = value.strip()
 
-    custom_fields = {
-        field["key"]: field.get("text", {}).get("value", "")
-        for field in (session.get("custom_fields") or [])
-        if "key" in field
-    }
-
-    service = (
-        metadata.get("package")
-        or custom_fields.get("service")
-        or "Not specified"
+    amount_cents = (
+        (payment.get("amount_money") or {}).get("amount") or 0
     )
+    deposit_paid = round(amount_cents / 100, 2)
 
-    addons = (
-        metadata.get("addons")
-        or custom_fields.get("add-ons")
-        or custom_fields.get("addons")
-        or None
-    )
-    if addons and not str(addons).strip():
-        addons = None
-
-    address = (
-        metadata.get("address")
-        or custom_fields.get("address-of-service")
-        or custom_fields.get("addressOfService")
-        or custom_fields.get("address_of_service")
-        or custom_fields.get("address")
-        or custom_fields.get("Address of Service")
-        or None
-    )
-    if address and not str(address).strip():
-        address = None
-
-    appointment_date = (
-        metadata.get("appointment_time")
-        or custom_fields.get("date")
-        or "Not specified"
-    )
-
-    deposit_paid = _amount_to_dollars(
-        session.get("amount_total"), "invalid_amount_value"
-    )
-
-    balance = metadata.get("balance")
+    balance = context.get("balance")
     balance_due = _to_float(balance) if balance else None
 
+    buyer = payment.get("buyer_email_address") or "No email"
+    shipping = payment.get("shipping_address") or {}
+
     return {
-        "customer_name": customer_details.get("name") or "Unknown",
-        "customer_email": customer_details.get("email") or "No email",
+        "customer_name":  shipping.get("first_name", "Unknown"),
+        "customer_email": buyer,
         "customer_phone": _normalize_phone_number(
-            customer_details.get("phone") or None
+            payment.get("buyer_phone_number") or None
         ),
-        "service": service,
-        "addons": addons,
-        "address": address,
-        "appointment_date": appointment_date,
-        "deposit_paid": deposit_paid,
-        "balance_due": balance_due,
+        "service":          context.get("package") or "Not specified",
+        "addons":           context.get("addons") or None,
+        "address":          context.get("address") or None,
+        "appointment_date": context.get("appointment_time") or "Not specified",
+        "deposit_paid":     deposit_paid,
+        "balance_due":      balance_due,
+        "order_id":         context.get("order_id") or "unknown",
+        "cal_url":          context.get("cal_url") or "",
     }
 
 
-def _handle_stripe_webhook(event: dict, body: str) -> dict:
-    """Handle incoming Stripe webhook (checkout.session.completed)."""
-    stripe_event, err = _verify_stripe_event(event, body)
-    if err:
-        return err
+def _handle_square_webhook(event: dict, body: str) -> dict:
+    """Handle incoming Square webhook (payment.completed)."""
+    headers  = _normalized_headers(event)
+    signature = headers.get("x-square-hmacsha256-signature", "")
+    url = (
+        (event.get("requestContext") or {})
+        .get("domainName", "")
+    )
+    if url:
+        path = (event.get("requestContext") or {}).get("path", "/webhook")
+        url = f"https://{url}{path}"
 
-    session = stripe_event["data"]["object"]
-    metadata = session.get("metadata") or {}
-    booking_id = str(metadata.get("booking_id") or "").strip() or "unknown"
+    if SQUARE_WEBHOOK_SIGNATURE_KEY and not _verify_square_signature(body, signature, url):
+        _log("ERROR", "square_invalid_signature")
+        return _response(400, "Invalid signature")
+
+    try:
+        data = json.loads(body)
+    except Exception as exc:
+        _log("ERROR", "square_parse_error", detail=str(exc))
+        return _response(400, "Invalid JSON")
+
+    event_type = data.get("type", "")
+    payment    = (data.get("data") or {}).get("object", {}).get("payment", {})
+    payment_id = payment.get("id", "unknown")
+    order_id   = payment.get("order_id", "unknown")
 
     _log(
         "INFO",
-        "stripe_webhook_received",
-        stripe_event_id=stripe_event["id"],
-        stripe_event_type=stripe_event["type"],
-        livemode=stripe_event.get("livemode", False),
-        session_id=session.get("id", "unknown"),
-        payment_status=session.get("payment_status", "unknown"),
-        amount_total=session.get("amount_total", 0),
-        booking_id=booking_id,
+        "square_webhook_received",
+        event_type=event_type,
+        payment_id=payment_id,
+        order_id=order_id,
     )
 
-    if stripe_event["type"] != "checkout.session.completed":
-        _log("INFO", "event_ignored",
-             detail=f"Ignored event type: {stripe_event['type']}")
+    if event_type != "payment.completed":
+        _log("INFO", "event_ignored", detail=f"Ignored event type: {event_type}")
         return _response(200, "Ignored")
 
-    booking = _extract_stripe_booking(session)
+    booking = _extract_square_booking(payment)
 
     deposit_paid = booking["deposit_paid"]
-    balance_due = (
+    balance_due  = (
         booking["balance_due"]
         if booking["balance_due"] is not None
         else _calculate_balance_due(booking["service"], deposit_paid)
@@ -686,20 +670,19 @@ def _handle_stripe_webhook(event: dict, body: str) -> dict:
 
     _log(
         "INFO",
-        "stripe_payment_confirmed",
-        session_id=session.get("id", "unknown"),
-        booking_id=booking_id,
+        "square_payment_confirmed",
+        payment_id=payment_id,
+        order_id=order_id,
         deposit_paid=deposit_paid,
         balance_due=balance_due,
         customer_email=booking["customer_email"],
-        livemode=stripe_event.get("livemode", False),
     )
 
     _mark_booking_confirmed(
-        booking_id=booking_id,
-        session_id=session.get("id", "unknown"),
-        stripe_event_id=stripe_event["id"],
-        amount_total_cents=session.get("amount_total"),
+        booking_id=order_id,
+        square_payment_id=payment_id,
+        square_order_id=order_id,
+        amount_total_cents=int(deposit_paid * 100),
         detailer_sms_status="pending_calcom",
         customer_sms_status="pending_calcom",
     )
@@ -713,18 +696,18 @@ def lambda_handler(event, context):
     """
     Routes incoming webhooks to the correct handler:
     - Cal.com webhooks: contain triggerEvent field in JSON body
-    - Stripe webhooks: contain stripe-signature header
+    - Square webhooks: contain x-square-hmacsha256-signature header
     """
     del context
 
     body = event.get("body", "") or ""
     headers = _normalized_headers(event)
 
-    has_stripe_sig = "stripe-signature" in headers
-    has_cal_sig = "x-cal-signature-256" in headers
+    has_square_sig = "x-square-hmacsha256-signature" in headers
+    has_cal_sig    = "x-cal-signature-256" in headers
 
     is_calcom = has_cal_sig
-    if not has_stripe_sig and not has_cal_sig:
+    if not has_square_sig and not has_cal_sig:
         try:
             parsed = json.loads(body)
             if "triggerEvent" in parsed:
@@ -735,4 +718,4 @@ def lambda_handler(event, context):
     if is_calcom:
         return _handle_calcom_webhook(event, body)
 
-    return _handle_stripe_webhook(event, body)
+    return _handle_square_webhook(event, body)
