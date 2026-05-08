@@ -268,11 +268,12 @@ def _mark_booking_confirmed(
 
 def _send_sms(phone_number, message, recipient):
     try:
+        sanitized_message = re.sub(r"https?://\S+", "[link removed]", str(message))
         response = requests.post(
             "https://textbelt.com/text",
             {
                 "phone": phone_number,
-                "message": message,
+                "message": sanitized_message,
                 "key": TEXTBELT_API_KEY,
             },
             timeout=30,

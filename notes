@@ -1,0 +1,272 @@
+
+You want a clean retention strategy: store confirmed booking records in DynamoDB, and add CloudWatch-to-S3 retention after the pricing engine ships. I’ll save this decision in memory now and then give you a practical rollout plan.
+
+Perfect direction. This is the clean way to do it, and I saved your decision to repository memory.
+
+Recommended approach now
+
+Make DynamoDB the source of truth for booking records
+One record per booking_id
+Store customer details, vehicle/service details, appointment time, Stripe payment status, Cal booking status, and confirmation timestamps
+Keep status progression explicit:
+initiated
+payment_pending
+payment_confirmed
+appointment_confirmed
+completed
+canceled
+Write confirmed details at the webhook boundary
+On Stripe checkout.session.completed:
+upsert booking record
+set payment_confirmed_at
+persist final paid amounts and package/addons snapshot
+On Cal booking confirmed event:
+update same booking_id
+set appointment_confirmed_at
+persist final appointment metadata
+This gives you deterministic confirmed-details tracking instead of relying on logs
+Add idempotency so retries do not corrupt state
+Save last processed event id per provider (stripe_event_id, cal_event_id)
+Ignore duplicates if already processed
+Use conditional update expressions in DynamoDB for safe state transitions
+Add retention policy in DynamoDB
+Keep business records long-term (or by your legal/business rule)
+Optional TTL only for operational/temporary fields, not core booking facts
+If needed, split into:
+bookings table (long retention)
+webhook_events table (short/medium retention)
+Defer CloudWatch to S3 until after pricing engine ships
+Your sequencing is correct
+Post-pricing phase:
+set CloudWatch retention days for log groups
+enable export/archival pipeline to S3
+lifecycle policy on S3 (for low-cost long-term storage)
+This keeps current delivery focused and avoids noisy backtracking
+What I saved to memory
+
+DynamoDB is primary record retention for confirmed details
+CloudWatch-to-S3 retention is a later phase after pricing engine release
+Keep scope clean now, add logs archival later
+If you want, next I can draft the exact DynamoDB schema and update contract for Stripe + Cal events so implementation is straightforward in one pass.
+
+GPT-5.3-Codex • 0.9x
+
+Weekly Airtable actions are a great cost-control move.
+
+If you run Airtable sync weekly
+
+Cost impact
+Much lower automation/task usage than real-time.
+Fewer API calls and fewer Zapier/n8n executions.
+Tradeoff
+Airtable is up to 7 days stale.
+Operations team should treat DynamoDB/system notifications as real-time truth.
+Best weekly model
+Run one scheduled job (weekly) that:
+pulls bookings changed since last sync from DynamoDB
+upserts rows by booking_id
+marks canceled/completed states
+writes a sync report (count created/updated/failed)
+Make weekly still reliable
+Keep a last_synced_at or sync_version field.
+Use idempotent upsert (booking_id as key).
+Retry failures and log a dead-letter list for manual fix.
+Hybrid model (usually best)
+Real-time only for mission-critical events:
+confirmed
+canceled
+Weekly batch for everything else:
+enrichment fields
+analytics fields
+cleanup/archive
+This hybrid keeps cost low while avoiding “we didn’t know a booking changed” issues.
+
+Recommended schedule
+
+Weekly full delta sync: Sunday night.
+Optional tiny daily sync for confirmed/canceled only (still cheap).
+Monthly archive old Airtable rows to S3 CSV to keep base small.
+If you want, I can define the exact weekly sync payload and field map so your n8n/Zapier flow is one-pass and idempotent.
+
+I’ll map this to your actual backend flow so the answer is concrete, then I’ll give you exact integration patterns for Zapier, n8n, and Airtable with low cost and low risk.
+
+Read [](file:///c%3A/Users/Willi/OneDrive/Documents/agt-website/docs/system-context.md)
+
+Read [](file:///c%3A/Users/Willi/OneDrive/Documents/agt-website/backend-integration/terraform/outputs.tf)
+
+Read [](file:///c%3A/Users/Willi/OneDrive/Documents/agt-website/backend-integration/lambda/lambda_function.py#1-1), lines 1 to 260
+
+Read [](file:///c%3A/Users/Willi/OneDrive/Documents/agt-website/backend-integration/lambda/lambda_function.py#260-260), lines 260 to 520
+
+Read [](file:///c%3A/Users/Willi/OneDrive/Documents/agt-website/backend-integration/lambda/lambda_function.py#520-520), lines 520 to 760
+
+Read [](file:///c%3A/Users/Willi/OneDrive/Documents/agt-website/api/create_checkout_session.py)
+
+Read [](file:///c%3A/Users/Willi/OneDrive/Documents/agt-website/api/booking_intent.py#1-1), lines 1 to 220
+
+Short answer: they sit on top of your current AWS flow as an automation layer, not as your source of truth.
+
+How it fits your current pipeline
+
+1. Booking intent is created and stored as draft in DynamoDB in booking_intent.py.
+2. Checkout session is created and booking is updated with Stripe session details in create_checkout_session.py.
+3. Stripe webhook confirms payment and updates final status fields in DynamoDB in lambda_function.py.
+4. Your infra already exposes the webhook URL and table name outputs in outputs.tf.
+5. System rules currently define DynamoDB as source of truth in system-context.md.
+
+How Zapier or n8n works with this
+
+Use either of these patterns:
+
+1. Push pattern (best for real-time)
+- After booking is confirmed in Lambda, send a small outbound webhook event to Zapier Catch Hook or n8n Webhook node.
+- Event example fields: event_type, booking_id, status, payment_status, customer_name, customer_phone, appointment_time, total, deposit, balance_due, updated_at.
+- Then Zapier or n8n does actions:
+  - upsert Airtable row
+  - send internal notifications
+  - call any third-party API
+  - trigger AI-agent workflows
+
+2. Pull pattern (best for low-cost/batch)
+- Scheduled job reads confirmed rows from DynamoDB and posts batches to n8n/Zapier or writes CSV to S3.
+- n8n or Zapier ingests on schedule.
+
+How Airtable fits
+
+Best use: mirror/reporting layer, not primary database.
+
+1. Keep one Airtable table for bookings with booking_id as unique key.
+2. Upsert from Zapier/n8n whenever status changes to confirmed or completed.
+3. Add views for operations team:
+- Today jobs
+- Confirmed unpaid balance
+- Completed
+- Canceled
+4. Export is then easy for human hands (CSV directly from Airtable).
+
+Security model (important)
+
+1. Sign outbound webhook payloads from Lambda with HMAC secret.
+2. Validate signature in n8n or via an API gateway proxy before Zapier.
+3. Send only needed fields to automation tools, avoid extra PII.
+4. Keep secrets in SSM/Secrets Manager, not code.
+
+Cost tradeoff
+
+1. Zapier: fastest setup, but task-based cost can climb quickly.
+2. n8n: cheaper at scale if self-hosted, but you own reliability.
+3. Airtable: good human UI, but cost depends on user count and automation volume.
+
+Recommended path for your constraints
+
+1. Keep DynamoDB as source of truth.
+2. Add one outbound confirmed_booking webhook from Lambda.
+3. Route that event first to n8n (or Zapier if speed matters now).
+4. In that workflow, upsert Airtable + trigger downstream tools.
+5. After pricing engine ships, add CloudWatch retention and S3 archival layer.
+
+If you want, I can draft the exact event contract and a minimal n8n workflow design next so implementation is copy-ready.
+
+You’re weighing storage options against cost/security/integration and automation compatibility. I’ll quickly verify the current project constraints, then give you a decision matrix and a practical recommendation path.
+
+Read [](file:///c%3A/Users/Willi/OneDrive/Documents/agt-website/docs/system-context.md)
+
+Read memory
+
+Created memory file [](file:///c%3A/Users/Willi/AppData/Roaming/Code/User/globalStorage/github.copilot-chat/memory-tool/memories/infra-preferences.md)
+
+Great framing. Based on your parameters, here’s the technical call:
+
+Your current project constraints explicitly say DynamoDB is the source of truth in system-context.md, plus cost target under $10/client/month and “do not introduce new services.”
+
+Quick option scorecard (for your criteria)
+
+| Option | Cost | Security | Integration into current workflow | Exportable to humans | Ecosystem integrations |
+|---|---|---|---|---|---|
+| DynamoDB (current stack) | Best | Best (IAM-native, no server patching) | Best (already in Lambda/Terraform flow) | Good (export to S3/CSV) | Good (Zapier/n8n/Airtable via API/Lambda) |
+| Small EC2 + Postgres/MySQL | Worse (instance + storage + ops) | Riskier (OS hardening, patching, backups, network mgmt) | Medium/low (new infra + ops overhead) | Good | Good |
+| Airtable as primary DB | Medium/high at scale | Medium (SaaS permissions model) | Medium (would re-architect backend flow) | Best | Best |
+| RDS/Aurora Serverless | Medium/high | Strong | Medium (new service + migrations) | Good | Good |
+
+Recommendation
+
+1. Keep DynamoDB as primary booking record store now.
+2. Add human-friendly exports as a separate path:
+- DynamoDB -> scheduled export (or Lambda transform) -> S3 CSV/JSON
+- Optional sync job to Airtable for ops visibility
+3. Add integration layer (not DB swap):
+- Webhook/event relay for Zapier/n8n
+- Clean API endpoints for AI agents/LLMs
+4. Defer CloudWatch->S3 archival until pricing engine ships (your current sequencing is right).
+
+Why this is the best fit for your criteria
+
+1. Lowest operational burden and lowest failure surface.
+2. Strongest security posture with least custom work.
+3. Zero architecture churn in your existing Lambda/API/Terraform workflow.
+4. Still gives you “human hands” export via S3 CSV/JSON and optional Airtable mirror.
+5. Keeps future integrations open without changing your system of record.
+
+If you want, I can draft a concrete “retention + export” blueprint next:
+1. DynamoDB table schema (confirmed details + idempotency fields)
+2. S3 export format (CSV fields for non-technical users)
+3. Airtable/Zapier/n8n integration path with minimal monthly cost.
+
+You want a clean retention strategy: store confirmed booking records in DynamoDB, and add CloudWatch-to-S3 retention after the pricing engine ships. I’ll save this decision in memory now and then give you a practical rollout plan.
+
+Read memory
+
+Created memory file [](file:///c%3A/Users/Willi/AppData/Roaming/Code/User/workspaceStorage/775fef9dfed6d2b212bd62e32a955dd0/GitHub.copilot-chat/memory-tool/memories/repo/retention-roadmap.md)
+
+Perfect direction. This is the clean way to do it, and I saved your decision to repository memory.
+
+Recommended approach now
+
+1. Make DynamoDB the source of truth for booking records
+- One record per booking_id
+- Store customer details, vehicle/service details, appointment time, Stripe payment status, Cal booking status, and confirmation timestamps
+- Keep status progression explicit:
+  - initiated
+  - payment_pending
+  - payment_confirmed
+  - appointment_confirmed
+  - completed
+  - canceled
+
+2. Write confirmed details at the webhook boundary
+- On Stripe checkout.session.completed:
+  - upsert booking record
+  - set payment_confirmed_at
+  - persist final paid amounts and package/addons snapshot
+- On Cal booking confirmed event:
+  - update same booking_id
+  - set appointment_confirmed_at
+  - persist final appointment metadata
+- This gives you deterministic confirmed-details tracking instead of relying on logs
+
+3. Add idempotency so retries do not corrupt state
+- Save last processed event id per provider (stripe_event_id, cal_event_id)
+- Ignore duplicates if already processed
+- Use conditional update expressions in DynamoDB for safe state transitions
+
+4. Add retention policy in DynamoDB
+- Keep business records long-term (or by your legal/business rule)
+- Optional TTL only for operational/temporary fields, not core booking facts
+- If needed, split into:
+  - bookings table (long retention)
+  - webhook_events table (short/medium retention)
+
+5. Defer CloudWatch to S3 until after pricing engine ships
+- Your sequencing is correct
+- Post-pricing phase:
+  - set CloudWatch retention days for log groups
+  - enable export/archival pipeline to S3
+  - lifecycle policy on S3 (for low-cost long-term storage)
+- This keeps current delivery focused and avoids noisy backtracking
+
+What I saved to memory
+- DynamoDB is primary record retention for confirmed details
+- CloudWatch-to-S3 retention is a later phase after pricing engine release
+- Keep scope clean now, add logs archival later
+
+If you want, next I can draft the exact DynamoDB schema and update contract for Stripe + Cal events so implementation is straightforward in one pass.
