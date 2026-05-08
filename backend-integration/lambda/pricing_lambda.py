@@ -16,7 +16,9 @@ Security:
 import json
 import os
 import uuid
-from square.client import Client as SquareClient
+from square import Square
+from square.environment import SquareEnvironment
+from square.core.api_error import ApiError
 
 # ─── CONFIG ──────────────────────────────────────────────────────────────────
 
@@ -132,10 +134,16 @@ def _create_square_payment_link(
     addon_keys: list,
     cal_url: str,
 ) -> str:
-    """Create Square Payment Link and return checkout URL."""
-    client = SquareClient(
-        access_token=SQUARE_ACCESS_TOKEN,
-        environment="sandbox" if ENVIRONMENT == "dev" else "production",
+    """Create Square Payment Link using SDK v42+ and return checkout URL."""
+    environment = (
+        SquareEnvironment.SANDBOX
+        if ENVIRONMENT == "dev"
+        else SquareEnvironment.PRODUCTION
+    )
+
+    client = Square(
+        environment=environment,
+        token=SQUARE_ACCESS_TOKEN,
     )
 
     addon_desc = (
@@ -158,34 +166,34 @@ def _create_square_payment_link(
         f"environment={ENVIRONMENT}",
     ])
 
-    result = client.checkout.create_payment_link({
-        "idempotency_key": order_id,
-        "order": {
-            "location_id": SQUARE_LOCATION_ID,
-            "line_items": [{
-                "name": f"AGT Deposit — {price_data['package_name']}",
-                "quantity": "1",
-                "note": addon_desc,
-                "base_price_money": {
-                    "amount": price_data["deposit_cents"],
-                    "currency": "USD",
+    try:
+        response = client.checkout.payment_links.create(
+            idempotency_key=order_id,
+            order={
+                "location_id": SQUARE_LOCATION_ID,
+                "line_items": [{
+                    "name": f"AGT Deposit — {price_data['package_name']}",
+                    "quantity": "1",
+                    "note": addon_desc,
+                    "base_price_money": {
+                        "amount": price_data["deposit_cents"],
+                        "currency": "USD",
+                    },
+                }],
+                "metadata": {
+                    "order_id":    order_id,
+                    "environment": ENVIRONMENT,
                 },
-            }],
-            "metadata": {
-                "order_id":    order_id,
-                "environment": ENVIRONMENT,
             },
-        },
-        "checkout_options": {
-            "redirect_url": SUCCESS_URL,
-        },
-        "payment_note": note,
-    })
+            checkout_options={
+                "redirect_url": SUCCESS_URL,
+            },
+            payment_note=note,
+        )
+    except ApiError as e:
+        raise RuntimeError(f"Square error: {e.body}")
 
-    if result.is_error():
-        raise RuntimeError(f"Square error: {result.errors}")
-
-    return result.body["payment_link"]["url"]
+    return response.payment_link.url
 
 
 # ─── MAIN HANDLER ─────────────────────────────────────────────────────────────
