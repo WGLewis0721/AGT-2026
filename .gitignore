@@ -4,3 +4,32 @@ fix-lambda*.ps1
 *.csv
 AGT-2026/
 artifacts/
+
+# Tooling & CLI binaries
+.tools/
+
+# VS Code
+.vscode/
+
+# Wix tooling
+.wix/
+
+# Python cache
+**/__pycache__/
+**/*.pyc
+
+# Lambda build artifacts
+backend-integration/lambda/*.zip
+backend-integration/layer/layer.zip
+backend-integration/layer/.requirements.hash
+
+# Terraform
+backend-integration/terraform/.terraform/
+backend-integration/terraform/.terraform.lock.hcl
+
+# Node
+node_modules/
+jsconfig.json
+
+# Client-specific (keep out of version control)
+backend-integration/clients/
