@@ -461,12 +461,12 @@ def _parse_calcom_booking(payload: dict) -> dict:
     if addons and not addons.strip():
         addons = None
     service = _parse_calcom_service(payload, responses)
-    # Cal.com no longer collects payment (Square does), so payload.price is
-    # often missing/0. Fall back to 20% of the documented full price.
-    deposit_paid = _amount_to_dollars(payload.get("price"), "invalid_price_value")
-    if deposit_paid <= 0:
-        full_price = _service_full_price(service)
-        deposit_paid = round(full_price * 0.20, 2) if full_price else 0.0
+    # Square handles payment, not Cal.com. Always derive the deposit from
+    # the documented 20% policy on the package full price; payload.price is
+    # ignored because it reflects whatever was last configured on the
+    # Cal.com event type, not what Square actually charged.
+    full_price = _service_full_price(service)
+    deposit_paid = round(full_price * 0.20, 2) if full_price else 0.0
     return {
         "customer_name": customer_name,
         "customer_email": customer_email,
