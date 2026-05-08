@@ -206,13 +206,18 @@ def _format_detailer_phone() -> str:
     return display
 
 
-def _calculate_balance_due(service: str, deposit_paid: float):
+def _service_full_price(service: str):
     service_lower = service.lower().strip()
     full_price = SERVICE_PRICES.get(service_lower)
     if full_price is None:
         matched_keys = [key for key in SERVICE_PRICES if key in service_lower]
         if matched_keys:
             full_price = SERVICE_PRICES[max(matched_keys, key=len)]
+    return full_price
+
+
+def _calculate_balance_due(service: str, deposit_paid: float):
+    full_price = _service_full_price(service)
     balance_due = round(full_price - deposit_paid, 2) if full_price else None
     return max(balance_due, 0) if balance_due is not None else None
 
@@ -430,7 +435,7 @@ def _parse_calcom_appointment_date(payload: dict) -> str:
 
 def _parse_calcom_booking(payload: dict) -> dict:
     """
-    Extract booking details from Cal.com BOOKING_PAYMENT_INITIATED payload.
+    Extract booking details from Cal.com BOOKING_CREATED payload.
     Returns a normalized dict matching the SMS builder expectations.
     """
     responses = payload.get("responses") or {}
@@ -455,15 +460,22 @@ def _parse_calcom_booking(payload: dict) -> dict:
     )
     if addons and not addons.strip():
         addons = None
+    service = _parse_calcom_service(payload, responses)
+    # Cal.com no longer collects payment (Square does), so payload.price is
+    # often missing/0. Fall back to 20% of the documented full price.
+    deposit_paid = _amount_to_dollars(payload.get("price"), "invalid_price_value")
+    if deposit_paid <= 0:
+        full_price = _service_full_price(service)
+        deposit_paid = round(full_price * 0.20, 2) if full_price else 0.0
     return {
         "customer_name": customer_name,
         "customer_email": customer_email,
         "customer_phone": customer_phone,
-        "service": _parse_calcom_service(payload, responses),
+        "service": service,
         "addons": addons,
         "address": _parse_calcom_address(responses),
         "appointment_date": _parse_calcom_appointment_date(payload),
-        "deposit_paid": _amount_to_dollars(payload.get("price"), "invalid_price_value"),
+        "deposit_paid": deposit_paid,
         "booking_uid": payload.get("uid") or "unknown",
     }
 
@@ -492,7 +504,7 @@ def _check_calcom_trigger(data: dict):
         booking_id=payload.get("bookingId"),
         event_title=payload.get("eventTitle"),
     )
-    if trigger != "BOOKING_PAYMENT_INITIATED":
+    if trigger != "BOOKING_CREATED":
         _log("INFO", "calcom_ignored", trigger=trigger)
         return _response(200, f"Ignored: {trigger}")
     return None
