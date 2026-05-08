@@ -1,26 +1,28 @@
 """
-TRA3 Pricing API — Stripe Checkout Session Creator
+TRA3 Pricing API — Square Payment Link Creator
 Client: A Gentlemen's Touch (AGT) Mobile Detailing
 Lambda: tra3-gentlemens-touch-{env}-pricing-api
 
 Receives: POST /create-checkout with package + addon selections
-Returns:  { "url": "https://checkout.stripe.com/..." }
+Returns:  { "url": "https://squareup.com/pay/..." }
 
 Security:
   - Server-side price recalculation (never trust browser amounts)
   - CORS restricted to AGT GitHub Pages domain
-  - Stripe Checkout Session created with exact deposit amount
-  - Metadata carries booking context through Stripe to SMS Lambda
+  - Square Payment Link created with exact deposit amount
+  - Metadata carries booking context through Square to SMS Lambda
 """
 
 import json
 import os
-import stripe
+import uuid
+from square.client import Client as SquareClient
 
 # ─── CONFIG ──────────────────────────────────────────────────────────────────
 
-STRIPE_SECRET_KEY = os.environ.get("STRIPE_SECRET_KEY", "")
-ENVIRONMENT       = os.environ.get("ENVIRONMENT", "dev")
+SQUARE_ACCESS_TOKEN = os.environ.get("SQUARE_ACCESS_TOKEN", "")
+SQUARE_LOCATION_ID  = os.environ.get("SQUARE_LOCATION_ID", "")
+ENVIRONMENT         = os.environ.get("ENVIRONMENT", "dev")
 # Supports comma-separated list of allowed origins
 # e.g. "https://agt-detailing.com,https://wglewis0721.github.io,http://localhost:5500"
 ALLOWED_ORIGINS = [
@@ -124,14 +126,17 @@ def _calculate_price(package_key: str, addon_keys: list) -> dict:
     }
 
 
-def _create_checkout_session(
+def _create_square_payment_link(
     price_data: dict,
     package_key: str,
     addon_keys: list,
     cal_url: str,
 ) -> str:
-    """Create Stripe Checkout Session and return URL."""
-    stripe.api_key = STRIPE_SECRET_KEY
+    """Create Square Payment Link and return checkout URL."""
+    client = SquareClient(
+        access_token=SQUARE_ACCESS_TOKEN,
+        environment="sandbox" if ENVIRONMENT == "dev" else "production",
+    )
 
     addon_desc = (
         ", ".join(price_data["addon_names"])
@@ -139,41 +144,48 @@ def _create_checkout_session(
         else "No add-ons"
     )
 
-    product_name = f"AGT Deposit — {price_data['package_name']}"
-    product_desc = (
-        f"20% deposit on ${price_data['total']:.2f} total. "
-        f"Includes: {addon_desc}. "
-        f"Balance of ${price_data['balance']:.2f} collected after service."
-    )
+    order_id = str(uuid.uuid4())
 
-    session = stripe.checkout.Session.create(
-        payment_method_types=["card"],
-        line_items=[{
-            "price_data": {
-                "currency":     "usd",
-                "product_data": {
-                    "name":        product_name,
-                    "description": product_desc,
+    note = "|".join([
+        f"package={package_key}",
+        f"addons={','.join(addon_keys)}",
+        f"total={price_data['total']}",
+        f"deposit={price_data['deposit']}",
+        f"balance={price_data['balance']}",
+        f"cal_url={cal_url}",
+        f"order_id={order_id}",
+        f"client=gentlemens-touch",
+        f"environment={ENVIRONMENT}",
+    ])
+
+    result = client.checkout.create_payment_link({
+        "idempotency_key": order_id,
+        "order": {
+            "location_id": SQUARE_LOCATION_ID,
+            "line_items": [{
+                "name": f"AGT Deposit — {price_data['package_name']}",
+                "quantity": "1",
+                "note": addon_desc,
+                "base_price_money": {
+                    "amount": price_data["deposit_cents"],
+                    "currency": "USD",
                 },
-                "unit_amount": price_data["deposit_cents"],
+            }],
+            "metadata": {
+                "order_id":    order_id,
+                "environment": ENVIRONMENT,
             },
-            "quantity": 1,
-        }],
-        mode="payment",
-        success_url=SUCCESS_URL,
-        cancel_url=CANCEL_URL,
-        metadata={
-            "package":     package_key,
-            "addons":      ",".join(addon_keys),
-            "total":       str(price_data["total"]),
-            "deposit":     str(price_data["deposit"]),
-            "balance":     str(price_data["balance"]),
-            "cal_url":     cal_url,
-            "client":      "gentlemens-touch",
-            "environment": ENVIRONMENT,
         },
-    )
-    return session.url
+        "checkout_options": {
+            "redirect_url": SUCCESS_URL,
+        },
+        "payment_note": note,
+    })
+
+    if result.is_error():
+        raise RuntimeError(f"Square error: {result.errors}")
+
+    return result.body["payment_link"]["url"]
 
 
 # ─── MAIN HANDLER ─────────────────────────────────────────────────────────────
@@ -181,7 +193,7 @@ def _create_checkout_session(
 def lambda_handler(event, context):
     """
     TRA3 Pricing API handler.
-    POST /create-checkout → creates Stripe Checkout Session → returns URL
+    POST /create-checkout → creates Square Payment Link → returns URL
     OPTIONS /create-checkout → CORS preflight
     """
     origin  = (event.get("headers") or {}).get("origin", "")
@@ -242,22 +254,22 @@ def lambda_handler(event, context):
         "deposit_cents": price_data["deposit_cents"],
     }))
 
-    # Create Stripe Checkout Session
+    # Create Square Payment Link
     try:
-        checkout_url = _create_checkout_session(
+        checkout_url = _create_square_payment_link(
             price_data, package_key, addon_keys, cal_url
         )
-    except stripe.error.StripeError as e:
+    except RuntimeError as e:
         print(json.dumps({
             "level":  "ERROR",
-            "event":  "stripe_error",
+            "event":  "square_error",
             "detail": str(e),
         }))
         return _response(500, {"error": "Payment system error"}, origin)
 
     print(json.dumps({
         "level":  "INFO",
-        "event":  "checkout_session_created",
+        "event":  "payment_link_created",
         "package": package_key,
         "deposit": price_data["deposit"],
     }))
