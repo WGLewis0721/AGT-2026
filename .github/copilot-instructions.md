@@ -197,3 +197,30 @@ Output:
 - Square SDK docs: `https://developer.squareup.com/docs/sdks/python`
 - Square Checkout API: `https://developer.squareup.com/reference/square/checkout-api`
 - Webhook signature verification: `https://developer.squareup.com/docs/webhooks/step3validate`
+
+### TEST_MODE Flag
+
+`test_mode` (Terraform variable) wires through to `TEST_MODE` env var on
+both Lambdas and `const TEST_MODE` in `index.html`. When enabled:
+
+- Packages charge $0.01 / $0.10 / $1.00, add-ons $0.01, deposit = 100%
+- Frontend rewrites `.package-price` and `.addon-pill-price` text on
+  `DOMContentLoaded` to match what's actually charged
+
+When working on pricing code:
+- Don't hardcode 0.20 — read `DEPOSIT_RATE` (Python) / `DEPOSIT_RATE`
+  (JS) which are flag-aware
+- Both Lambdas have `REAL_*` and `TEST_*` price tables; pick via
+  `TEST_MODE`. Keep them in sync if you change either side.
+- Frontend's `_renderPriceDisplay()` is the single source of truth for
+  on-page prices — don't re-hardcode prices in markup; use
+  `data-pkg-display` / `data-pkg` / `data-addon` hooks.
+
+### Cal.com Webhook
+
+- Trigger is `BOOKING_CREATED` (not `BOOKING_PAYMENT_INITIATED` — that
+  legacy trigger only fired when Cal.com initiated the payment itself
+  via its built-in Stripe integration)
+- `payload.price` is **ignored** — it reflects whatever is configured on
+  the Cal.com event type, not what Square actually charged. Deposit is
+  always derived from the package's full price × `DEPOSIT_RATE`

@@ -125,3 +125,36 @@ The layer requirements file is `backend-integration/layer/requirements.txt` (NOT
 - [x] End-to-end tested: checkout → payment → webhook → confirmation
 - [x] FAQ copy updated on frontend
 - [x] All Stripe references removed from codebase
+
+### TEST_MODE Flag
+
+A `test_mode` Terraform variable wires through to a `TEST_MODE` env var
+on both Lambdas and a `const TEST_MODE` in `index.html`. When enabled:
+
+- Packages: SM **$0.01** / MD **$0.10** / LG **$1.00**
+- All add-ons: **$0.01**
+- Deposit charged: **100%** of total (full upfront)
+- Frontend rewrites the displayed prices on `DOMContentLoaded` so the
+  customer sees what they'll actually be charged
+
+The flag exists so the live Square production wiring can be validated
+end-to-end with real cards but minimal real-money risk before public
+launch. To flip off:
+
+1. `test_mode = false` in `backend-integration/clients/gentlemens-touch/prod.tfvars`
+2. `const TEST_MODE = false` in `index.html` (in the PRICING ENGINE section)
+3. `deploy.ps1` + push to `main` (GitHub Pages auto-deploys frontend)
+
+The webhook Lambda's `_calculate_balance_due` and Cal.com deposit
+calculation both honor the flag, so SMS messages reflect the test
+deposit ($0.01 / $0.10 / $1.00) and a $0 balance during test mode.
+
+### Cal.com Webhook Trigger
+
+The webhook Lambda fires SMS on Cal.com `BOOKING_CREATED` (not
+`BOOKING_PAYMENT_INITIATED` — that legacy trigger only fired when
+Cal.com itself initiated the payment via its built-in Stripe integration).
+
+Cal.com's `payload.price` is **ignored** because it reflects whatever is
+configured on the Cal.com event type, not what Square actually charged.
+The deposit is always derived from the package full price × `DEPOSIT_RATE`.

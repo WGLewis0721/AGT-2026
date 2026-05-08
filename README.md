@@ -276,6 +276,21 @@ All stored in AWS SSM Parameter Store under `/tra3/gentlemens-touch/prod/square_
 4. Register production webhook in Square Developer Console
 5. Deploy via `.\backend-integration\scripts\deploy.ps1`
 
+**TEST_MODE (pre-launch validation):**
+
+A `test_mode` Terraform variable swaps the whole stack to micro prices so
+the live Square production wiring can be validated end-to-end with real
+cards but minimal real-money risk:
+
+- Packages: SM $0.01 / MD $0.10 / LG $1.00 — all add-ons: $0.01
+- Deposit: 100% of total (full charge upfront)
+- Frontend rewrites displayed prices on page load so the customer sees
+  what they'll actually be charged
+
+To enable: `test_mode = true` in `prod.tfvars` **and** `const TEST_MODE = true`
+in `index.html` (PRICING ENGINE section). Deploy backend with `deploy.ps1`,
+push frontend to `main`. Reverse both before public launch.
+
 ---
 
 ## Contact
