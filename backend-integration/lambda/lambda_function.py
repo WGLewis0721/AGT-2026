@@ -581,7 +581,7 @@ def _verify_square_signature(body: str, signature: str, url: str) -> bool:
 
 def _extract_square_booking(payment: dict) -> dict:
     """
-    Extract booking fields from a Square payment.completed event.
+    Extract booking fields from a Square payment.updated event.
     Reads booking context from the pipe-delimited note field written
     by pricing_lambda.py at checkout creation time.
     """
@@ -621,7 +621,7 @@ def _extract_square_booking(payment: dict) -> dict:
 
 
 def _handle_square_webhook(event: dict, body: str) -> dict:
-    """Handle incoming Square webhook (payment.completed)."""
+    """Handle incoming Square webhook (payment.updated)."""
     headers  = _normalized_headers(event)
     signature = headers.get("x-square-hmacsha256-signature", "")
     url = (
@@ -655,8 +655,13 @@ def _handle_square_webhook(event: dict, body: str) -> dict:
         order_id=order_id,
     )
 
-    if event_type != "payment.completed":
+    if event_type != "payment.updated":
         _log("INFO", "event_ignored", detail=f"Ignored event type: {event_type}")
+        return _response(200, "Ignored")
+
+    payment_status = payment.get("status", "")
+    if payment_status != "COMPLETED":
+        _log("INFO", "payment_not_completed", status=payment_status)
         return _response(200, "Ignored")
 
     booking = _extract_square_booking(payment)
