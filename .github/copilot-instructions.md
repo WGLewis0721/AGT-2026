@@ -164,10 +164,36 @@ Constraints:
 - No unnecessary dependencies
 
 Internet usage:
-- Only official docs (AWS, Stripe, Cal.com)
+- Only official docs (AWS, Square, Cal.com)
 - No random blog code
 
 Output:
 - clean
 - minimal
 - production-ready
+
+## Payment Provider: Square
+
+**TRA3 uses Square for payments (not Stripe).** Stripe was fully removed in May 2026.
+
+### Key Implementation Details
+
+- **Pricing Lambda:** Uses Square SDK v42+ (`from square import Square`)
+- **Webhook Lambda:** Verifies HMAC-SHA256 signatures, no Square SDK imported
+- **Environment:** `SQUARE_ENVIRONMENT` env var controls sandbox/production (independent of AWS `ENVIRONMENT`)
+- **Layer:** Must use `--platform manylinux2014_x86_64` pip flags on Windows to download Linux wheels
+- **Events:** Listens for `payment.updated` with `status == "COMPLETED"`, ignores `payment.created`
+
+### When Working on Payment Code
+
+- Never add Stripe imports or references
+- Square credentials are in SSM under `/tra3/.../square_*`
+- Lambda layer requirements are in `backend-integration/layer/requirements.txt` (NOT `pricing-requirements.txt`)
+- If layer rebuild fails with `No module named 'pydantic_core._pydantic_core'`, the pip flags are missing in `bootstrap-layer.ps1`
+- Sandbox vs production is controlled by `square_environment` in `prod.tfvars`, not by AWS environment
+
+### Useful References
+
+- Square SDK docs: `https://developer.squareup.com/docs/sdks/python`
+- Square Checkout API: `https://developer.squareup.com/reference/square/checkout-api`
+- Webhook signature verification: `https://developer.squareup.com/docs/webhooks/step3validate`

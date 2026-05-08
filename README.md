@@ -47,9 +47,9 @@ For developers and future owners — the system is simple by design.
 
 **Frontend** — A single `index.html`. Zero dependencies. No build step. Runs anywhere. The luxury aesthetic is pure CSS and considered typography — nothing is borrowed from a UI kit.
 
-**Booking** — Cal.com handles scheduling. Stripe handles deposits. The customer never feels the seam between them.
+**Booking** — Cal.com handles scheduling. Square handles deposits. The customer never feels the seam between them.
 
-**Automation (TRA3)** — When a booking completes, an AWS Lambda function fires. It reads the Stripe event, calculates the balance due, and sends a formatted SMS to both the detailer and the customer. The entire backend runs serverlessly for less than the cost of a car wash.
+**Automation (TRA3)** — When a booking completes, an AWS Lambda function fires. It reads the Square event, calculates the balance due, and sends a formatted SMS to both the detailer and the customer. The entire backend runs serverlessly for less than the cost of a car wash.
 
 **Infrastructure as Code** — Every AWS resource is defined in Terraform. Deploy a new environment in minutes. Hand off to a new developer in an afternoon.
 
@@ -121,7 +121,7 @@ start index.html       # Windows
 2. Live at `https://yourusername.github.io/AGT-2026/`
 
 **Booking backend (TRA3)**
-See [`backend-integration/README.md`](./backend-integration/README.md) for AWS setup, Terraform deployment, and Stripe webhook configuration.
+See [`backend-integration/README.md`](./backend-integration/README.md) for AWS setup, Terraform deployment, and Square webhook configuration.
 
 **Services & Packages**
 Edit package cards and add-ons directly in `index.html` inside `#packages` and `#addons`.
@@ -153,7 +153,7 @@ Fleet placeholder images expected in `assets/` — see [`assets/README.md`](./as
 
 ## Booking Flow
 
-Booking is handled via Cal.com with Stripe deposit payment.
+Booking is handled via Cal.com with Square deposit payment.
 
 Three Cal.com event types correspond to each vehicle size:
 - Small: https://cal.com/william-g.-lewis-ai51kb/mobile-detail-appointment-service-1
@@ -164,9 +164,9 @@ Three Cal.com event types correspond to each vehicle size:
 
 ```
 Frontend → POST /booking-intent  → DynamoDB (draft booking created)
-        → POST /create-checkout  → Stripe Checkout Session returned
+        → POST /create-checkout  → Square Payment Link returned
         → Customer pays deposit
-        → Stripe webhook  ─┐
+        → Square webhook  ─┐
           Cal.com webhook  ─┴→ Lambda → DynamoDB (confirmed) → SMS to detailer + customer
 ```
 
@@ -195,11 +195,11 @@ Pricing is also validated in the backend — update `PACKAGE_CATALOG` in `backen
 - **HTML5 / CSS3 / ES2020** — zero-dependency static site; no build step, no framework
 - **[Cal.com](https://cal.com)** — scheduling embed (`mobile-detail-appointment`, `month_view` layout)
 - **Google Fonts** — Cormorant Garamond, Bebas Neue, Montserrat
-- **AWS Lambda (Python 3.11)** — booking intent, Stripe checkout creation, Stripe/Cal.com webhooks, cost reporting
+- **AWS Lambda (Python 3.11)** — booking intent, Square checkout creation, Square/Cal.com webhooks, cost reporting
 - **AWS DynamoDB** — booking records (source of truth)
 - **AWS API Gateway (HTTP)** — routes: `POST /booking-intent`, `POST /create-checkout`, `POST /webhook`
-- **AWS SSM Parameter Store** — all secrets (Stripe keys, Textbelt key, phone numbers)
-- **Stripe** — deposit checkout sessions + webhook confirmation
+- **AWS SSM Parameter Store** — all secrets (Square keys, Textbelt key, phone numbers)
+- **Square** — deposit checkout sessions + webhook confirmation
 - **Textbelt** — SMS notifications to detailer and customer
 - **Terraform** — all AWS infrastructure as code, isolated `dev` / `prod` environments
 
@@ -211,10 +211,10 @@ Production-ready AWS serverless infrastructure in [`backend-integration/`](./bac
 
 | Component | Purpose |
 |---|---|
-| `lambda/lambda_function.py` | Stripe + Cal.com webhook handler — confirms booking, sends SMS |
-| `lambda/pricing_lambda.py` | `POST /create-checkout` — builds Stripe Checkout sessions |
+| `lambda/lambda_function.py` | Square + Cal.com webhook handler — confirms booking, sends SMS |
+| `lambda/pricing_lambda.py` | `POST /create-checkout` — builds Square Payment Links |
 | `api/booking_intent.py` | `POST /booking-intent` — validates payload, writes draft to DynamoDB |
-| `api/create_checkout_session.py` | `POST /create-checkout` — looks up booking, creates Stripe session |
+| `api/create_checkout_session.py` | `POST /create-checkout` — looks up booking, creates Square Payment Link |
 | `cost-reporter/cost_reporter_handler.py` | Daily AWS cost report via SNS email (optional) |
 | `shared/booking_common.py` | Shared pricing catalog, DynamoDB helpers, normalizers |
 | `terraform/` | All AWS resources (Lambda, API Gateway, DynamoDB, IAM, CloudWatch, S3, SSM) |
@@ -245,7 +245,36 @@ See [`wix/README.md`](./wix/README.md) for full page inventory and booking flow 
 | `docs/system-context.md` | Core architecture rules and constraints |
 | `docs/skills/frontend.md` | Frontend conventions |
 | `docs/skills/lambda.md` | Lambda conventions |
-| `docs/skills/stripe.md` | Stripe conventions |
+| `docs/skills/stripe.md` | Legacy Stripe conventions (archived — Square is now active) |
+
+---
+
+## Payment Processing
+
+TRA3 uses **Square** for secure payment processing.
+
+**Deposit Flow:**
+1. Customer selects package and add-ons on the booking page
+2. Frontend calls `/create-checkout` API (pricing Lambda)
+3. Lambda creates a Square Payment Link with 20% deposit amount
+4. Customer redirects to Square checkout page
+5. After payment, Square fires `payment.updated` webhook
+6. Webhook Lambda verifies signature and logs booking confirmation
+7. Customer redirects to `success.html` and schedules via Cal.com
+
+**Credentials:**
+- Square Access Token (sandbox or production)
+- Square Location ID
+- Square Webhook Signature Key
+
+All stored in AWS SSM Parameter Store under `/tra3/gentlemens-touch/prod/square_*`.
+
+**Switching from Sandbox to Production:**
+1. Get production Square credentials from client
+2. Update SSM parameters with production values
+3. Set `square_environment = "production"` in `backend-integration/clients/gentlemens-touch/prod.tfvars`
+4. Register production webhook in Square Developer Console
+5. Deploy via `.\backend-integration\scripts\deploy.ps1`
 
 ---
 

@@ -601,10 +601,10 @@ def _extract_square_booking(payment: dict) -> dict:
     balance_due = _to_float(balance) if balance else None
 
     buyer = payment.get("buyer_email_address") or "No email"
-    shipping = payment.get("shipping_address") or {}
-
+    # Square Payment Links don't collect name at checkout — only email and phone.
+    # Customer name comes from Cal.com webhook when the appointment is scheduled.
     return {
-        "customer_name":  shipping.get("first_name", "Unknown"),
+        "customer_name":  "Square Checkout",
         "customer_email": buyer,
         "customer_phone": _normalize_phone_number(
             payment.get("buyer_phone_number") or None
