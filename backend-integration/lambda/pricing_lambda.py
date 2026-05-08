@@ -24,6 +24,7 @@ from square.core.api_error import ApiError
 
 SQUARE_ACCESS_TOKEN = os.environ.get("SQUARE_ACCESS_TOKEN", "")
 SQUARE_LOCATION_ID  = os.environ.get("SQUARE_LOCATION_ID", "")
+SQUARE_ENVIRONMENT  = os.environ.get("SQUARE_ENVIRONMENT", "sandbox").lower()
 ENVIRONMENT         = os.environ.get("ENVIRONMENT", "dev")
 # Supports comma-separated list of allowed origins
 # e.g. "https://agt-detailing.com,https://wglewis0721.github.io,http://localhost:5500"
@@ -136,9 +137,9 @@ def _create_square_payment_link(
 ) -> str:
     """Create Square Payment Link using SDK v42+ and return checkout URL."""
     environment = (
-        SquareEnvironment.SANDBOX
-        if ENVIRONMENT == "dev"
-        else SquareEnvironment.PRODUCTION
+        SquareEnvironment.PRODUCTION
+        if SQUARE_ENVIRONMENT == "production"
+        else SquareEnvironment.SANDBOX
     )
 
     client = Square(

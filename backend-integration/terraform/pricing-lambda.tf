@@ -1,8 +1,4 @@
 # ─── TRA3 Pricing API Lambda ─────────────────────────────────────────────────
-# Separate from the webhook Lambda. Handles Stripe Checkout Session creation.
-# Reuses the existing API Gateway (booking_api) — additive route only.
-
-# ─── IAM Role ────────────────────────────────────────────────────────────────
 
 resource "aws_iam_role" "pricing_lambda_role" {
   name = "${local.name_prefix}-pricing-role"
@@ -24,16 +20,11 @@ resource "aws_iam_role_policy_attachment" "pricing_lambda_logs" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 }
 
-# ─── CloudWatch Log Group ─────────────────────────────────────────────────────
-
 resource "aws_cloudwatch_log_group" "pricing_lambda_log_group" {
   name              = "/aws/lambda/${local.pricing_function_name}"
   retention_in_days = var.log_retention
-
-  tags = local.common_tags
+  tags              = local.common_tags
 }
-
-# ─── Lambda Function ─────────────────────────────────────────────────────────
 
 resource "aws_lambda_function" "pricing_api" {
   function_name = local.pricing_function_name
@@ -51,17 +42,17 @@ resource "aws_lambda_function" "pricing_api" {
 
   environment {
     variables = {
-      STRIPE_SECRET_KEY = data.aws_ssm_parameter.stripe_secret_key.value
-      ENVIRONMENT       = var.environment
-      ALLOWED_ORIGIN    = var.allowed_origin
-      DOMAIN_URL        = var.domain_url
+      SQUARE_ACCESS_TOKEN = data.aws_ssm_parameter.square_access_token.value
+      SQUARE_LOCATION_ID  = data.aws_ssm_parameter.square_location_id.value
+      SQUARE_ENVIRONMENT  = var.square_environment
+      DOMAIN_URL          = var.domain_url
+      ENVIRONMENT         = var.environment
+      ALLOWED_ORIGIN      = var.allowed_origin
     }
   }
 
   tags = local.common_tags
 }
-
-# ─── API Gateway Integration ──────────────────────────────────────────────────
 
 resource "aws_apigatewayv2_integration" "pricing_integration" {
   api_id                 = aws_apigatewayv2_api.booking_api.id
@@ -70,21 +61,18 @@ resource "aws_apigatewayv2_integration" "pricing_integration" {
   payload_format_version = "2.0"
 }
 
-# POST /create-checkout route
 resource "aws_apigatewayv2_route" "create_checkout" {
   api_id    = aws_apigatewayv2_api.booking_api.id
   route_key = "POST /create-checkout"
   target    = "integrations/${aws_apigatewayv2_integration.pricing_integration.id}"
 }
 
-# OPTIONS /create-checkout route (CORS preflight)
 resource "aws_apigatewayv2_route" "create_checkout_options" {
   api_id    = aws_apigatewayv2_api.booking_api.id
   route_key = "OPTIONS /create-checkout"
   target    = "integrations/${aws_apigatewayv2_integration.pricing_integration.id}"
 }
 
-# Lambda permission for API Gateway
 resource "aws_lambda_permission" "pricing_api_gateway" {
   statement_id  = "AllowAPIGatewayInvokePricing"
   action        = "lambda:InvokeFunction"
@@ -92,8 +80,6 @@ resource "aws_lambda_permission" "pricing_api_gateway" {
   principal     = "apigateway.amazonaws.com"
   source_arn    = "${aws_apigatewayv2_api.booking_api.execution_arn}/*/*"
 }
-
-# ─── Outputs ─────────────────────────────────────────────────────────────────
 
 output "pricing_api_url" {
   description = "URL for the TRA3 Pricing API create-checkout endpoint"

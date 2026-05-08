@@ -14,16 +14,6 @@ variable "environment" {
   }
 }
 
-variable "stripe_secret_key_parameter_name" {
-  description = "SSM Parameter Store name for the Stripe secret key."
-  type        = string
-}
-
-variable "stripe_webhook_secret_parameter_name" {
-  description = "SSM Parameter Store name for the Stripe webhook signing secret."
-  type        = string
-}
-
 variable "calcom_webhook_secret_parameter_name" {
   description = "Optional SSM Parameter Store name for the Cal.com webhook signing secret."
   type        = string
@@ -41,7 +31,7 @@ variable "detailer_phone_number_parameter_name" {
 }
 
 variable "domain_url" {
-  description = "Frontend URL used for Stripe checkout success and cancel redirects."
+  description = "Frontend URL used for Square checkout success and cancel redirects."
   type        = string
 }
 
@@ -95,8 +85,6 @@ variable "log_retention" {
   default     = 14
 }
 
-# ─── Pricing API Lambda ──────────────────────────────────────────────────────
-
 variable "pricing_lambda_handler" {
   description = "Handler for pricing Lambda"
   type        = string
@@ -112,7 +100,7 @@ variable "pricing_lambda_runtime" {
 variable "pricing_lambda_timeout" {
   description = "Timeout in seconds for pricing Lambda"
   type        = number
-  default     = 10
+  default     = 30
 }
 
 variable "pricing_lambda_memory" {
@@ -124,5 +112,16 @@ variable "pricing_lambda_memory" {
 variable "allowed_origin" {
   description = "Allowed CORS origin for pricing API"
   type        = string
-  default     = "https://wglewis0721.github.io"
+  default     = "https://agt-detailing.com"
+}
+
+variable "square_environment" {
+  description = "Square API environment: sandbox or production. Independent of AWS environment — sandbox credentials must use sandbox even in prod AWS."
+  type        = string
+  default     = "sandbox"
+
+  validation {
+    condition     = contains(["sandbox", "production"], var.square_environment)
+    error_message = "square_environment must be either sandbox or production."
+  }
 }
