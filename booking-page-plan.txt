@@ -1,0 +1,736 @@
+================================================================================
+ AGT-2026 — BOOKING PAGE REDESIGN: RESEARCH AUDIT & IMPLEMENTATION PLAN
+ Branch: agt-website-v2
+ Generated: 2026-05-13
+================================================================================
+
+
+────────────────────────────────────────────────────────────────────────────────
+ 1. AUDIT FINDINGS
+────────────────────────────────────────────────────────────────────────────────
+
+## 1A. WAIVER MODAL
+
+### Element
+  ID:        #waiver-modal
+  HTML loc:  index.html lines 4078–4108
+  Inner btn: #waiver-agree-btn (id="waiver-agree-btn")
+
+### CSS (index.html lines 1651–1736)
+  Classes:
+    .waiver-modal-card         – card shell (bg: --black-card, max-w: 640px)
+    .waiver-close              – ✕ button (top-right, absolute)
+    .waiver-clauses            – ordered list of 7 service-agreement clauses
+    .waiver-clauses li         – clause row, with gold .clause-num
+    .waiver-agree-btn          – full-width gold CTA button
+  State:
+    default:  display:none
+    open:     #waiver-modal.open → display:flex
+  Backdrop:  rgba(0,0,0,0.88), z-index:10000, fixed inset:0
+
+### Controlling JS (index.html lines 4173–4215)
+  Function              Signature                  Purpose
+  ─────────────────────────────────────────────────────────────────────────
+  openBookingModal()    (url, stripeUrl)            Opens waiver; stores
+                                                    pendingCalUrl. "Agree"
+                                                    btn visible. Called by
+                                                    #checkout-btn onclick.
+  openWaiverOnly()      ()                          Opens waiver for the
+                                                    footer "Waiver & Terms"
+                                                    link. "Agree" btn hidden.
+  agreeAndBook()        ()                          Closes modal; if a
+                                                    package is selected,
+                                                    calls initiateCheckout().
+  closeWaiverModal()    ()                          Closes modal, resets
+                                                    pendingCalUrl.
+  [click-outside]       addEventListener('click')  Closes on backdrop click.
+
+### Trigger chain
+  1. User selects package → updatePriceSummary() enables #checkout-btn
+  2. User clicks #checkout-btn → onclick="openBookingModal('', '')"
+  3. Waiver opens → user clicks "I Agree & Continue to Booking →"
+  4. agreeAndBook() → closeWaiverModal() → initiateCheckout()
+
+
+## 1B. PRICING LOGIC
+
+### Location
+  index.html inline <script> block — lines 4217–4378 (PRICING ENGINE section)
+
+### State variables (module-level)
+  let selectedPackage = null;     // string key or null
+  let selectedAddons  = new Set(); // Set of string keys
+
+### Constants
+  Constant          Value / Shape
+  ─────────────────────────────────────────────────────────────────────────
+  TEST_MODE         boolean (currently true)
+  REAL_PACKAGES     { sm_detail, md_detail, lg_detail } → {name, price}
+  REAL_ADDONS       10 addon keys → {name, price}
+  TEST_PACKAGES     same keys, micro prices (0.01 / 0.10 / 1.00)
+  TEST_ADDONS       all addons → 0.01
+  PACKAGES          = TEST_MODE ? TEST_PACKAGES : REAL_PACKAGES
+  ADDONS            = TEST_MODE ? TEST_ADDONS   : REAL_ADDONS
+  DEPOSIT_RATE      = TEST_MODE ? 1.00 : 0.20
+  PRICING_API_URL   'https://c4eki550u8.execute-api.us-east-1.amazonaws.com/create-checkout'
+  CAL_URLS          { sm_detail, md_detail, lg_detail } → string URL
+
+### Functions
+  Function               Purpose
+  ─────────────────────────────────────────────────────────────────────────
+  _renderPriceDisplay()  Rewrites DOM price text from PACKAGES/ADDONS.
+                         Runs on DOMContentLoaded. Uses data-pkg-display,
+                         data-pkg, data-addon attributes.
+  selectPackage(key)     Sets selectedPackage; toggles .selected on cards;
+                         shows #pkg-line; calls updatePriceSummary().
+  toggleAddon(keyOrEl)   Toggles key in selectedAddons Set; or toggles
+                         .selected class if legacy element passed.
+                         Calls updatePriceSummary().
+  _calcOrder()           Returns {total, deposit} from selectedPackage +
+                         selectedAddons. Pure calculation, no DOM side effects.
+  updatePriceSummary()   Writes to #total-amount, #deposit-amount,
+                         #checkout-btn text/disabled, #addon-lines.
+  initiateCheckout()     async; POSTs {package, addons, cal_url, client}
+                         to PRICING_API_URL. On success, stores session
+                         keys and does window.location.href = data.url.
+
+### DOM hooks used by pricing engine
+  #pkg-line, #pkg-line-name, #pkg-line-price
+  #addon-lines
+  #total-amount, #deposit-amount
+  #checkout-btn
+  .pkg-card[data-pkg]
+  .addon-pill[data-addon]
+  [data-pkg-display], .package-price, .addon-pill-price
+
+
+## 1C. LAMBDA REQUEST BODY (pricing_lambda.py)
+
+### Current fields read from POST body
+  Field          Type     Required  Notes
+  ─────────────────────────────────────────────────────────────────────────
+  package        string   YES       Must be key in PACKAGES dict
+  addons         list     YES       Each element must be key in ADDONS dict
+                                   (empty list is valid)
+  cal_url        string   NO        Cal.com booking URL; stored in
+                                    payment_note pipe-delimited string
+  client         string   NO        Not validated; appears in no server-side
+                                    logic (frontend sends 'gentlemens-touch'
+                                    but Lambda ignores it)
+
+### Fields IGNORED / not validated by Lambda
+  total          – browser amount intentionally ignored (server recalculates)
+  deposit        – same
+
+### payment_note format (what gets stored in Square and read by webhook)
+  "package={key}|addons={comma-sep}|total={n}|deposit={n}|balance={n}|
+   cal_url={url}|order_id={uuid}|client=gentlemens-touch|environment={env}"
+
+### New fields required by booking.html redesign
+  Field              Type    Notes
+  ─────────────────────────────────────────────────────────────────────────
+  appointment_date   string  ISO date, e.g. "2026-05-15". Captured from
+                             Cal.com embed callback.
+  appointment_time   string  24-hour time, e.g. "10:00". Captured from
+                             Cal.com embed callback.
+  cal_event_id       string  Cal.com booking UID (UUID string from embed
+                             bookingSuccessful callback). Used to link the
+                             Square payment to the specific Cal.com booking
+                             in the webhook Lambda.
+
+### Updated payment_note with new fields
+  "package={key}|addons={comma-sep}|total={n}|deposit={n}|balance={n}|
+   cal_url={url}|order_id={uuid}|client=gentlemens-touch|environment={env}|
+   appointment_date={date}|appointment_time={time}|cal_event_id={uid}"
+
+### Fields NOT to add to payment_note
+  client — Lambda already hardcodes "gentlemens-touch"; frontend value unused.
+  Any PII fields — name/phone not sent to this Lambda (not needed for Square).
+
+
+## 1D. SQUARE REDIRECT — FULL CALL CHAIN
+
+  Step  Location              Action
+  ─────────────────────────────────────────────────────────────────────────
+  1     index.html DOM        User selects package → selectPackage(key)
+  2     index.html JS         updatePriceSummary() enables #checkout-btn
+  3     index.html DOM        User clicks #checkout-btn
+                              onclick="openBookingModal('', '')"
+  4     index.html JS         openBookingModal('', '') → adds 'open' class
+                              to #waiver-modal; stores pendingCalUrl=''
+  5     index.html DOM        User clicks #waiver-agree-btn
+                              onclick="agreeAndBook()"
+  6     index.html JS         agreeAndBook() → removes 'open' class →
+                              calls initiateCheckout() (selectedPackage set)
+  7     index.html JS         initiateCheckout():
+                              • btn disabled + "Preparing your checkout..."
+                              • fetch(PRICING_API_URL, POST, JSON body:
+                                  {package, addons, cal_url, client})
+  8     API Gateway           Routes POST /create-checkout to
+                              pricing_lambda (Lambda proxy integration)
+  9     pricing_lambda.py     Validates package/addons; recalculates price;
+                              builds payment_note string; calls
+                              client.checkout.payment_links.create()
+  10    Square API            Creates Payment Link; returns URL
+                              sandbox: https://sandbox.square.link/...
+                              prod:    https://squareup.com/checkout/...
+  11    pricing_lambda.py     Returns {"url": checkout_url} with 200
+  12    index.html JS         Stores to sessionStorage:
+                              agt_cal_url, agt_package, agt_addons,
+                              agt_deposit, agt_balance
+                              window.location.href = data.url  (redirect)
+  13    Square                User completes card payment
+  14    Square                Redirects to SUCCESS_URL (success.html)
+  15    Square                Fires payment.updated webhook to API Gateway
+  16    lambda_function.py    Verifies HMAC-SHA256 signature; parses
+                              payment_note; updates DynamoDB; sends SMS
+
+
+## 1E. DESIGN TOKENS
+
+### CSS Custom Properties (defined in :root, index.html line 10–22)
+  Variable          Hex Value    Usage
+  ────────────────────────────────────────────────────────────────────
+  --black           #0a0a0a      Page background, body
+  --black-soft      #111111      Section/panel backgrounds
+  --black-card      #161616      Card/modal surfaces
+  --black-border    #1e1e1e      All borders, dividers
+  --gold            #C9A84C      Accents, CTAs, active states
+  --gold-light      #E8C96B      Button hover states
+  --gold-dark       #9A7A2E      Rarely used
+  --white           #FFFFFF      Primary text
+  --white-soft      #F0EDE8      Body text, summary lines
+  --white-muted     #9A9A9A      Captions, secondary labels
+  --silver          #C0C0C0      Rarely used
+
+### Typography
+  Font                  Family String                          Role
+  ──────────────────────────────────────────────────────────────────
+  Cormorant Garamond    'Cormorant Garamond', serif            Display/headings
+                        Weights: 300, 400, 600, 700; italic
+  Bebas Neue            'Bebas Neue', sans-serif               Logo / hero
+  Montserrat            'Montserrat', sans-serif               Body / UI labels
+                        Weights: 300, 400, 500, 600, 700
+  Google Fonts link:
+    https://fonts.googleapis.com/css2?
+      family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400
+      &family=Bebas+Neue
+      &family=Montserrat:wght@300;400;500;600;700
+      &display=swap
+
+### Spacing & Shape Patterns
+  No border-radius on cards (sharp corners = luxury aesthetic).
+  Border-radius: 2px only on small badges/pills.
+  Card padding: 32–48px.
+  Section padding: 80–100px vertical.
+  Max-width containers: 1080px (booking engine), 1440px (full-width sections).
+  Section labels: 10px / letter-spacing:3px / uppercase / color:--gold.
+  Section titles: font-family Cormorant Garamond, 42–54px, italic <em> in gold.
+  Noise texture: fixed position, base64 SVG fractalNoise, opacity:0.4, z:9999.
+
+### Noise Texture (shared verbatim across index.html and fleet.html)
+  body::before { content:''; position:fixed; inset:0;
+    background-image: url("data:image/svg+xml,..."); pointer-events:none;
+    z-index:9999; opacity:0.4; }
+
+### Key UI Patterns
+  .btn-gold:          bg --gold, color --black, no border-radius,
+                      font Montserrat 700, letter-spacing 2px,
+                      hover → --gold-light, disabled → opacity 0.4
+  Cards selected:     border-color --gold; background rgba(201,168,76,0.04)
+  Gold top border:    border-top: 2px solid var(--gold) (price summary)
+  Gold left bar:      position:absolute; top:0; left:0; w:3px;
+                      background: linear-gradient(180deg,--gold,transparent)
+  Scrollbar:          4px, gold thumb
+
+
+────────────────────────────────────────────────────────────────────────────────
+ 2. FILE CHANGE MANIFEST
+────────────────────────────────────────────────────────────────────────────────
+
+## FILES BEING CREATED
+
+  File                  Purpose
+  ─────────────────────────────────────────────────────────────────────────
+  booking.html          New dedicated booking page. Standalone HTML.
+                        Contains: hero header, multi-step booking flow
+                        (package → Cal.com slot → waiver → pay), inline
+                        CSS, references booking.js for all JS logic.
+
+  booking.js            Shared JavaScript module. Loaded by both
+                        booking.html and index.html (replacing the inline
+                        PRICING ENGINE block). Contains:
+                          – All pricing constants (TEST_MODE, PACKAGES,
+                            ADDONS, DEPOSIT_RATE, PRICING_API_URL, CAL_URLS)
+                          – _renderPriceDisplay()
+                          – selectPackage(), toggleAddon(), _calcOrder(),
+                            updatePriceSummary(), initiateCheckout()
+                          – openBookingModal(), closeWaiverModal(),
+                            agreeAndBook(), openWaiverOnly()
+                          – Booking state (selectedPackage, selectedAddons,
+                            capturedSlot object for booking.html)
+                          – initiateCheckoutWithSlot() — new function for
+                            booking.html that includes appointment_date,
+                            appointment_time, cal_event_id in POST body
+
+
+## FILES BEING MODIFIED
+
+  File                        Changes
+  ─────────────────────────────────────────────────────────────────────────
+  index.html                  1. Replace inline PRICING ENGINE JS block
+                                 (lines ~4217–4378) with:
+                                 <script src="booking.js"></script>
+                              2. Remove the four waiver JS functions
+                                 (openBookingModal, openWaiverOnly,
+                                  agreeAndBook, closeWaiverModal) and
+                                 backdrop click listener from inline
+                                 <script> — these move to booking.js.
+                              3. Waiver modal HTML stays in index.html
+                                 (it is presentation HTML, not logic).
+                              4. No other structural changes.
+
+  pricing_lambda.py           1. Read 3 new optional fields from body:
+                                 appointment_date, appointment_time,
+                                 cal_event_id.
+                              2. Add all three to the payment_note string.
+                              3. Add structured log field for each.
+                              NOTE: all 3 fields are optional — existing
+                              callers (index.html on main page) will not
+                              break if they omit the new fields. Values
+                              default to empty string if absent.
+
+
+## FILES STAYING UNTOUCHED
+
+  File                          Reason
+  ─────────────────────────────────────────────────────────────────────────
+  lambda_function.py            Constraint: do not modify.
+                                (webhook Lambda already reads payment_note
+                                 as pipe-delimited; new fields append safely)
+  success.html                  Constraint: do not modify.
+  All Terraform files           Constraint: do not modify.
+                                (no new env vars, no new resources needed —
+                                 appointment fields ride in payment_note)
+  fleet.html                    Unrelated to booking redesign.
+  api/booking_intent.py         Legacy file; not part of active flow.
+  backend-integration/**        No changes beyond pricing_lambda.py.
+
+
+────────────────────────────────────────────────────────────────────────────────
+ 3. SHARED CODE STRATEGY
+────────────────────────────────────────────────────────────────────────────────
+
+## What Gets Extracted
+
+  From index.html inline <script> → booking.js:
+    ✓ All PRICING ENGINE constants (TEST_MODE, PACKAGES, ADDONS, etc.)
+    ✓ _renderPriceDisplay()
+    ✓ selectPackage(), toggleAddon(), _calcOrder()
+    ✓ updatePriceSummary(), initiateCheckout()
+    ✓ openBookingModal(), openWaiverOnly(), agreeAndBook(), closeWaiverModal()
+    ✓ New: capturedSlot state + initiateCheckoutWithSlot()
+    ✓ New: initCalEmbed(packageKey, onSlotCaptured) — Cal.com embed logic
+
+  Stays in index.html inline <script> (page-specific, not shared):
+    ✓ NAV SCROLL listener
+    ✓ FADE IN OBSERVER
+    ✓ MOBILE MENU (toggleMenu, link listeners)
+    ✓ Booking state vars: pendingCalUrl, pendingStripeUrl
+       (These are index.html-specific UX vars; booking.js uses capturedSlot)
+    ✓ selectAndScroll()
+    ✓ toggleFaq()
+    ✓ filterPortfolio()
+
+## How Waiver Modal is Handled
+
+  Option chosen: Duplicate HTML in booking.html + share JS via booking.js.
+
+  Rationale:
+  – The waiver HTML is ~30 lines of static markup with no data dependencies.
+  – Dynamic injection (fetch/innerHTML) adds async complexity and FOUC risk
+    for a component that needs to be present at page load.
+  – Sharing the CSS classes (waiver-modal-card etc.) in booking.js is wrong
+    because CSS belongs in HTML files.
+  – The simplest DRY approach: put waiver JS functions once in booking.js,
+    waiver HTML once per page file (index.html already has it; booking.html
+    will include it verbatim).
+  – This is the same pattern used by fleet.html for the noise texture and
+    :root variables.
+
+## How booking.html References Shared Logic
+
+  1. <script src="booking.js"></script> at bottom of <body>.
+  2. booking.js exposes all functions as globals (no ES module syntax,
+     consistent with the zero-build constraint).
+  3. booking.html calls selectPackage(), toggleAddon(), updatePriceSummary()
+     for the package/addon section, and initiateCheckoutWithSlot() for pay.
+  4. booking.js reads DOM element IDs defined in booking.html —
+     same IDs as index.html for the pricing section (pkg-card, addon-pill,
+     checkout-btn, etc.) so no fork in the shared logic.
+
+## No-Duplication Guarantee
+
+  Pricing table (PACKAGES/ADDONS/DEPOSIT_RATE) lives only in booking.js.
+  Waiver text lives in HTML files (index.html + booking.html) — text only,
+  no logic duplication.
+  Checkout POST logic lives only in booking.js.
+
+
+────────────────────────────────────────────────────────────────────────────────
+ 4. BOOKING PAGE STRUCTURE (booking.html)
+────────────────────────────────────────────────────────────────────────────────
+
+## Layout Overview
+
+  booking.html is a single-page, full-dark-luxury booking funnel.
+  It does NOT need the full nav of index.html — a minimal sticky header
+  with logo + "Back to Home" is sufficient.
+
+  ┌───────────────────────────────────────────────────────────────────────┐
+  │  Sticky mini-header: AGT logo (left) | "← Home" link (right)         │
+  ├───────────────────────────────────────────────────────────────────────┤
+  │  Section: Hero / Page Title                                           │
+  │    "Book Your Detail" — Cormorant Garamond, gold <em> accent         │
+  │    Sub-copy: "Select your package, reserve a slot, pay your deposit"  │
+  ├───────────────────────────────────────────────────────────────────────┤
+  │  Progress Indicator (3 steps)                                         │
+  │    Step 1: Package   Step 2: Schedule   Step 3: Review & Pay         │
+  │    Gold active step, muted incomplete steps                           │
+  ├───────────────────────────────────────────────────────────────────────┤
+  │  STEP 1 — Package & Add-ons (always visible)                          │
+  │    3 pkg-cards (same markup as index.html)                            │
+  │    10 addon-pills (same markup as index.html)                         │
+  │    "Continue to Schedule" button (gold, disabled until pkg selected)  │
+  ├───────────────────────────────────────────────────────────────────────┤
+  │  STEP 2 — Schedule Your Appointment (hidden until Step 1 complete)    │
+  │    Selected package summary badge (name, estimated time)              │
+  │    Cal.com inline embed (iframe pointing to CAL_URLS[selectedPackage])│
+  │    Slot capture note: "Selecting a time below holds your slot."       │
+  │    JS listens for Cal.com postMessage / embed callback                │
+  │    On slot captured: shows captured date/time, enables Step 3 button  │
+  │    "Continue to Review" button (gold, disabled until slot captured)   │
+  ├───────────────────────────────────────────────────────────────────────┤
+  │  STEP 3 — Review & Pay (hidden until Step 2 complete)                 │
+  │    Order summary card:                                                │
+  │      Package name | price                                             │
+  │      Add-on lines (dynamically rendered)                              │
+  │      Total | Deposit amount (gold)                                    │
+  │      Appointment date + time                                          │
+  │    Waiver modal trigger:                                              │
+  │      Gold "Review Service Agreement" link                             │
+  │      #waiver-modal (same HTML structure as index.html)                │
+  │    Waiver checkbox: "I have read and agree to the Service Agreement"  │
+  │      (accent-color: --gold)                                           │
+  │    Pay Deposit button (#checkout-btn):                                │
+  │      Disabled until: package selected + slot captured + waiver checked│
+  │      Label: "Pay $XX.XX Deposit — Secure Booking"                    │
+  │      On click: initiateCheckoutWithSlot()                             │
+  │    Sub-note: "Secure payment via Square. Remaining balance due at     │
+  │    service completion."                                               │
+  ├───────────────────────────────────────────────────────────────────────┤
+  │  Mobile CTA bar (same pattern as index.html)                          │
+  └───────────────────────────────────────────────────────────────────────┘
+
+## JS State Shape (booking.html-specific)
+
+  // Shared via booking.js (also used by index.html):
+  let selectedPackage = null;       // 'sm_detail' | 'md_detail' | 'lg_detail'
+  let selectedAddons  = new Set();  // Set of addon key strings
+
+  // New — booking.html only (in capturedSlot object):
+  const capturedSlot = {
+    appointment_date:  '',   // ISO date string, e.g. "2026-05-15"
+    appointment_time:  '',   // 24-hour time string, e.g. "10:00"
+    cal_event_id:      '',   // Cal.com booking UID from embed callback
+    cal_url:           '',   // Cal.com event URL for this package
+  };
+
+  // Waiver state (booking.html):
+  let waiverAgreed = false;  // toggled by waiver checkbox in Step 3
+
+## Cal.com Embed Approach
+
+  Approach: Cal.com inline iframe embed with embed.js callback.
+
+  How it works:
+  1. Load Cal.com embed script (ONE external script allowed for booking.html;
+     the zero-CDN constraint applies to index.html):
+       <script src="https://cal.com/embed.js"></script>
+  2. Initialise the embed targeting #cal-container div:
+       Cal("inline", {
+         elementOrSelector: "#cal-container",
+         calLink: CAL_URLS[selectedPackage],  // switched on package select
+         config: { hideEventTypeDetails: false }
+       });
+  3. Listen for booking event:
+       Cal("on", {
+         action: "bookingSuccessful",
+         callback: (e) => {
+           capturedSlot.appointment_date = e.data.date;      // ISO string
+           capturedSlot.appointment_time = e.data.startTime; // "HH:MM"
+           capturedSlot.cal_event_id     = e.data.uid;       // booking UID
+           onSlotCaptured();  // advance UI to Step 3
+         }
+       });
+
+  IMPORTANT: The Cal.com embed creates a Cal.com booking record when the
+  user selects a slot. This is a REAL Cal.com booking in pending/unconfirmed
+  state. It is NOT cancelled if payment fails — see Risks section §7.
+
+  Cal.com embed loads inside #cal-container, constrained to the Step 2 panel.
+  When selectedPackage changes, the embed is re-initialised with the new
+  CAL_URLS[selectedPackage] URL to show the correct event type's availability.
+
+## Pay Button Enable/Disable Logic
+
+  The #checkout-btn in booking.html is enabled ONLY when ALL of:
+    1. selectedPackage !== null
+    2. capturedSlot.cal_event_id !== ''  (slot captured from Cal.com)
+    3. waiverAgreed === true             (checkbox checked)
+
+  Function: updateBookingReadiness()
+    Checks all three conditions.
+    Sets checkoutBtn.disabled = true/false.
+    Updates btn label:
+      – All missing:     "Select a Package to Continue"
+      – Pkg set, no slot:"Select an Appointment Time"
+      – Slot set, no waiv:"Review & Accept Service Agreement"
+      – All set:         "Pay $XX.XX Deposit — Secure Booking"
+
+## Waiver → Lambda → Square Call Chain (booking.html)
+
+  1. User completes Step 1 (package + addons) and Step 2 (slot capture).
+  2. In Step 3, user clicks "Review Service Agreement" link →
+     openWaiverOnly() → waiver modal opens (no "Agree" CTA redirect).
+     Instead, closing the modal does NOT initiate checkout. The user
+     must check the waiver checkbox in Step 3 to proceed.
+     NOTE: Alternative — use openBookingModal() so "I Agree" checks
+     the box and hides the modal automatically. See Risks §7.
+  3. User checks waiver checkbox → waiverAgreed = true →
+     updateBookingReadiness() enables #checkout-btn.
+  4. User clicks #checkout-btn → initiateCheckoutWithSlot():
+       a. Validates selectedPackage, capturedSlot, waiverAgreed.
+       b. Disables btn, sets "Preparing your checkout..." label.
+       c. POSTs to PRICING_API_URL:
+            {
+              package:          selectedPackage,
+              addons:           [...selectedAddons],
+              cal_url:          capturedSlot.cal_url,
+              appointment_date: capturedSlot.appointment_date,
+              appointment_time: capturedSlot.appointment_time,
+              cal_event_id:     capturedSlot.cal_event_id,
+            }
+       d. Lambda creates Square Payment Link.
+       e. Returns { url: "https://..." }.
+       f. Stores to sessionStorage:
+            agt_cal_url, agt_package, agt_addons,
+            agt_deposit, agt_balance,
+            agt_appointment_date, agt_appointment_time, agt_cal_event_id
+       g. window.location.href = data.url (redirect to Square).
+  5. User pays on Square → Square redirects to success.html.
+  6. Square fires payment.updated webhook → lambda_function.py reads
+     appointment_date, appointment_time, cal_event_id from payment_note.
+
+
+────────────────────────────────────────────────────────────────────────────────
+ 5. LAMBDA CHANGES (pricing_lambda.py)
+────────────────────────────────────────────────────────────────────────────────
+
+## New Fields Read from Request Body
+
+  # In lambda_handler(), after reading cal_url:
+  appointment_date = body.get("appointment_date", "")
+  appointment_time = body.get("appointment_time", "")
+  cal_event_id     = body.get("cal_event_id", "")
+
+  All three are optional strings. Empty string default = backward-compatible
+  (index.html's existing initiateCheckout() doesn't send them; no breakage).
+
+## Updated payment_note String
+
+  note = "|".join([
+      f"package={package_key}",
+      f"addons={','.join(addon_keys)}",
+      f"total={price_data['total']}",
+      f"deposit={price_data['deposit']}",
+      f"balance={price_data['balance']}",
+      f"cal_url={cal_url}",
+      f"order_id={order_id}",
+      f"client=gentlemens-touch",
+      f"environment={ENVIRONMENT}",
+      f"appointment_date={appointment_date}",   # NEW
+      f"appointment_time={appointment_time}",   # NEW
+      f"cal_event_id={cal_event_id}",           # NEW
+  ])
+
+  The webhook Lambda (lambda_function.py) parses payment_note by splitting
+  on "|" and then "=" for each part. Adding new pipe-delimited fields at the
+  END is fully backward-compatible; the webhook simply ignores unknown keys
+  until it is updated to use them.
+
+## Updated Structured Log
+
+  Add to the checkout_request_received log:
+    "appointment_date": appointment_date,
+    "appointment_time": appointment_time,
+    "cal_event_id":     cal_event_id,
+
+## What Does NOT Change
+
+  – PACKAGES, ADDONS, DEPOSIT_RATE, TEST_MODE: unchanged.
+  – _calculate_price(): unchanged.
+  – _create_square_payment_link() signature: takes appointment_date etc.
+    indirectly via the note string; no signature change needed if note is
+    built before calling the function. ALTERNATIVE: pass as kwargs to keep
+    note construction inside the helper. Either works; prefer keeping note
+    construction in the helper for cohesion.
+  – Square order metadata: appointment_date/time could also be added to
+    order.metadata if the webhook Lambda needs structured access. This is
+    optional since payment_note parsing already works.
+
+
+────────────────────────────────────────────────────────────────────────────────
+ 6. IMPLEMENTATION ORDER
+────────────────────────────────────────────────────────────────────────────────
+
+  Step  File                 Action                              Rationale
+  ─────────────────────────────────────────────────────────────────────────
+  1     booking.js           CREATE — extract all pricing        Must exist before
+                             constants + functions from           either HTML file
+                             index.html inline <script>.          references it.
+                             Add capturedSlot state and           Single source of
+                             initiateCheckoutWithSlot().          truth for pricing.
+
+  2     index.html           MODIFY — replace inline pricing     Verify no regression
+                             JS block with                        on the existing
+                             <script src="booking.js">.           booking flow before
+                             Remove waiver JS functions           building new page.
+                             from inline block.
+                             Keep waiver HTML and all
+                             other page-specific JS.
+
+  3     [TEST index.html]    Manual / browser test:              Confirm shared JS
+                             – Package cards still work          works correctly
+                             – Add-on pills still work           from external file
+                             – Price summary updates             before building
+                             – Waiver modal opens/closes         booking.html.
+                             – Checkout redirect works
+
+  4     pricing_lambda.py    MODIFY — add 3 new optional         Lambda must be
+                             fields to body parsing and           deployed before
+                             payment_note string.                 booking.html goes
+                                                                 live so slot data
+                                                                 is persisted.
+
+  5     booking.html         CREATE — full booking page          Built last so all
+                             with 3-step flow, Cal.com            dependencies
+                             embed, waiver checkbox,              (booking.js,
+                             Step 3 pay panel.                    lambda) are ready.
+
+  6     [TEST booking.html]  End-to-end test:                    Confirm full new
+                             – Package select + addons            flow before PR.
+                             – Cal.com embed loads
+                             – Slot capture callback fires
+                             – Pay button enable logic
+                             – Lambda POST with all 6 fields
+                             – Square redirect
+
+
+────────────────────────────────────────────────────────────────────────────────
+ 7. RISKS & ASSUMPTIONS
+────────────────────────────────────────────────────────────────────────────────
+
+  #  Risk / Ambiguity                    Decision Needed / Mitigation
+  ─────────────────────────────────────────────────────────────────────────
+  1  Cal.com embed creates a REAL        DECISION REQUIRED:
+     confirmed booking immediately.      a) Accept this — the Cal.com booking
+     If the user never completes            is created on slot select; if
+     Square payment, a ghost Cal.com        payment fails, manually cancel
+     booking exists.                        the Cal.com booking.
+                                         b) Configure the Cal.com event type
+                                            to "requires confirmation" so the
+                                            host must manually approve, giving
+                                            time to verify payment first.
+                                         c) Use Cal.com's "payment required"
+                                            option with a $0 placeholder price
+                                            (avoids Cal.com's own payment).
+                                         Recommendation: Option (b) is lowest-
+                                         complexity given current stack.
+
+  2  Cal.com embed.js is an external     ASSUMPTION: The zero-CDN constraint
+     CDN script (cal.com/embed.js).       applies to index.html only. booking.html
+     The constraint says "do not add      is a new file and can load the Cal.com
+     external JS libraries" for           embed script. If the constraint applies
+     index.html.                          to all pages, use an iframe-only embed
+                                          and capture slot via postMessage instead
+                                          of the embed.js callback API.
+
+  3  Cal.com callback field names        ASSUMPTION: e.data.date, e.data.startTime,
+     (date, startTime, uid) must be       e.data.uid are correct based on Cal.com
+     verified against Cal.com's           embed documentation. Must be verified
+     actual embed event payload.          against a live test before finalising
+                                          capturedSlot field mapping.
+
+  4  booking.js is a global-scope        ASSUMPTION: This matches the zero-build
+     script, not an ES module.            constraint and the existing index.html
+     (no import/export)                   pattern. All functions are globals.
+     If two tabs of the page are          No module scope isolation needed since
+     open, state could theoretically      each page tab has its own JS context.
+     conflict.                            Not a real issue for single-page usage.
+
+  5  The webhook Lambda                  ASSUMPTION: The webhook Lambda
+     (lambda_function.py) does not        (lambda_function.py) already parses
+     need changes to pass Step 1.         payment_note via split("|") and handles
+                                          unknown key=value pairs gracefully.
+                                          Must verify this before deploying
+                                          Lambda changes to confirm append-only
+                                          payment_note is safe.
+
+  6  Waiver modal — booking.html         Two options identified:
+     interaction model (checkbox vs       a) Standard modal: open waiver, user
+     modal agree button).                    clicks "I Agree" → this sets
+                                             waiverAgreed = true automatically.
+                                             Simpler UX, single click.
+                                         b) Inline checkbox in Step 3 view,
+                                            with "Review Agreement" link.
+                                            More explicit — user sees checkbox
+                                            before clicking Pay.
+                                         RECOMMENDATION: Option (b) for booking.html
+                                         because it gives a clearer paper trail
+                                         that the user actively checked consent
+                                         before initiating payment.
+
+  7  "Client" field in Lambda body:      The frontend currently sends
+     client: 'gentlemens-touch'          client: 'gentlemens-touch'. The Lambda
+                                          reads it from body but does nothing with
+                                          it (the payment_note hardcodes the same
+                                          value). booking.html does not need to
+                                          send this field.
+
+  8  index.html booking section         ASSUMPTION: index.html's #booking section
+     stays as-is after extracting JS.    keeps its existing markup and behaviour.
+     No redirect to booking.html         The plan does NOT reroute index.html's
+     from index.html.                    "Book Now" button to booking.html — that
+                                         would be a separate design decision.
+                                         booking.html is an ADDITIONAL page,
+                                         not a replacement (yet).
+
+  9  Mobile responsiveness of           Cal.com's embed is inherently responsive.
+     Cal.com embed.                      The #cal-container needs min-height:600px
+                                         on desktop and a lower value (~400px)
+                                         on mobile. Verify on iOS Safari.
+
+  10 TEST_MODE flag in booking.js        booking.js must read the same const
+     must stay in sync with              TEST_MODE = true/false. Since booking.js
+     index.html and Lambda.              replaces the inline const, there is now
+                                         ONE definition (in booking.js) rather
+                                         than two. Lambda has its own env var.
+                                         Flip booking.js:TEST_MODE to false at
+                                         launch; Lambda TEST_MODE is controlled
+                                         by Terraform.
+
+
+================================================================================
+ END OF PLAN
+================================================================================
