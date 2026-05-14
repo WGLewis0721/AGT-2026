@@ -4,7 +4,7 @@ resource "aws_apigatewayv2_api" "booking_api" {
 
   cors_configuration {
     allow_headers = ["content-type"]
-    allow_methods = ["OPTIONS", "POST"]
+    allow_methods = ["OPTIONS", "POST", "GET"]
     allow_origins = [local.frontend_origin]
   }
 
@@ -46,6 +46,12 @@ resource "aws_apigatewayv2_integration" "lambda" {
 resource "aws_apigatewayv2_route" "webhook" {
   api_id    = aws_apigatewayv2_api.booking_api.id
   route_key = "POST /webhook"
+  target    = "integrations/${aws_apigatewayv2_integration.lambda.id}"
+}
+
+resource "aws_apigatewayv2_route" "complete" {
+  api_id    = aws_apigatewayv2_api.booking_api.id
+  route_key = "GET /complete"
   target    = "integrations/${aws_apigatewayv2_integration.lambda.id}"
 }
 

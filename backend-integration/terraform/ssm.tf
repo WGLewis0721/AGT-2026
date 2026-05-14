@@ -26,6 +26,11 @@ data "aws_ssm_parameter" "calcom_webhook_secret" {
   with_decryption = true
 }
 
+data "aws_ssm_parameter" "mark_complete_secret" {
+  name            = "/tra3/${var.client_name}/${var.environment}/mark_complete_secret"
+  with_decryption = true
+}
+
 locals {
   calcom_webhook_secret = (
     var.calcom_webhook_secret_parameter_name == ""

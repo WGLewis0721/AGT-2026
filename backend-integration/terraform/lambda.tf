@@ -21,6 +21,8 @@ resource "aws_lambda_function" "booking_webhook" {
       BOOKING_TABLE                = aws_dynamodb_table.bookings.name
       ENVIRONMENT                  = var.environment
       TEST_MODE                    = var.test_mode ? "true" : "false"
+      MARK_COMPLETE_SECRET         = data.aws_ssm_parameter.mark_complete_secret.value
+      PUBLIC_API_BASE_URL          = "https://${aws_apigatewayv2_api.booking_api.id}.execute-api.${var.aws_region}.amazonaws.com"
     }
   }
 
