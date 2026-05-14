@@ -3,37 +3,39 @@
 ## Project Overview
 
 This is the codebase for **A Gentlemen's Touch (AGT)**, a luxury mobile car detailing business.
-The repo has two distinct, independent layers:
+The repo has three distinct layers:
 
-1. **`index.html`** — standalone static marketing + booking funnel (no build step, no framework)
-2. **`src/`** — a Wix Velo multi-page application connected to Wix site `685cc33b-0e63-481d-9422-d4bafcc7f070`
+1. **`index.html`** — standalone static marketing site (no build step, no framework)
+2. **`booking.html` + `booking.js`** — standalone booking page and shared booking engine
+3. **`wix/`** — a Wix Velo multi-page application (reference only, not actively developed)
 
-Do **not** mix code from these two layers.
+Do **not** mix code between these layers.
 
 ---
 
 ## Tech Stack
 
-### Wix Velo (`src/`)
+### Static site (`index.html`, `booking.html`, `booking.js`, `success.html`)
 
-- **Framework:** Wix Velo — proprietary Wix JavaScript runtime
-- **Page code:** one `.js` file per Wix page in `src/pages/`; `masterPage.js` runs globally on every page
-- **Shared utilities:** `src/public/` — import with `'public/<filename>'` (not relative paths)
-- **Backend web modules:** `src/backend/*.jsw` — callable from frontend with `'backend/<filename>'`
-- **Data:** Wix Data API (`wix-data`) — primary collection is `Bookings`
-- **Session state:** `wix-storage` session module (keys defined in `cartManager.js`)
-- **Element selection:** `$w('#elementId')` (Velo API — not DOM)
-- **Navigation:** `wixLocation.to('/route')`
-- **Geolocation:** `wixWindow.getCurrentGeolocation()`
-- **Dev command:** `npm run dev` (alias: `wix dev`) — opens Local Editor
-- **Lint:** `npm run lint` (`eslint .` with `@wix/eslint-plugin-cli`)
+- Vanilla HTML5 / CSS3 / ES2020 — zero dependencies, no bundler
+- `index.html`: all CSS in `<style>`, all JS in inline `<script>` at bottom of `<body>`
+- `booking.html`: all CSS in `<style>`, imports `booking.js` as external script
+- `booking.js`: IIFE module; exposes named functions on `window` for HTML onclick handlers
+- `success.html`: reads sessionStorage keys set by `booking.js` before Square redirect
 
-### Static site (`index.html`)
+### Booking backend (`backend-integration/`)
 
-- Vanilla HTML 5 / CSS 3 / ES2020 — zero dependencies, no bundler
-- All CSS in a single inline `<style>` block in `<head>`
-- All JS in a single inline `<script>` block at the bottom of `<body>`
-- Cal.com embed for Step 2 of the booking funnel
+- `lambda/pricing_lambda.py` — `POST /create-checkout` — Square Payment Link creation
+- `lambda/lambda_function.py` — `POST /webhook` / `GET /complete` — Square + Cal.com webhook handler
+- Square SDK v42+ (`squareup>=42.0.0`) — used only in `pricing_lambda.py`
+- Webhook Lambda uses raw `hmac`, `hashlib`, `base64` — no Square SDK
+- Python 3.11, Terraform, DynamoDB, Textbelt SMS
+
+### Wix Velo (`wix/`)
+
+- Framework: Wix Velo — proprietary Wix JavaScript runtime
+- Page code: one `.js` file per Wix page in `wix/src/pages/`
+- Dev command: `npm run dev` (alias: `wix dev`) — opens Local Editor
 
 ---
 
@@ -42,120 +44,120 @@ Do **not** mix code from these two layers.
 - **Background:** deep black `#0a0a0a` (`--black`), card surfaces `#161616` (`--black-card`)
 - **Accent:** gold `#C9A84C` (`--gold`), lighter gold `#E8C96B` (`--gold-light`)
 - **Text:** white `#FFFFFF`, soft white `#F0EDE8` (`--white-soft`), muted `#9A9A9A` (`--white-muted`)
-- **Active/selected (Velo pages):** dark navy `#1A1A2E` for buttons/pills
 - **Error:** `#E74C3C` (red) — success: `#27AE60` (green)
 - **Fonts:** Cormorant Garamond (display/serif), Bebas Neue (logo/headings), Montserrat (body/UI)
 - **Tone:** luxury, minimal, editorial — "A Gentlemen's Touch"
-- Inline `style` attributes are acceptable in `index.html` for one-off sizing tweaks; match this pattern
+- Inline `style` attributes are acceptable for one-off sizing tweaks; match the pattern already in the file
+
+---
+
+## Booking Flow
+
+The full booking flow lives on `booking.html`. There is no inline booking funnel in `index.html`.
+
+**Step sequence (booking.html):**
+1. Customer picks date and time (built-in calendar + 4 time slots: 9 AM, 11 AM, 1 PM, 3 PM)
+2. Customer picks package and optional add-ons (sections unlock sequentially)
+3. Customer fills in info form (name, phone, email, address, vehicle year/make/model, notes) and accepts waiver
+4. `initiateCheckoutWithSlot()` in `booking.js` POSTs all fields to `/create-checkout`
+5. `pricing_lambda.py` recalculates price server-side, creates Square Payment Link, embeds all context in `payment_note`
+6. Customer redirected to Square, pays deposit
+7. Square fires `payment.updated` webhook → `lambda_function.py` → DynamoDB write + SMS (both detailer and customer, immediately)
+8. Square redirects to `success.html` → reads sessionStorage keys written before Square redirect
+
+**Fields sent to `/create-checkout` (from `booking.js`):**
+`package`, `addons`, `appointment_date`, `appointment_time`, `cal_event_id`, `cal_url`,
+`customer_name`, `customer_phone`, `customer_email`, `customer_address`,
+`vehicle_year`, `vehicle_make`, `vehicle_model`, `special_instructions`, `waiver_accepted_at`
+
+**sessionStorage keys written by `booking.js`** (available on `success.html`):
+`agt_package`, `agt_addons`, `agt_deposit`, `agt_balance`, `agt_cal_url`,
+`agt_customer_name`, `agt_customer_phone`, `agt_customer_email`, `agt_address`, `agt_vehicle`
 
 ---
 
 ## Conventions
 
-### Wix Velo
+### Static site
 
-**Check element existence before manipulating optional elements:**
-
-```js
-if ($w('#elementId').length) {
-    $w('#elementId').show();
-}
-```
-
-**Session storage keys** (defined in `src/public/cartManager.js`):
-
-| Key | Description |
-|---|---|
-| `'agt_cart'` | JSON array of cart items |
-| `'agt_booking_info'` | JSON object — address, vehicle, contact info |
-| `'agt_selected_date'` | ISO date string, e.g. `"2026-03-15"` |
-| `'agt_selected_time'` | 24-hour time string, e.g. `"10:00"` |
-
-**Import paths — always use Velo-style, not relative:**
-
-```js
-import { getCart, addItem } from 'public/cartManager';
-import { submitBooking }    from 'backend/bookingUtils';
-import { refreshCartBadge } from 'masterPage';
-```
-
-**After any cart mutation, refresh the header badge:**
-
-```js
-refreshCartBadge(); // imported from 'masterPage'
-```
-
-**Prices:** stored and calculated as **dollar amounts** (not cents). Use `formatPrice(dollars)` from `cartManager.js` for display strings.
-
-**Page file names:** do **not** rename `src/pages/*.js` files — Wix maps pages by filename.
-
-**Code style:**
-- JSDoc comments on all exported functions
-- Section separator comments: `// ─── Section name ─────────────────`
-- `$w.onReady()` at the top; helper functions below
-
-### Static site (`index.html`)
-
-- Booking state lives in the `booking` object (in-memory, no persistence)
-- `goToStep(n)` validates before advancing; never call `goToStep` without completing validation
+- `booking.js` is an IIFE; all state (`selectedPackage`, `selectedAddons`, `capturedSlot`, `customerInfo`, `waiverAgreed`) lives inside the IIFE
+- Functions needed by HTML `onclick=` are explicitly attached to `window` at the bottom of the IIFE
 - Use `document.getElementById()` for DOM access (no jQuery or other libraries)
 - CSS custom properties (e.g. `var(--gold)`) must be used for all theme colors
 - Do not add external JS libraries or CDN script tags
+- `_updateBookingReadiness()` gates the checkout button on ALL 11 required fields: `selectedPackage`, `capturedSlot.appointment_date`, `capturedSlot.appointment_time`, `waiverAgreed`, plus 7 customer info fields
+- Prices displayed via `_renderPriceDisplay()` — reads `data-pkg` / `data-addon` attributes; do not hardcode prices in markup
+- `TEST_MODE` flag at top of `booking.js` mirrors the Lambda `TEST_MODE` — keep in sync with `prod.tfvars`
+
+### index.html nav structure
+
+```html
+<nav id="mainNav">
+  <ul class="nav-links">
+    <li class="nav-dropdown">About ▾ → [#services, #packages]</li>
+    <li class="nav-dropdown">How It Works ▾ → [#portfolio, #testimonials, #faq]</li>
+    <li><a href="booking.html">Contact</a></li>
+  </ul>
+  <a href="booking.html" class="nav-cta">Book Now</a>
+</nav>
+```
+
+All "Book Now" / "Select Package" CTAs link to `booking.html` (or `booking.html?package=<key>`).
+There is no inline booking funnel in `index.html`.
 
 ---
 
 ## Common Tasks
 
-### Add a new service (Wix — Book Online page)
+### Add a new service package
 
-Edit `ALL_SERVICES` in `src/pages/Book Online.c5pg0.js`. Each entry requires:
-`id`, `category`, `name`, `description`, `price` (dollars), `duration`, `image`.
+1. Add `<article class="pkg-card" data-pkg="new_detail" onclick="selectPackage('new_detail')">` to `booking.html` `#section-package`
+2. Add to `REAL_PACKAGES` in `booking.js`
+3. Add to `REAL_PACKAGES` in `pricing_lambda.py`
+4. Add to `PACKAGE_DISPLAY` in `lambda_function.py`
+5. Add to `REAL_SERVICE_PRICES` in `lambda_function.py`
+6. Add `TEST_*` entries to test tables in all three files if TEST_MODE is relevant
 
-### Add a new service add-on (Wix — Service Page)
+### Add a new add-on
 
-Edit the `ADD_ONS` array in `src/pages/Service Page.zapqr.js`.
+1. Add `<button class="addon-pill" data-addon="new_key" onclick="toggleAddon('new_key')">` to `booking.html`
+2. Add to `REAL_ADDONS` in `booking.js`
+3. Add to `REAL_ADDONS` in `pricing_lambda.py`
+4. Add to `ADDON_DISPLAY` in `lambda_function.py`
 
-### Add a new promo code (Wix — Cart Page)
+### Update pricing
 
-Edit the `PROMO_CODES` object in `src/pages/Cart Page.u25lg.js`. Value is the discount fraction (e.g. `0.15` for 15%).
+Edit `REAL_PACKAGES` / `REAL_ADDONS` in **both** `booking.js` and `pricing_lambda.py`.
+`booking.js` values are display-only; `pricing_lambda.py` values are the authoritative server-side prices.
+
+### Update SERVICE_PRICES in webhook lambda
+
+If the detailer SMS balance shows "Not mapped", add the service key and price to `REAL_SERVICE_PRICES` in `lambda_function.py`.
 
 ### Add a new backend function
 
-Add to `src/backend/bookingUtils.jsw`. Update `src/backend/permissions.json` if the function needs non-default permissions.
-
-### Change available booking time slots
-
-Edit the `allSlots` array in `src/backend/bookingUtils.jsw` (`getAvailableSlots`) **and** the fallback array in `src/pages/Booking Calendar.s9swq.js` (`_loadSlots`).
-
-### Add a new page to the Wix site
-
-Create the page in the Wix editor (browser), then sync to the IDE with `wix dev`. A new `src/pages/<Page Name>.<id>.js` file will appear automatically.
-
-### Update static site packages or add-ons (`index.html`)
-
-Edit the `.pick-card` elements inside `#step1` and the `selectPkg()` calls in the booking funnel section of `index.html`.
-
-### Update payment handles (`index.html`)
-
-Search `index.html` for `$YOURHANDLE` and `@YOURHANDLE`; replace with real Cash App / Venmo handles. The Zelle number is `(334) 294-8228`.
+Add to `lambda_function.py` for webhook logic, or `pricing_lambda.py` for pricing/checkout logic.
+Keep both Lambdas independently deployable — they share no imports.
 
 ---
 
 ## Out of Scope
 
-- **Do not** install frontend frameworks (React, Vue, Angular) in the Wix Velo project — Velo is a self-contained runtime
-- **Do not** create `src/pages/*.js` files manually from the IDE — page files must be created through the Wix editor
-- **Do not** add a build step, bundler, or npm dependencies to `index.html` — it must remain zero-dependency
-- **Do not** convert `wix-storage` session to `localStorage` — session scoping is intentional (cart clears on tab close)
-- **Do not** change `wix.config.json` `siteId` — it identifies the live Wix production site
-- **Do not** use DOM APIs (`document.getElementById`, `querySelector`, etc.) in Velo page code — use `$w()`
-- **Do not** hardcode prices in Velo page code outside of `ALL_SERVICES`/`ADD_ONS` data arrays
+- **Do not** add a booking funnel back into `index.html` — it routes to `booking.html`
+- **Do not** add a Cal.com redirect to `success.html` — the appointment is confirmed pre-payment
+- **Do not** add a build step, bundler, or npm dependencies to the static site — zero-dependency is a hard constraint
+- **Do not** add Stripe imports or references anywhere — Square is the active payment provider
+- **Do not** import the Square SDK in `lambda_function.py` — webhook signature verification uses raw `hmac`/`hashlib`
+- **Do not** hardcode prices in HTML markup — use `data-pkg`/`data-addon` hooks and `_renderPriceDisplay()`
+- **Do not** trust browser-submitted amounts — `pricing_lambda.py` always recalculates from server-side tables
+
+---
 
 ## AGT Booking System Rules
 
 Always read:
-- docs/system-context.md
-- docs/skills/
+- `docs/system-context.md`
+- `docs/skills/`
 
 Constraints:
 - DynamoDB is the only database
@@ -164,13 +166,15 @@ Constraints:
 - No unnecessary dependencies
 
 Internet usage:
-- Only official docs (AWS, Square, Cal.com)
+- Only official docs (AWS, Square)
 - No random blog code
 
 Output:
 - clean
 - minimal
 - production-ready
+
+---
 
 ## Payment Provider: Square
 
@@ -181,8 +185,28 @@ Output:
 - **Pricing Lambda:** Uses Square SDK v42+ (`from square import Square`)
 - **Webhook Lambda:** Verifies HMAC-SHA256 signatures, no Square SDK imported
 - **Environment:** `SQUARE_ENVIRONMENT` env var controls sandbox/production (independent of AWS `ENVIRONMENT`)
+- **Current environment:** production (`square_environment = "production"` in `prod.tfvars`)
 - **Layer:** Must use `--platform manylinux2014_x86_64` pip flags on Windows to download Linux wheels
 - **Events:** Listens for `payment.updated` with `status == "COMPLETED"`, ignores `payment.created`
+- **Note field:** Lambda reads `payment.note` OR `payment.payment_note` OR `order.note` (checked in order)
+
+### payment_note Parsing
+
+`pricing_lambda.py` writes the note; `lambda_function.py` reads it.
+Format: `key=value|key=value|...`
+All user values sanitized via `_sanitize_note_value()` — strips `|` and `=`.
+
+Keys written to `payment_note`:
+`package`, `addons`, `total`, `deposit`, `balance`, `cal_url`, `order_id`, `client`, `environment`,
+`appointment_date` (YYYY-MM-DD), `appointment_time` (HH:MM 24-hour), `cal_event_id`,
+`customer_name`, `customer_phone`, `customer_email`, `customer_address`,
+`vehicle` (year make model combined), `special_instructions`, `waiver`
+
+### SMS Trigger
+
+SMS fires **immediately** on Square `payment.updated` (COMPLETED) — not on Cal.com webhook.
+Both detailer SMS and customer SMS are sent in `_handle_square_webhook` after `_mark_booking_confirmed`.
+`detailer_sms_status` and `customer_sms_status` are set to `"sent"` / `"failed"` / `"skipped"` in DynamoDB.
 
 ### When Working on Payment Code
 
@@ -192,35 +216,45 @@ Output:
 - If layer rebuild fails with `No module named 'pydantic_core._pydantic_core'`, the pip flags are missing in `bootstrap-layer.ps1`
 - Sandbox vs production is controlled by `square_environment` in `prod.tfvars`, not by AWS environment
 
+### TEST_MODE Flag
+
+`test_mode` (Terraform variable) wires through to `TEST_MODE` env var on
+both Lambdas and `const TEST_MODE` in `booking.js`. When enabled:
+
+- Packages charge $0.01 / $0.10 / $1.00, add-ons $0.01, deposit = 100%
+- `booking.js` rewrites `.package-price` and `.addon-pill-price` text on `DOMContentLoaded`
+
+When working on pricing code:
+- Don't hardcode 0.20 — read `DEPOSIT_RATE` (Python/JS) which is flag-aware
+- Both Lambdas have `REAL_*` and `TEST_*` price tables; keep them in sync
+
 ### Useful References
 
 - Square SDK docs: `https://developer.squareup.com/docs/sdks/python`
 - Square Checkout API: `https://developer.squareup.com/reference/square/checkout-api`
 - Webhook signature verification: `https://developer.squareup.com/docs/webhooks/step3validate`
 
-### TEST_MODE Flag
+---
 
-`test_mode` (Terraform variable) wires through to `TEST_MODE` env var on
-both Lambdas and `const TEST_MODE` in `index.html`. When enabled:
+## Cal.com Webhook (Legacy)
 
-- Packages charge $0.01 / $0.10 / $1.00, add-ons $0.01, deposit = 100%
-- Frontend rewrites `.package-price` and `.addon-pill-price` text on
-  `DOMContentLoaded` to match what's actually charged
+Cal.com `BOOKING_CREATED` webhooks are still handled but are **not** the primary SMS trigger.
+They attach scheduling metadata to an existing DynamoDB record via `_attach_calcom_to_booking`.
 
-When working on pricing code:
-- Don't hardcode 0.20 — read `DEPOSIT_RATE` (Python) / `DEPOSIT_RATE`
-  (JS) which are flag-aware
-- Both Lambdas have `REAL_*` and `TEST_*` price tables; pick via
-  `TEST_MODE`. Keep them in sync if you change either side.
-- Frontend's `_renderPriceDisplay()` is the single source of truth for
-  on-page prices — don't re-hardcode prices in markup; use
-  `data-pkg-display` / `data-pkg` / `data-addon` hooks.
+- Trigger: `BOOKING_CREATED`
+- `payload.price` is **ignored** — deposit is always derived from package full price × `DEPOSIT_RATE`
+- Signature: HMAC-SHA256 via `x-cal-signature-256` header
+- If Cal.com fires and a matching phone number is found in DynamoDB, it updates: `appointment_at`, `appointment_display`, `vehicle_make`, `vehicle_model`, `calcom_booking_uid`
 
-### Cal.com Webhook
+---
 
-- Trigger is `BOOKING_CREATED` (not `BOOKING_PAYMENT_INITIATED` — that
-  legacy trigger only fired when Cal.com initiated the payment itself
-  via its built-in Stripe integration)
-- `payload.price` is **ignored** — it reflects whatever is configured on
-  the Cal.com event type, not what Square actually charged. Deposit is
-  always derived from the package's full price × `DEPOSIT_RATE`
+## Wix Velo (`wix/`)
+
+Reference only — not actively developed.
+
+- **Page code:** one `.js` file per Wix page in `wix/src/pages/`; `masterPage.js` runs globally
+- **Shared utilities:** `wix/src/public/` — import with `'public/<filename>'` (not relative paths)
+- **Element selection:** `$w('#elementId')` (Velo API — not DOM)
+- **Dev command:** `npm run dev` (alias: `wix dev`) in `wix/` directory
+- Do **not** rename `wix/src/pages/*.js` files — Wix maps pages by filename
+- Do **not** use DOM APIs in Velo page code — use `$w()`

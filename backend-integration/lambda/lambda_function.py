@@ -280,7 +280,7 @@ def _mark_booking_confirmed(
         "customer_name = :customer_name",
         "appointment_date = :appt_date",
         "deposit_paid = :deposit_paid",
-        "source = :source",
+        "#src = :source",
         "#env = :environment",
     ]
     values = {
@@ -321,7 +321,7 @@ def _mark_booking_confirmed(
         _booking_table().update_item(
             Key={"booking_id": booking_id},
             UpdateExpression="SET " + ", ".join(update_parts),
-            ExpressionAttributeNames={"#status": "status", "#env": "environment"},
+            ExpressionAttributeNames={"#status": "status", "#env": "environment", "#src": "source"},
             ExpressionAttributeValues=values,
         )
     except Exception as exc:

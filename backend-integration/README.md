@@ -2,30 +2,37 @@
 
 ## 1. What This Is
 
-AWS serverless pipeline: Stripe Payment Link deposits → Lambda (Python 3.11) → Textbelt SMS.
-No database. No manual steps. Fires on every `checkout.session.completed` webhook.
-For the consolidated rollout history, deployment sequence, and operator runbook, use `backend-integration/DEPLOYMENT-GUIDE.md`.
+AWS serverless pipeline: customer books on `booking.html` → Square deposit payment → Lambda (Python 3.11) → Textbelt SMS.
+SMS fires immediately on Square `payment.updated` (COMPLETED). No manual steps. No Cal.com dependency for SMS.
+
+For the consolidated rollout history, deployment sequence, and operator runbook, see `backend-integration/DEPLOYMENT-GUIDE.md`.
 
 ---
 
 ## 2. Architecture
 
 ```
-Cal.com booking → customer pays deposit via Stripe Payment Link
-    ↓
-Stripe fires checkout.session.completed webhook
-    ↓
-AWS API Gateway (HTTP) → Lambda (Python 3.11)
-    ↓
+Customer fills out booking.html
+  → booking.js POSTs to POST /create-checkout (pricing_lambda.py)
+  → Square Payment Link created; all booking context in pipe-delimited payment_note
+  → Customer pays deposit on Square checkout
+  ↓
+Square fires payment.updated webhook
+  ↓
+AWS API Gateway (HTTP) → lambda_function.py (Python 3.11)
+  ↓
+DynamoDB ← full booking record written
 Textbelt SMS → detailer (booking details + balance due)
 Textbelt SMS → customer (confirmation + balance due)
+  ↓
+Square redirects customer to success.html
 ```
 
 **S3 bucket layout** (`tra3-{account_id}-deployments`):
 
 ```
 tra3-{account_id}-deployments/
-├── layers/dependencies/layer.zip          ← stripe + requests (built once)
+├── layers/dependencies/layer.zip          ← squareup + requests (built once)
 ├── functions/{client}/{env}/lambda_function.zip  ← 3KB code only
 └── terraform-state/{client}/{env}/terraform.tfstate
 ```
@@ -33,7 +40,8 @@ tra3-{account_id}-deployments/
 **AWS resources per environment:**
 
 ```
-tra3-{client}-{env}-booking-webhook              Lambda function
+tra3-{client}-{env}-booking-webhook              Lambda (webhook handler + complete link)
+tra3-{client}-{env}-pricing-api                  Lambda (Square Payment Link creation)
 tra3-{client}-{env}-api                          API Gateway (HTTP)
 tra3-{client}-{env}-lambda-role                  IAM role
 /aws/lambda/tra3-{client}-{env}-booking-webhook  CloudWatch log group
@@ -43,12 +51,12 @@ tra3-{client}-{env}-lambda-role                  IAM role
 
 ## 3. Environments
 
-| Environment | Stripe Mode | Purpose |
+| Environment | Square Mode | Purpose |
 |-------------|-------------|---------|
-| dev | Test | Stripe CLI testing, code changes |
-| prod | Live | Real customer bookings |
+| dev | Sandbox | Local testing, code changes |
+| prod | Production | Real customer bookings |
 
-Always test against dev. Never run `stripe trigger` against prod.
+Always test against dev. Never run against prod until dev is verified.
 
 ---
 
@@ -57,7 +65,7 @@ Always test against dev. Never run `stripe trigger` against prod.
 - Terraform >= 1.6.0
 - AWS CLI configured
 - Python 3.11+ with pip (layer bootstrap only)
-- Stripe account (test + live)
+- Square account (sandbox + production)
 - Textbelt API key
 
 ---
@@ -79,24 +87,24 @@ Always test against dev. Never run `stripe trigger` against prod.
    .\backend-integration\scripts\deploy.ps1 -Client gentlemens-touch -Environment dev
    ```
 
-4. Register dev webhook in Stripe **TEST mode**:
-   - Stripe → TEST mode → Developers → Webhooks → Add endpoint
+4. Register dev webhook in Square **Sandbox** mode:
+   - Square Developer Console → Sandbox → Webhooks → Add subscription
    - URL: (from terraform output)
-   - Event: `checkout.session.completed`
-   - Copy signing secret → update `dev.tfvars` → `stripe_webhook_secret`
+   - Events: `payment.created`, `payment.updated`
+   - Copy Signature Key → update `dev.tfvars` → `square_webhook_signature_key`
 
 5. Redeploy dev with webhook secret:
    ```powershell
    .\backend-integration\scripts\deploy.ps1 -Client gentlemens-touch -Environment dev
    ```
 
-6. Test:
-   ```powershell
-   stripe trigger checkout.session.completed
-   ```
-   Verify CloudWatch + SMS on +13346522601.
+6. Test by completing a sandbox payment and verifying:
+   - CloudWatch log shows `booking_processed`
+   - SMS received on detailer phone
+   - DynamoDB record created with all fields
 
-7. Repeat steps 2–5 for prod using `prod.tfvars` and Stripe **LIVE mode**.
+7. Repeat steps 2–5 for prod using `prod.tfvars` and Square **Production** mode.
+   Set `square_environment = "production"` in `prod.tfvars`.
 
 ---
 
@@ -129,87 +137,107 @@ Always test against dev. Never run `stripe trigger` against prod.
 
 ## 8. Updating the Layer
 
-When `stripe` or `requests` versions change:
+When `squareup` or `requests` versions change:
 
 1. Update `backend-integration\layer\requirements.txt`
 2. Run `bootstrap-layer.ps1`
 3. Deploy both environments
 
+**Critical:** Use `--platform manylinux2014_x86_64` flags in `bootstrap-layer.ps1` when running on Windows.
+Without them Lambda fails with `No module named 'pydantic_core._pydantic_core'`.
+
 ---
 
 ## 9. SMS Format
 
+SMS fires immediately when Square `payment.updated` (COMPLETED) is received.
+
 **Detailer SMS:**
 ```
 🚗 NEW DETAIL BOOKING
-──────────────────────
-Name:     Marcus Johnson
-Phone:    +13346522601
-Email:    marcus@gmail.com
-──────────────────────
-Service:  MD Detail
-Date:     04-05-2026
-Location: 131 Kentucky Oaks St
-──────────────────────
-Deposit:  $30.00
-Balance:  $120.00
+──────────────────────────────────
+Name:     John Smith
+Phone:    (334) 555-1234
+Email:    john@example.com
+──────────────────────────────────
+Service:  Essential Detail
+Add-Ons:  Pet Hair Removal
+Address:  123 Main St, City AL 36301
+Vehicle:  2022 Toyota Camry
+Date:     Wed, May 20, 2026 at 9:00 AM
+──────────────────────────────────
+Deposit:  $28.00
+Balance:  $112.00
 ```
 
 **Customer SMS:**
 ```
 🚗 Booking Confirmed!
 A Gentlemen's Touch
-──────────────────────
-Hi Marcus! Your detail is booked.
-──────────────────────
-Service:  MD Detail
-Date:     04-05-2026
-Location: 131 Kentucky Oaks St
-──────────────────────
-Deposit:  $30.00 received
-Balance:  $120.00 due after service
-──────────────────────
+──────────────────────────────────
+Hi John! Your detail is confirmed.
+──────────────────────────────────
+Service:  Essential Detail
+Add-Ons:  Pet Hair Removal
+Address:  123 Main St, City AL 36301
+Vehicle:  2022 Toyota Camry
+Date:     Wed, May 20, 2026 at 9:00 AM
+──────────────────────────────────
+Deposit:  $28.00 received
+Balance:  $112.00 due after service
+──────────────────────────────────
 Questions? Call (334) 294-8228
 ```
 
-> **No URLs in any SMS.** Textbelt blocks them.
+Add-Ons, Address, and Vehicle lines are omitted when absent.
+
+The detailer SMS may include a "Mark complete" link (`GET /complete?id=...&t=...`) if `MARK_COMPLETE_SECRET` is configured.
 
 ---
 
 ## 10. Balance Collection
 
-After service, detailer sends customer a Stripe invoice:
-
-```
-Stripe app → Invoices → Create → customer email + amount → Send
-```
-
-Lambda SMS shows balance amount. No payment links in SMS.
+After service, the detailer collects the remaining balance directly from the customer on-site. The balance amount is shown in the detailer SMS.
 
 ---
 
-## 11. Service Prices
+## 11. Service Packages & Pricing
 
-| Cal.com Event | Service Label | Full Price | Deposit (20%) |
-|---------------|---------------|------------|---------------|
-| service-1 | SM Detail | $100 | $20 |
-| service-2 | MD Detail | $150 | $30 |
-| service-3 | LG Detail | $200 | $40 |
+| Key | Display Name | Full Price | Deposit (20%) |
+|-----|-------------|------------|---------------|
+| `sm_detail` | Essential Detail (Small Vehicle) | $140 | $28 |
+| `md_detail` | Signature Detail (Mid-Size Vehicle) | $175 | $35 |
+| `lg_detail` | Executive Detail (Large / SUV) | $220 | $44 |
 
-Cal.com booking links:
-- SM: https://cal.com/william-g.-lewis-ai51kb/mobile-detail-appointment-service-1
-- MD: https://cal.com/william-g.-lewis-ai51kb/mobile-detail-appointment-service-2
-- LG: https://cal.com/william-g.-lewis-ai51kb/mobile-detail-appointment-service-3
+Prices are server-side authoritative in `pricing_lambda.py` `REAL_PACKAGES`. Mirror any changes in `booking.js` `REAL_PACKAGES` and `lambda_function.py` `REAL_SERVICE_PRICES`.
 
 ---
 
-## 12. Stripe Payment Link Custom Fields
+## 12. payment_note Fields
 
-| Label | Key | Type |
-|-------|-----|------|
-| Service | service | Text |
-| Date | date | Text |
-| Location | location | Text |
+All booking context is embedded in the Square `payment_note` as pipe-delimited `key=value` pairs.
+Written by `pricing_lambda.py`, parsed by `lambda_function.py`.
+
+| Key | Example Value |
+|-----|--------------|
+| `package` | `sm_detail` |
+| `addons` | `pet_hair,wax` |
+| `total` | `200` |
+| `deposit` | `40` |
+| `balance` | `160` |
+| `cal_url` | `https://cal.com/...` |
+| `order_id` | UUID |
+| `client` | `gentlemens-touch` |
+| `environment` | `prod` |
+| `appointment_date` | `2026-05-20` |
+| `appointment_time` | `09:00` |
+| `customer_name` | `John Smith` |
+| `customer_phone` | `3345551234` |
+| `customer_email` | `john@example.com` |
+| `customer_address` | `123 Main St` |
+| `vehicle` | `2022 Toyota Camry` |
+| `special_instructions` | `Park in driveway` |
+| `waiver` | `2026-05-14T12:00:00Z` |
 
 ---
 
@@ -233,10 +261,17 @@ fields @timestamp, @message
 | sort @timestamp desc
 ```
 
-**All Stripe events:**
+**All Square webhook events:**
 ```
 fields @timestamp, @message
-| filter @message like /stripe_webhook_received/
+| filter @message like /square_webhook_received/
+| sort @timestamp desc
+```
+
+**payment_note debug (check note was received):**
+```
+fields @timestamp, @message
+| filter @message like /payment_note_debug/
 | sort @timestamp desc
 ```
 
@@ -246,12 +281,13 @@ fields @timestamp, @message
 
 | Symptom | Likely cause | Fix |
 |---------|-------------|-----|
-| Lambda not invoked | Webhook not registered | Register in Stripe Dashboard |
-| Signature verification failed | Wrong webhook secret | Update tfvars, redeploy |
+| Lambda not invoked | Webhook not registered | Register in Square Developer Console |
+| Signature verification failed | Wrong webhook signature key | Update SSM `square_webhook_signature_key`, redeploy |
 | SMS not received | Textbelt key issue | Check CloudWatch for `sms_failed` |
-| Balance shows None | Service name not in `SERVICE_PRICES` | Add key to `SERVICE_PRICES` dict |
-| Wrong env receiving events | Stripe mode mismatch | Check live/test toggle in Stripe |
-| `stripe trigger` fails | Running against prod | Always trigger against dev |
+| Balance shows "Not mapped" | Service key not in `REAL_SERVICE_PRICES` | Add key + price to `lambda_function.py` |
+| payment_note empty | note field location differs by Square API version | Check `payment_note_debug` log; `_extract_square_booking` checks `payment.note`, `payment.payment_note`, `order.note` |
+| Wrong env receiving events | Square environment mismatch | Check `square_environment` in `prod.tfvars` |
+| Layer error: pydantic_core | Windows pip downloaded Windows wheels | Re-run `bootstrap-layer.ps1` with `--platform manylinux2014_x86_64` flags |
 
 ---
 
