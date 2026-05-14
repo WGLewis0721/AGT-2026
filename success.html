@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Deposit Confirmed — A Gentlemen's Touch</title>
+  <title>Booking Confirmed — A Gentlemen's Touch</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Bebas+Neue&family=Montserrat:wght@300;400;500&display=swap" rel="stylesheet">
   <style>
@@ -51,9 +51,12 @@
       margin-bottom: 12px;
     }
 
-    h1 em {
+    .tagline {
+      font-family: 'Cormorant Garamond', serif;
       font-style: italic;
       color: #C9A84C;
+      font-size: 18px;
+      margin-bottom: 24px;
     }
 
     .subtitle {
@@ -70,35 +73,19 @@
       margin: 32px 0;
     }
 
-    .countdown-text {
+    .summary-card {
+      background: #0d0d0d;
+      border: 1px solid #1e1e1e;
+      padding: 20px 24px;
+      text-align: left;
+      margin-bottom: 32px;
       font-size: 13px;
-      color: #666;
-      margin-bottom: 8px;
+      color: #888;
+      line-height: 2;
     }
 
-    .countdown-number {
-      font-family: 'Bebas Neue', cursive;
-      font-size: 48px;
-      color: #C9A84C;
-      letter-spacing: 4px;
-      margin-bottom: 24px;
-    }
-
-    .btn-gold {
-      display: inline-block;
-      background: #C9A84C;
-      color: #000;
-      font-family: 'Montserrat', sans-serif;
-      font-size: 12px;
-      font-weight: 500;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      padding: 16px 40px;
-      border: none;
-      cursor: pointer;
-      text-decoration: none;
-      margin-bottom: 16px;
-      width: 100%;
+    .summary-card span {
+      color: #f5f5f5;
     }
 
     .btn-ghost {
@@ -121,10 +108,6 @@
       color: #555;
       line-height: 1.7;
     }
-
-    .note strong {
-      color: #888;
-    }
   </style>
 </head>
 <body>
@@ -133,90 +116,50 @@
 
   <div class="card">
     <div class="checkmark">✦</div>
-    <h1>Deposit <em>Confirmed</em></h1>
-    <p class="subtitle">
-      Your deposit has been received. Now let's lock in your appointment date and time.
-    </p>
+    <h1>Booking Confirmed</h1>
+    <p class="tagline">Your detail is locked in.</p>
+
+    <p class="subtitle" id="appt-line">Your appointment is confirmed.</p>
 
     <hr class="divider">
 
-    <p class="countdown-text">Redirecting to scheduling in</p>
-    <div class="countdown-number" id="countdown">3</div>
+    <div class="summary-card" id="summary-card" style="display:none"></div>
 
-    <a id="cal-link" class="btn-gold" href="#">
-      Book Your Appointment Now →
-    </a>
     <a href="index.html" class="btn-ghost">Back to Home</a>
 
     <p class="note">
-      <strong>Next step:</strong> Choose your appointment date and time on our scheduling page.
-      No additional payment is required — your deposit is already confirmed.
-      Your detailer will collect the remaining balance on-site after service.
+      You'll receive a text confirmation shortly with your booking details.
+      Your detailer will collect the remaining balance on-site when the job is complete.
     </p>
   </div>
 
   <script>
-    // ─── DISPLAY NAME MAPS ───────────────────────────────────────────────
     const PACKAGES = {
-      sm_detail: 'Small Vehicle Detail',
-      md_detail: 'Medium Vehicle Detail',
-      lg_detail: 'Large / SUV / Truck Detail',
+      sm_detail: 'Essential Detail',
+      md_detail: 'Signature Detail',
+      lg_detail: 'Executive Detail',
     };
 
-    const ADDONS = {
-      pet_hair:   'Pet Hair Removal',
-      shampooing: 'Interior Shampooing',
-      upholstery: 'Upholstery Shampoo',
-      wax:        'Hand Wax Upgrade',
-      steam:      'Steam Cleaning',
-      polishing:  'Machine Polishing',
-      headlights: 'Headlight Restoration',
-      odor:       'Odor Removal',
-      engine_bay: 'Engine Bay Cleaning',
-      leather:    'Leather Treatment',
-    };
+    const date    = sessionStorage.getItem('agt_appointment_date') || '';
+    const time    = sessionStorage.getItem('agt_appointment_time') || '';
+    const pkg     = sessionStorage.getItem('agt_package') || '';
+    const deposit = sessionStorage.getItem('agt_deposit') || '';
 
-    const FALLBACK_URL = 'https://cal.com/william-g.-lewis-ai51kb/mobile-detail-appointment-service-1';
-
-    // ─── READ SESSION STORAGE ────────────────────────────────────────────
-    const baseCalUrl = sessionStorage.getItem('agt_cal_url') || FALLBACK_URL;
-    const packageKey = sessionStorage.getItem('agt_package') || '';
-    const addonsRaw  = sessionStorage.getItem('agt_addons') || '';
-    const deposit    = sessionStorage.getItem('agt_deposit') || '';
-    const balance    = sessionStorage.getItem('agt_balance') || '';
-
-    // ─── BUILD PREFILLED URL ─────────────────────────────────────────────
-    const serviceName = PACKAGES[packageKey] || '';
-    const addonNames  = addonsRaw
-      ? addonsRaw.split(',').map(k => ADDONS[k.trim()] || '').filter(Boolean).join(', ')
-      : '';
-
-    let calUrl = baseCalUrl;
-
-    if (serviceName || addonNames) {
-      const params = new URLSearchParams();
-      if (serviceName) params.set('service', serviceName);
-      if (addonNames)  params.set('add-ons', addonNames);
-      if (deposit && balance) {
-        params.set('notes', 'Deposit paid: $' + deposit + ' | Balance due: $' + balance);
-      }
-      calUrl = baseCalUrl + (baseCalUrl.includes('?') ? '&' : '?') + params.toString();
+    if (date && time) {
+      document.getElementById('appt-line').textContent =
+        `Your appointment is confirmed for ${date} at ${time}.`;
     }
 
-    // ─── SET LINK + COUNTDOWN ────────────────────────────────────────────
-    document.getElementById('cal-link').href = calUrl;
+    const pkgDisplay = PACKAGES[pkg] || pkg;
+    const lines = [];
+    if (pkgDisplay) lines.push(`Package: <span>${pkgDisplay}</span>`);
+    if (deposit)    lines.push(`Deposit Paid: <span>$${deposit}</span>`);
 
-    let seconds = 3;
-    const countdownEl = document.getElementById('countdown');
-
-    const timer = setInterval(() => {
-      seconds--;
-      countdownEl.textContent = seconds;
-      if (seconds <= 0) {
-        clearInterval(timer);
-        window.location.href = calUrl;
-      }
-    }, 1000);
+    if (lines.length) {
+      const card = document.getElementById('summary-card');
+      card.innerHTML = lines.join('<br>');
+      card.style.display = 'block';
+    }
   </script>
 
 </body>
