@@ -209,7 +209,8 @@ def _format_iso_date(date_str: str) -> str:
         return ""
     try:
         dt = datetime.strptime(date_str, "%Y-%m-%d")
-        return dt.strftime("%a, %b %-d, %Y")
+        day = str(dt.day)  # strip leading zero portably
+        return dt.strftime(f"%a, %b {day}, %Y")
     except Exception:
         return date_str
 
@@ -220,7 +221,8 @@ def _format_24h_time(time_str: str) -> str:
         return ""
     try:
         dt = datetime.strptime(time_str, "%H:%M")
-        return dt.strftime("%-I:%M %p")
+        hour = str(int(dt.strftime("%I")))  # strip leading zero portably
+        return f"{hour}:{dt.strftime('%M %p')}"
     except Exception:
         return time_str
 
@@ -395,7 +397,7 @@ def _send_sms(phone_number, message, recipient):
 
 def _build_detailer_sms(booking: dict, balance_due, divider: str) -> str:
     addons_display = booking.get("addons") or "None"
-    vehicle_line = f"\nVehicle:  {booking['vehicle']}" if booking.get("vehicle") else ""
+    vehicle_line = f"Vehicle:  {booking['vehicle']}\n" if booking.get("vehicle") else ""
     notes_line = f"\nNotes:    {booking['special_instructions']}" if booking.get("special_instructions") else ""
     balance_line = f"${balance_due:.2f}" if balance_due is not None else "Not mapped"
 
@@ -417,8 +419,8 @@ def _build_detailer_sms(booking: dict, balance_due, divider: str) -> str:
         f"Add-Ons:  {addons_display}\n"
         f"Date:     {date_display}\n"
         f"{divider}\n"
-        f"Address:  {booking.get('address') or 'Not provided'}"
-        f"{vehicle_line}\n"
+        f"Address:  {booking.get('address') or 'Not provided'}\n"
+        f"{vehicle_line}"
         f"{divider}\n"
         f"Deposit Paid: ${booking['deposit_paid']:.2f}\n"
         f"Balance Due:  {balance_line}"

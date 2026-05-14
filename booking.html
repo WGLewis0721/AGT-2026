@@ -598,6 +598,14 @@
     .field-input::placeholder,
     .field-textarea::placeholder { color: var(--white-muted); font-size: 12px; }
 
+    .field-label-note {
+      color: var(--white-muted);
+      text-transform: none;
+      letter-spacing: normal;
+      font-weight: 400;
+      font-size: 9px;
+    }
+
     .field-textarea { resize: vertical; }
 
     @media (max-width: 768px) {
@@ -740,7 +748,7 @@
         </div>
         <div class="form-row form-row-1">
           <div class="form-field">
-            <label class="field-label" for="field-notes">Special Instructions <span style="color:var(--white-muted);text-transform:none;letter-spacing:normal;font-weight:400;font-size:9px;">(optional)</span></label>
+            <label class="field-label" for="field-notes">Special Instructions <span class="field-label-note">(optional)</span></label>
             <textarea id="field-notes" class="field-textarea" rows="3" placeholder="Any special requests or notes..."></textarea>
           </div>
         </div>
