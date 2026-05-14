@@ -248,6 +248,17 @@ def _mark_booking_confirmed(
     amount_total_cents,
     detailer_sms_status,
     customer_sms_status,
+    customer_name=None,
+    customer_email=None,
+    customer_phone=None,
+    service=None,
+    addons=None,
+    address=None,
+    appointment_date=None,
+    deposit_paid=None,
+    balance_due=None,
+    source="square",
+    environment=None,
 ):
     if not booking_id or booking_id == "unknown":
         return
@@ -264,10 +275,22 @@ def _mark_booking_confirmed(
                 "square_order_id = :square_order_id, "
                 "square_amount_total_cents = :amount_total_cents, "
                 "detailer_sms_status = :detailer_sms_status, "
-                "customer_sms_status = :customer_sms_status"
+                "customer_sms_status = :customer_sms_status, "
+                "customer_name = :customer_name, "
+                "customer_email = :customer_email, "
+                "customer_phone = :customer_phone, "
+                "service = :service, "
+                "addons = :addons, "
+                "address = :address, "
+                "appointment_date = :appointment_date, "
+                "deposit_paid = :deposit_paid, "
+                "balance_due = :balance_due, "
+                "#source = :source, "
+                "environment = :environment"
             ),
             ExpressionAttributeNames={
                 "#status": "status",
+                "#source": "source",
             },
             ExpressionAttributeValues={
                 ":status": "confirmed",
@@ -279,6 +302,17 @@ def _mark_booking_confirmed(
                 ":amount_total_cents": int(amount_total_cents or 0),
                 ":detailer_sms_status": detailer_sms_status,
                 ":customer_sms_status": customer_sms_status,
+                ":customer_name": customer_name or "Unknown",
+                ":customer_email": customer_email or "No email",
+                ":customer_phone": customer_phone or None,
+                ":service": service or "Not specified",
+                ":addons": addons or None,
+                ":address": address or None,
+                ":appointment_date": appointment_date or "Not specified",
+                ":deposit_paid": deposit_paid if deposit_paid is not None else 0.0,
+                ":balance_due": balance_due if balance_due is not None else None,
+                ":source": source,
+                ":environment": environment or "unknown",
             },
         )
     except Exception as exc:
@@ -719,6 +753,26 @@ def _handle_square_webhook(event: dict, body: str) -> dict:
         amount_total_cents=int(deposit_paid * 100),
         detailer_sms_status="pending_calcom",
         customer_sms_status="pending_calcom",
+        customer_name=booking["customer_name"],
+        customer_email=booking["customer_email"],
+        customer_phone=booking["customer_phone"],
+        service=booking["service"],
+        addons=booking.get("addons"),
+        address=booking.get("address"),
+        appointment_date=booking["appointment_date"],
+        deposit_paid=deposit_paid,
+        balance_due=balance_due,
+        source="square",
+        environment=os.environ.get("ENVIRONMENT", "unknown"),
+    )
+    _log(
+        "INFO",
+        "booking_record_persisted",
+        booking_id=order_id,
+        customer_name=booking["customer_name"],
+        service=booking["service"],
+        deposit_paid=deposit_paid,
+        source="square",
     )
 
     return _response(200, "Payment confirmed")
