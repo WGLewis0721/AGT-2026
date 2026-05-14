@@ -2913,7 +2913,7 @@
 </section>
 
 <!-- ─── TESTIMONIALS ─── -->
-<section class="testimonials">
+<section class="testimonials" id="testimonials">
   <div class="testimonials-header fade-in">
     <div class="section-label">Client Reviews</div>
     <h2 class="section-title">What They're <em>Saying</em></h2>
@@ -3903,137 +3903,13 @@
 </style>
 
 <section class="booking-funnel" id="booking">
-  <div class="section-label" style="justify-content:center">Book Your Service</div>
-  <h2 class="section-title" style="text-align:center;">Build Your <em>Detail Package</em></h2>
-  <p style="text-align:center; color:#888; font-family:'Montserrat',sans-serif; font-size:14px; margin-bottom:48px; max-width:600px; margin-left:auto; margin-right:auto;">
-    Select your package, choose any add-ons, and pay your 20% deposit securely. Your appointment is confirmed instantly.
-  </p>
-
-  <div class="booking-engine">
-
-    <!-- Part A: Package Selector -->
-    <div class="booking-section-label">Step 1 — Choose Your Package</div>
-    <div class="packages-grid" style="margin-bottom:48px;">
-      <div class="pkg-card fade-in" data-pkg="sm_detail" onclick="selectPackage('sm_detail')">
-        <div class="pkg-check">✦</div>
-        <div class="package-size">Small Vehicle</div>
-        <div class="package-name">Full Luxury Detail</div>
-        <div class="package-time">⏱ ~90 minutes</div>
-        <div class="package-price">$100</div>
-        <div class="package-divider"></div>
-        <ul class="package-features">
-          <li>Hand wash &amp; bug removal</li>
-          <li>Full interior vacuum</li>
-          <li>Interior &amp; exterior windows</li>
-          <li>Wheel &amp; tire cleaning</li>
-          <li>Dashboard &amp; console wipe-down</li>
-        </ul>
-      </div>
-      <div class="pkg-card fade-in" data-pkg="md_detail" onclick="selectPackage('md_detail')">
-        <div class="pkg-check">✦</div>
-        <div class="package-size">Medium Vehicle <span style="background:var(--gold);color:var(--black);font-size:9px;font-weight:700;letter-spacing:1px;padding:3px 8px;border-radius:2px;vertical-align:middle;margin-left:8px">Most Popular</span></div>
-        <div class="package-name">Full Luxury Detail</div>
-        <div class="package-time">⏱ ~120 minutes</div>
-        <div class="package-price">$150</div>
-        <div class="package-divider"></div>
-        <ul class="package-features">
-          <li>Everything in Small</li>
-          <li>Deeper seat &amp; carpet extraction</li>
-          <li>Tire dressing application</li>
-          <li>Door pocket &amp; crevice detailing</li>
-        </ul>
-      </div>
-      <div class="pkg-card fade-in" data-pkg="lg_detail" onclick="selectPackage('lg_detail')">
-        <div class="pkg-check">✦</div>
-        <div class="package-size">Large / SUV / Truck</div>
-        <div class="package-name">Full Luxury Detail</div>
-        <div class="package-time">⏱ ~150–180 minutes</div>
-        <div class="package-price">$200</div>
-        <div class="package-divider"></div>
-        <ul class="package-features">
-          <li>Everything in Medium</li>
-          <li>Extended steam on surfaces</li>
-          <li>Full door jamb degreasing</li>
-          <li>Third-row &amp; cargo area detail</li>
-        </ul>
-      </div>
-    </div>
-
-    <!-- Part B: Add-on Toggles -->
-    <div class="booking-section-label">Step 2 — Add Premium Services <span style="color:var(--white-muted);font-weight:300;font-size:10px;letter-spacing:1px">(Optional)</span></div>
-    <div class="addon-pills-grid">
-      <div class="addon-pill" data-addon="pet_hair" onclick="toggleAddon('pet_hair')">
-        <span class="addon-pill-name">Pet Hair Removal</span>
-        <span class="addon-pill-price">+$20</span>
-      </div>
-      <div class="addon-pill" data-addon="shampooing" onclick="toggleAddon('shampooing')">
-        <span class="addon-pill-name">Interior Shampooing</span>
-        <span class="addon-pill-price">+$15</span>
-      </div>
-      <div class="addon-pill" data-addon="upholstery" onclick="toggleAddon('upholstery')">
-        <span class="addon-pill-name">Upholstery Shampoo</span>
-        <span class="addon-pill-price">+$15</span>
-      </div>
-      <div class="addon-pill" data-addon="wax" onclick="toggleAddon('wax')">
-        <span class="addon-pill-name">Hand Wax Upgrade</span>
-        <span class="addon-pill-price">+$20</span>
-      </div>
-      <div class="addon-pill" data-addon="steam" onclick="toggleAddon('steam')">
-        <span class="addon-pill-name">Steam Cleaning</span>
-        <span class="addon-pill-price">+$10</span>
-      </div>
-      <div class="addon-pill" data-addon="polishing" onclick="toggleAddon('polishing')">
-        <span class="addon-pill-name">Machine Polishing</span>
-        <span class="addon-pill-price">+$20</span>
-      </div>
-      <div class="addon-pill" data-addon="headlights" onclick="toggleAddon('headlights')">
-        <span class="addon-pill-name">Headlight Restoration</span>
-        <span class="addon-pill-price">+$15</span>
-      </div>
-      <div class="addon-pill" data-addon="odor" onclick="toggleAddon('odor')">
-        <span class="addon-pill-name">Odor Removal</span>
-        <span class="addon-pill-price">+$10</span>
-      </div>
-      <div class="addon-pill" data-addon="engine_bay" onclick="toggleAddon('engine_bay')">
-        <span class="addon-pill-name">Engine Bay Cleaning</span>
-        <span class="addon-pill-price">+$15</span>
-      </div>
-      <div class="addon-pill" data-addon="leather" onclick="toggleAddon('leather')">
-        <span class="addon-pill-name">Leather Treatment</span>
-        <span class="addon-pill-price">+$15</span>
-      </div>
-    </div>
-
-    <!-- Part C: Price Summary + Checkout -->
-    <div class="price-summary">
-      <div class="price-summary-lines">
-        <div class="summary-line summary-pkg-line" id="pkg-line" style="display:none;">
-          <span id="pkg-line-name">—</span>
-          <span id="pkg-line-price">—</span>
-        </div>
-        <div id="addon-lines"></div>
-        <div class="summary-divider"></div>
-        <div class="summary-line summary-total">
-          <span>Total</span>
-          <span id="total-amount">$0.00</span>
-        </div>
-        <div class="summary-line summary-deposit">
-          <span>Deposit (20%)</span>
-          <span id="deposit-amount">$0.00</span>
-        </div>
-      </div>
-      <button
-        id="checkout-btn"
-        class="btn-gold"
-        disabled
-        onclick="openBookingModal('', '')"
-        style="width:100%; margin-top:24px; padding:18px; font-size:13px; letter-spacing:2px;"
-      >Select a Package to Continue</button>
-      <p style="text-align:center; font-size:11px; color:#555; margin-top:12px; font-family:'Montserrat',sans-serif; line-height:1.6;">
-        You'll review our service agreement before checkout. Secure payment via Square.
-      </p>
-    </div>
-
+  <div style="text-align:center;max-width:600px;margin:0 auto">
+    <div class="section-label" style="justify-content:center">Book Your Service</div>
+    <h2 class="section-title">Ready for a <em>Pristine Ride?</em></h2>
+    <p style="color:var(--white-muted);font-size:14px;line-height:1.8;font-weight:300;margin-bottom:40px">
+      Choose your package, pick a date and time, and pay your deposit — all in one place. We come to you.
+    </p>
+    <a href="booking.html" class="btn-gold" style="display:inline-block;padding:18px 56px;font-size:12px;letter-spacing:3px">Book Now &rarr;</a>
   </div>
 </section>
 
