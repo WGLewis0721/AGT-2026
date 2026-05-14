@@ -48,28 +48,29 @@ CANCEL_URL  = f"{_DOMAIN_URL}/"
 TEST_MODE = os.environ.get("TEST_MODE", "false").lower() == "true"
 
 REAL_PACKAGES = {
-    "sm_detail": {"name": "Small Vehicle Detail",   "price": 100.00},
-    "md_detail": {"name": "Medium Vehicle Detail",  "price": 150.00},
-    "lg_detail": {"name": "Large / SUV / Truck",    "price": 200.00},
+    "sm_detail": {"name": "Essential Detail",  "price": 140.00},
+    "md_detail": {"name": "Signature Detail",  "price": 175.00},
+    "lg_detail": {"name": "Executive Detail",  "price": 220.00},
 }
 
 REAL_ADDONS = {
-    "pet_hair":   {"name": "Pet Hair Removal",       "price": 20.00},
+    "pet_hair":   {"name": "Pet Hair Removal",       "price": 30.00},
     "shampooing": {"name": "Interior Shampooing",    "price": 15.00},
     "upholstery": {"name": "Upholstery Shampoo",     "price": 15.00},
-    "wax":        {"name": "Hand Wax Upgrade",       "price": 20.00},
+    "wax":        {"name": "Hand Wax Upgrade",       "price": 50.00},
     "steam":      {"name": "Steam Cleaning",         "price": 10.00},
     "polishing":  {"name": "Machine Polishing",      "price": 20.00},
-    "headlights": {"name": "Headlight Restoration",  "price": 15.00},
-    "odor":       {"name": "Odor Removal",           "price": 10.00},
-    "engine_bay": {"name": "Engine Bay Cleaning",    "price": 15.00},
+    "headlights": {"name": "Headlight Restore",      "price": 35.00},
+    "odor":       {"name": "Odor Elimination",       "price": 25.00},
+    "engine_bay": {"name": "Engine Bay Clean",       "price": 40.00},
+    "tire_dressing": {"name": "Tire Dressing",       "price": 20.00},
     "leather":    {"name": "Leather Treatment",      "price": 15.00},
 }
 
 TEST_PACKAGES = {
-    "sm_detail": {"name": "Small Vehicle Detail",   "price": 0.01},
-    "md_detail": {"name": "Medium Vehicle Detail",  "price": 0.10},
-    "lg_detail": {"name": "Large / SUV / Truck",    "price": 1.00},
+    "sm_detail": {"name": "Essential Detail",      "price": 0.01},
+    "md_detail": {"name": "Signature Detail",      "price": 0.10},
+    "lg_detail": {"name": "Executive Detail",      "price": 1.00},
 }
 
 TEST_ADDONS = {key: {"name": value["name"], "price": 0.01}
@@ -130,7 +131,10 @@ def _calculate_price(package_key: str, addon_keys: list) -> dict:
         raise ValueError(f"Unknown addon keys: {invalid}")
 
     total         = round(pkg_price + addon_total, 2)
-    deposit       = round(total * DEPOSIT_RATE, 2)
+    if TEST_MODE:
+        deposit = round(total * DEPOSIT_RATE, 2)
+    else:
+        deposit = float(round(total * DEPOSIT_RATE))
     balance       = round(total - deposit, 2)
     deposit_cents = int(deposit * 100)
 
@@ -151,6 +155,9 @@ def _create_square_payment_link(
     package_key: str,
     addon_keys: list,
     cal_url: str,
+    appointment_date: str = "",
+    appointment_time: str = "",
+    cal_event_id: str = "",
 ) -> str:
     """Create Square Payment Link using SDK v42+ and return checkout URL."""
     environment = (
@@ -182,6 +189,9 @@ def _create_square_payment_link(
         f"order_id={order_id}",
         f"client=gentlemens-touch",
         f"environment={ENVIRONMENT}",
+        f"appointment_date={appointment_date}",
+        f"appointment_time={appointment_time}",
+        f"cal_event_id={cal_event_id}",
     ])
 
     try:
@@ -242,6 +252,9 @@ def lambda_handler(event, context):
     package_key = body.get("package", "")
     addon_keys  = body.get("addons", [])
     cal_url     = body.get("cal_url", "")
+    appointment_date = body.get("appointment_date", "")
+    appointment_time = body.get("appointment_time", "")
+    cal_event_id = body.get("cal_event_id", "")
     # Note: total and deposit from browser are intentionally ignored.
     # Server recalculates both from PACKAGES/ADDONS — never trust browser amounts.
 
@@ -250,6 +263,9 @@ def lambda_handler(event, context):
         "event":   "checkout_request_received",
         "package": package_key,
         "addons":  addon_keys,
+        "appointment_date": appointment_date,
+        "appointment_time": appointment_time,
+        "cal_event_id": cal_event_id,
         "env":     ENVIRONMENT,
     }))
 
@@ -283,7 +299,13 @@ def lambda_handler(event, context):
     # Create Square Payment Link
     try:
         checkout_url = _create_square_payment_link(
-            price_data, package_key, addon_keys, cal_url
+            price_data,
+            package_key,
+            addon_keys,
+            cal_url,
+            appointment_date,
+            appointment_time,
+            cal_event_id,
         )
     except RuntimeError as e:
         print(json.dumps({
