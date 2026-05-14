@@ -97,6 +97,54 @@
 
   .nav-links a:hover { color: var(--gold); }
 
+  .nav-dropdown { position: relative; }
+
+  .nav-dropdown-menu {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background: rgba(10,10,10,0.98);
+    border: 1px solid var(--black-border);
+    border-top: 2px solid var(--gold);
+    min-width: 160px;
+    z-index: 1001;
+    list-style: none;
+    padding: 8px 0;
+  }
+
+  .nav-dropdown:hover .nav-dropdown-menu { display: block; }
+
+  .nav-dropdown-menu li a {
+    display: block;
+    padding: 10px 20px;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--white-muted);
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s;
+    white-space: nowrap;
+  }
+
+  .nav-dropdown-menu li a:hover { color: var(--gold); }
+
+  @media (max-width: 768px) {
+    .nav-dropdown-menu {
+      display: block;
+      position: static;
+      border: none;
+      border-top: none;
+      background: transparent;
+      padding: 0 0 0 16px;
+    }
+    .nav-dropdown-menu li a {
+      padding: 6px 0;
+      font-size: 10px;
+    }
+  }
+
   .nav-cta {
     background: transparent;
     border: 1px solid var(--gold);
@@ -2365,17 +2413,25 @@
 <nav id="mainNav">
   <a href="#home" class="nav-logo"><img src="images/photo-10.png" alt="A Gentlemen's Touch Logo" style="height:90px;"></a>
   <ul class="nav-links">
-    <li><a href="#about">About</a></li>
-    <li><a href="#services">Services</a></li>
-    <li><a href="#packages">Packages</a></li>
-    <li><a href="#portfolio">Portfolio</a></li>
-    <li><a href="#how-it-works">How It Works</a></li>
-    <li><a href="#faq">FAQ</a></li>
+    <li class="nav-dropdown">
+      <a href="#about" class="nav-dropdown-toggle">About ▾</a>
+      <ul class="nav-dropdown-menu">
+        <li><a href="#services">Services</a></li>
+        <li><a href="#packages">Packages</a></li>
+      </ul>
+    </li>
+    <li class="nav-dropdown">
+      <a href="#how-it-works" class="nav-dropdown-toggle">How It Works ▾</a>
+      <ul class="nav-dropdown-menu">
+        <li><a href="#portfolio">Portfolio</a></li>
+        <li><a href="#faq">FAQ</a></li>
+        <li><a href="#testimonials">Client Reviews</a></li>
+      </ul>
+    </li>
     <li><a href="#service-area">Service Area</a></li>
     <li><a href="fleet.html">Fleet</a></li>
-    <li><a href="#booking">Contact</a></li>
+    <li><a href="booking.html">Contact</a></li>
   </ul>
-  <a href="tel:3342948228" style="color:var(--gold);font-size:12px;letter-spacing:2px;text-decoration:none;font-weight:600;display:none" id="navPhone">(334) 294-8228</a>
   <a href="#booking" class="nav-cta">Book Now</a>
   <button class="hamburger" onclick="toggleMenu()" aria-label="Menu">
     <span></span><span></span><span></span>
@@ -4121,8 +4177,6 @@
   window.addEventListener('scroll', () => {
     const scrolled = window.scrollY > 60;
     document.getElementById('mainNav').classList.toggle('scrolled', scrolled);
-    const navPhone = document.getElementById('navPhone');
-    navPhone.style.display = scrolled ? 'inline-block' : 'none';
   });
 
   // ─── FADE IN OBSERVER ───
@@ -4133,6 +4187,7 @@
 
   // ─── MOBILE MENU ───
   function toggleMenu() {
+    if (window.innerWidth > 768) return;
     const links = document.querySelector('.nav-links');
     if (links.style.display === 'flex') {
       links.style.display = 'none';
@@ -4144,7 +4199,9 @@
   // Close mobile menu when any nav link is clicked
   document.querySelectorAll('.nav-links a').forEach(link => {
     link.addEventListener('click', () => {
-      document.querySelector('.nav-links').style.display = 'none';
+      if (window.innerWidth <= 768) {
+        document.querySelector('.nav-links').style.display = 'none';
+      }
     });
   });
 
