@@ -56,6 +56,18 @@
   };
 
   let waiverAgreed = false;
+
+  const customerInfo = {
+    full_name: '',
+    phone: '',
+    email: '',
+    address: '',
+    vehicle_year: '',
+    vehicle_make: '',
+    vehicle_model: '',
+    special_instructions: '',
+  };
+
   const TODAY = new Date();
   const TODAY_START = new Date(TODAY.getFullYear(), TODAY.getMonth(), TODAY.getDate());
   let calendarMonth = new Date(TODAY.getFullYear(), TODAY.getMonth(), 1);
@@ -322,7 +334,14 @@
         selectedPackage &&
         capturedSlot.appointment_date &&
         capturedSlot.appointment_time &&
-        waiverAgreed
+        waiverAgreed &&
+        customerInfo.full_name.trim() &&
+        customerInfo.phone.trim() &&
+        customerInfo.email.trim() &&
+        customerInfo.address.trim() &&
+        customerInfo.vehicle_year.trim() &&
+        customerInfo.vehicle_make.trim() &&
+        customerInfo.vehicle_model.trim()
       );
 
       checkoutBtn.disabled = !ready;
@@ -473,6 +492,14 @@
           appointment_date: capturedSlot.appointment_date,
           appointment_time: capturedSlot.appointment_time,
           cal_event_id: capturedSlot.cal_event_id || '',
+          customer_name: customerInfo.full_name,
+          customer_phone: customerInfo.phone,
+          customer_email: customerInfo.email,
+          customer_address: customerInfo.address,
+          vehicle_year: customerInfo.vehicle_year,
+          vehicle_make: customerInfo.vehicle_make,
+          vehicle_model: customerInfo.vehicle_model,
+          special_instructions: customerInfo.special_instructions,
         }),
       });
 
@@ -486,6 +513,12 @@
       sessionStorage.setItem('agt_addons', [...selectedAddons].join(','));
       sessionStorage.setItem('agt_deposit', deposit.toFixed(2));
       sessionStorage.setItem('agt_balance', balance.toFixed(2));
+      sessionStorage.setItem('agt_customer_name', customerInfo.full_name);
+      sessionStorage.setItem('agt_customer_phone', customerInfo.phone);
+      sessionStorage.setItem('agt_customer_email', customerInfo.email);
+      sessionStorage.setItem('agt_address', customerInfo.address);
+      sessionStorage.setItem('agt_vehicle',
+        `${customerInfo.vehicle_year} ${customerInfo.vehicle_make} ${customerInfo.vehicle_model}`.trim());
 
       window.location.href = data.url;
     } catch (err) {
@@ -533,6 +566,30 @@
     if (modal) modal.classList.remove('open');
     if (agreeBtn) agreeBtn.style.display = 'inline-block';
     document.body.style.overflow = '';
+  }
+
+  function _initCustomerInfoFields() {
+    if (!_isBookingPage()) return;
+
+    const fieldMap = [
+      { id: 'field-full-name',     key: 'full_name' },
+      { id: 'field-phone',         key: 'phone' },
+      { id: 'field-email',         key: 'email' },
+      { id: 'field-address',       key: 'address' },
+      { id: 'field-vehicle-year',  key: 'vehicle_year' },
+      { id: 'field-vehicle-make',  key: 'vehicle_make' },
+      { id: 'field-vehicle-model', key: 'vehicle_model' },
+      { id: 'field-notes',         key: 'special_instructions' },
+    ];
+
+    fieldMap.forEach(function (mapping) {
+      const el = document.getElementById(mapping.id);
+      if (!el) return;
+      el.addEventListener('input', function () {
+        customerInfo[mapping.key] = el.value;
+        _updateBookingReadiness();
+      });
+    });
   }
 
   function _initBookingPage() {
@@ -590,6 +647,7 @@
     _renderDateConfirmation();
     _renderPackageConfirmation();
     _renderReview();
+    _initCustomerInfoFields();
     _updateBookingReadiness();
   }
 
