@@ -146,11 +146,17 @@ def _calculate_price(package_key: str, addon_keys: list) -> dict:
     }
 
 
+def _sanitize_note_value(v: str) -> str:
+    return str(v).replace("|", "").replace("=", "")
+
+
 def _create_square_payment_link(
     price_data: dict,
     package_key: str,
     addon_keys: list,
     cal_url: str,
+    waiver_accepted_at: str = "",
+    customer_fields: dict = None,
 ) -> str:
     """Create Square Payment Link using SDK v42+ and return checkout URL."""
     environment = (
@@ -172,7 +178,7 @@ def _create_square_payment_link(
 
     order_id = str(uuid.uuid4())
 
-    note = "|".join([
+    note_parts = [
         f"package={package_key}",
         f"addons={','.join(addon_keys)}",
         f"total={price_data['total']}",
@@ -182,7 +188,22 @@ def _create_square_payment_link(
         f"order_id={order_id}",
         f"client=gentlemens-touch",
         f"environment={ENVIRONMENT}",
-    ])
+    ]
+    if waiver_accepted_at:
+        note_parts.append(f"waiver={waiver_accepted_at}")
+    if customer_fields:
+        note_parts += [
+            f"appointment_date={customer_fields['appointment_date']}",
+            f"appointment_time={customer_fields['appointment_time']}",
+            f"cal_event_id={customer_fields['cal_event_id']}",
+            f"customer_name={customer_fields['customer_name']}",
+            f"customer_phone={customer_fields['customer_phone']}",
+            f"customer_email={customer_fields['customer_email']}",
+            f"customer_address={customer_fields['customer_address']}",
+            f"vehicle={customer_fields['vehicle_year']} {customer_fields['vehicle_make']} {customer_fields['vehicle_model']}",
+            f"special_instructions={customer_fields['special_instructions']}",
+        ]
+    note = "|".join(note_parts)
 
     try:
         response = client.checkout.payment_links.create(
@@ -242,15 +263,32 @@ def lambda_handler(event, context):
     package_key = body.get("package", "")
     addon_keys  = body.get("addons", [])
     cal_url     = body.get("cal_url", "")
+    waiver_accepted_at = body.get("waiver_accepted_at") or ""
+
+    appointment_date     = _sanitize_note_value(body.get("appointment_date", ""))
+    appointment_time     = _sanitize_note_value(body.get("appointment_time", ""))
+    cal_event_id         = _sanitize_note_value(body.get("cal_event_id", ""))
+    customer_name        = _sanitize_note_value(body.get("customer_name", ""))
+    customer_phone       = _sanitize_note_value(body.get("customer_phone", ""))
+    customer_email       = _sanitize_note_value(body.get("customer_email", ""))
+    customer_address     = _sanitize_note_value(body.get("customer_address", ""))
+    vehicle_year         = _sanitize_note_value(body.get("vehicle_year", ""))
+    vehicle_make         = _sanitize_note_value(body.get("vehicle_make", ""))
+    vehicle_model        = _sanitize_note_value(body.get("vehicle_model", ""))
+    special_instructions = _sanitize_note_value(body.get("special_instructions", ""))
+
     # Note: total and deposit from browser are intentionally ignored.
     # Server recalculates both from PACKAGES/ADDONS — never trust browser amounts.
 
     print(json.dumps({
-        "level":   "INFO",
-        "event":   "checkout_request_received",
-        "package": package_key,
-        "addons":  addon_keys,
-        "env":     ENVIRONMENT,
+        "level":                "INFO",
+        "event":                "checkout_request_received",
+        "package":              package_key,
+        "addons":               addon_keys,
+        "env":                  ENVIRONMENT,
+        "has_customer_name":    bool(customer_name),
+        "has_appointment_date": bool(appointment_date),
+        "has_vehicle":          bool(vehicle_year and vehicle_make),
     }))
 
     # Validate inputs
@@ -282,8 +320,22 @@ def lambda_handler(event, context):
 
     # Create Square Payment Link
     try:
+        customer_fields = {
+            "appointment_date":     appointment_date,
+            "appointment_time":     appointment_time,
+            "cal_event_id":         cal_event_id,
+            "customer_name":        customer_name,
+            "customer_phone":       customer_phone,
+            "customer_email":       customer_email,
+            "customer_address":     customer_address,
+            "vehicle_year":         vehicle_year,
+            "vehicle_make":         vehicle_make,
+            "vehicle_model":        vehicle_model,
+            "special_instructions": special_instructions,
+        }
         checkout_url = _create_square_payment_link(
-            price_data, package_key, addon_keys, cal_url
+            price_data, package_key, addon_keys, cal_url, waiver_accepted_at,
+            customer_fields,
         )
     except RuntimeError as e:
         print(json.dumps({

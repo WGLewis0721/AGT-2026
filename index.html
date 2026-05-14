@@ -4195,6 +4195,7 @@
     pendingCalUrl    = '';
     pendingStripeUrl = '';
     document.body.style.overflow = '';
+    window._waiverAcceptedAt = new Date().toISOString();
     // If coming from pricing engine, initiate checkout
     if (selectedPackage) {
       initiateCheckout();
@@ -4351,6 +4352,7 @@
           addons:  [...selectedAddons],
           cal_url: CAL_URLS[selectedPackage],
           client:  'gentlemens-touch',
+          waiver_accepted_at: window._waiverAcceptedAt || null,
         }),
       });
 
