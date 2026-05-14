@@ -165,6 +165,14 @@ def _create_square_payment_link(
     appointment_date: str = "",
     appointment_time: str = "",
     cal_event_id: str = "",
+    customer_name: str = "",
+    customer_phone: str = "",
+    customer_email: str = "",
+    customer_address: str = "",
+    vehicle_year: str = "",
+    vehicle_make: str = "",
+    vehicle_model: str = "",
+    special_instructions: str = "",
 ) -> str:
     """Create Square Payment Link using SDK v42+ and return checkout URL."""
     environment = (
@@ -189,6 +197,14 @@ def _create_square_payment_link(
     safe_appointment_date = _sanitize_note_value(appointment_date)
     safe_appointment_time = _sanitize_note_value(appointment_time)
     safe_cal_event_id = _sanitize_note_value(cal_event_id)
+    safe_customer_name    = _sanitize_note_value(customer_name)
+    safe_customer_phone   = _sanitize_note_value(customer_phone)
+    safe_customer_email   = _sanitize_note_value(customer_email)
+    safe_customer_address = _sanitize_note_value(customer_address)
+    safe_vehicle = _sanitize_note_value(
+        f"{vehicle_year} {vehicle_make} {vehicle_model}".strip()
+    )
+    safe_special_instructions = _sanitize_note_value(special_instructions)
 
     note = "|".join([
         f"package={package_key}",
@@ -203,6 +219,12 @@ def _create_square_payment_link(
         f"appointment_date={safe_appointment_date}",
         f"appointment_time={safe_appointment_time}",
         f"cal_event_id={safe_cal_event_id}",
+        f"customer_name={safe_customer_name}",
+        f"customer_phone={safe_customer_phone}",
+        f"customer_email={safe_customer_email}",
+        f"customer_address={safe_customer_address}",
+        f"vehicle={safe_vehicle}",
+        f"special_instructions={safe_special_instructions}",
     ])
 
     try:
@@ -266,6 +288,14 @@ def lambda_handler(event, context):
     appointment_date = body.get("appointment_date", "")
     appointment_time = body.get("appointment_time", "")
     cal_event_id = body.get("cal_event_id", "")
+    customer_name    = body.get("customer_name", "")
+    customer_phone   = body.get("customer_phone", "")
+    customer_email   = body.get("customer_email", "")
+    customer_address = body.get("customer_address", "")
+    vehicle_year     = body.get("vehicle_year", "")
+    vehicle_make     = body.get("vehicle_make", "")
+    vehicle_model    = body.get("vehicle_model", "")
+    special_instructions = body.get("special_instructions", "")
     # Note: total and deposit from browser are intentionally ignored.
     # Server recalculates both from PACKAGES/ADDONS — never trust browser amounts.
 
@@ -275,6 +305,11 @@ def lambda_handler(event, context):
         "package": package_key,
         "addons":  addon_keys,
         "env":     ENVIRONMENT,
+        "has_customer_name":    bool(customer_name),
+        "has_customer_phone":   bool(customer_phone),
+        "has_customer_email":   bool(customer_email),
+        "has_customer_address": bool(customer_address),
+        "has_vehicle":          bool(vehicle_year or vehicle_make or vehicle_model),
     }))
 
     # Validate inputs
@@ -314,6 +349,14 @@ def lambda_handler(event, context):
             appointment_date,
             appointment_time,
             cal_event_id,
+            customer_name,
+            customer_phone,
+            customer_email,
+            customer_address,
+            vehicle_year,
+            vehicle_make,
+            vehicle_model,
+            special_instructions,
         )
     except RuntimeError as e:
         print(json.dumps({

@@ -38,6 +38,32 @@ CALCOM_WEBHOOK_SECRET = os.environ.get("CALCOM_WEBHOOK_SECRET", "")
 TEXTBELT_API_KEY = os.environ.get("TEXTBELT_API_KEY")
 DETAILER_PHONE = os.environ.get("DETAILER_PHONE")
 
+# Support comma-separated DETAILER_PHONES; fall back to single DETAILER_PHONE.
+_DETAILER_PHONES_RAW = os.environ.get("DETAILER_PHONES", "") or (DETAILER_PHONE or "")
+DETAILER_PHONES = [p.strip() for p in _DETAILER_PHONES_RAW.split(",") if p.strip()]
+
+# ─── Package / Addon display name mappings ─────────────────
+
+PACKAGE_DISPLAY = {
+    "sm_detail": "Essential Detail",
+    "md_detail": "Signature Detail",
+    "lg_detail": "Executive Detail",
+}
+
+ADDON_DISPLAY = {
+    "pet_hair":      "Pet Hair Removal",
+    "shampooing":    "Interior Shampooing",
+    "upholstery":    "Upholstery Shampoo",
+    "wax":           "Hand Wax Upgrade",
+    "steam":         "Steam Cleaning",
+    "polishing":     "Machine Polishing",
+    "headlights":    "Headlight Restore",
+    "odor":          "Odor Elimination",
+    "engine_bay":    "Engine Bay Clean",
+    "tire_dressing": "Tire Dressing",
+    "leather":       "Leather Treatment",
+}
+
 # ─── Inline DynamoDB (replaces booking_common) ─────────────────
 
 _dynamodb = _boto3.resource("dynamodb")
@@ -175,6 +201,28 @@ def _format_appointment_time(value):
         return dt.strftime("%Y-%m-%d %I:%M %p %Z").strip()
     except Exception:
         return str(value)
+
+
+def _format_iso_date(date_str: str) -> str:
+    """Format ISO date string (YYYY-MM-DD) to readable display."""
+    if not date_str:
+        return ""
+    try:
+        dt = datetime.strptime(date_str, "%Y-%m-%d")
+        return dt.strftime("%a, %b %-d, %Y")
+    except Exception:
+        return date_str
+
+
+def _format_24h_time(time_str: str) -> str:
+    """Format 24-hour time string (HH:MM) to 12-hour display."""
+    if not time_str:
+        return ""
+    try:
+        dt = datetime.strptime(time_str, "%H:%M")
+        return dt.strftime("%-I:%M %p")
+    except Exception:
+        return time_str
 
 
 def _to_float(value):
@@ -346,48 +394,74 @@ def _send_sms(phone_number, message, recipient):
 
 
 def _build_detailer_sms(booking: dict, balance_due, divider: str) -> str:
-    addons_line = f"\nAdd-Ons:  {booking['addons']}" if booking.get("addons") else ""
-    address_line = f"\nAddress:  {booking['address']}" if booking.get("address") else ""
+    addons_display = booking.get("addons") or "None"
+    vehicle_line = f"\nVehicle:  {booking['vehicle']}" if booking.get("vehicle") else ""
+    notes_line = f"\nNotes:    {booking['special_instructions']}" if booking.get("special_instructions") else ""
     balance_line = f"${balance_due:.2f}" if balance_due is not None else "Not mapped"
+
+    # Combine date + time if both are available separately; otherwise just date.
+    appointment_time = booking.get("appointment_time", "")
+    if appointment_time:
+        date_display = f"{booking['appointment_date']} at {appointment_time}"
+    else:
+        date_display = booking["appointment_date"] or "Not specified"
+
     return (
-        f"\U0001F697 NEW DETAIL BOOKING\n"
+        f"New Booking \u2014 A Gentlemen's Touch\n"
         f"{divider}\n"
-        f"Name:     {booking['customer_name']}\n"
+        f"Customer: {booking['customer_name']}\n"
         f"Phone:    {booking['customer_phone'] or 'No phone'}\n"
         f"Email:    {booking['customer_email']}\n"
         f"{divider}\n"
-        f"Service:  {booking['service']}{addons_line}{address_line}\n"
-        f"Date:     {booking['appointment_date']}\n"
+        f"Service:  {booking['service']}\n"
+        f"Add-Ons:  {addons_display}\n"
+        f"Date:     {date_display}\n"
         f"{divider}\n"
-        f"Deposit:  ${booking['deposit_paid']:.2f}\n"
-        f"Balance:  {balance_line}\n"
+        f"Address:  {booking.get('address') or 'Not provided'}"
+        f"{vehicle_line}\n"
         f"{divider}\n"
-        f"Customer Phone: {booking['customer_phone'] or 'No phone'}"
+        f"Deposit Paid: ${booking['deposit_paid']:.2f}\n"
+        f"Balance Due:  {balance_line}"
+        f"{notes_line}"
     )
 
 
 def _build_customer_sms(booking: dict, balance_due, detailer_phone_display: str, divider: str) -> str:
     balance_customer = (
-        f"${balance_due:.2f} due after service"
-        if balance_due is not None
-        else "Contact us for balance details"
+        f"${balance_due:.2f}" if balance_due is not None else "contact us"
     )
-    addons_line = f"\nAdd-Ons:  {booking['addons']}" if booking.get("addons") else ""
-    address_line = f"\nAddress:  {booking['address']}" if booking.get("address") else ""
+
+    # Combine date + time if both are available separately; otherwise just date.
+    appointment_time = booking.get("appointment_time", "")
+    if appointment_time:
+        date_display = f"{booking['appointment_date']} at {appointment_time}"
+    else:
+        date_display = booking["appointment_date"] or "Not specified"
+
     return (
-        f"\U0001F697 Booking Confirmed!\n"
-        f"A Gentlemen's Touch\n"
+        f"Hi {booking['customer_name']}! Your detail is confirmed.\n"
         f"{divider}\n"
-        f"Hi {booking['customer_name']}! Your detail is booked.\n"
+        f"Service:  {booking['service']}\n"
+        f"Date:     {date_display}\n"
+        f"Address:  {booking.get('address') or 'Not provided'}\n"
         f"{divider}\n"
-        f"Service:  {booking['service']}{addons_line}{address_line}\n"
-        f"Date:     {booking['appointment_date']}\n"
+        f"Deposit Paid: ${booking['deposit_paid']:.2f}\n"
+        f"Balance due at service: {balance_customer}\n"
         f"{divider}\n"
-        f"Deposit:  ${booking['deposit_paid']:.2f} received\n"
-        f"Balance:  {balance_customer}\n"
-        f"{divider}\n"
-        f"Questions? Call {detailer_phone_display}"
+        f"Questions? Call {BUSINESS_PHONE}"
     )
+
+
+def _send_sms_to_detailers(message: str) -> bool:
+    """Send SMS to all configured detailer phones. Returns True if at least one succeeded."""
+    if not DETAILER_PHONES:
+        _log("WARN", "no_detailer_phones", detail="DETAILER_PHONES not configured")
+        return False
+    success = False
+    for phone in DETAILER_PHONES:
+        if _send_sms(phone, message, "detailer"):
+            success = True
+    return success
 
 
 # ─── Cal.com Webhook ─────────────────
@@ -526,6 +600,9 @@ def _parse_calcom_booking(payload: dict) -> dict:
         "addons": addons,
         "address": _parse_calcom_address(responses),
         "appointment_date": _parse_calcom_appointment_date(payload),
+        "appointment_time": "",
+        "vehicle": "",
+        "special_instructions": "",
         "deposit_paid": deposit_paid,
         "booking_uid": payload.get("uid") or "unknown",
     }
@@ -562,9 +639,9 @@ def _check_calcom_trigger(data: dict):
 
 
 def _send_calcom_sms(booking: dict, balance_due, detailer_phone_display: str) -> tuple:
-    divider = "\u2500" * 42
+    divider = "\u2500" * 34
     sms_detailer = _build_detailer_sms(booking, balance_due, divider)
-    if not _send_sms(DETAILER_PHONE, sms_detailer, "detailer"):
+    if not _send_sms_to_detailers(sms_detailer):
         return None, _response(500, "Detailer SMS failed")
     customer_sms_status = "skipped"
     if booking["customer_phone"]:
@@ -663,23 +740,49 @@ def _extract_square_booking(payment: dict) -> dict:
     balance = context.get("balance")
     balance_due = _to_float(balance) if balance else None
 
-    buyer = payment.get("buyer_email_address") or "No email"
-    # Square Payment Links don't collect name at checkout — only email and phone.
-    # Customer name comes from Cal.com webhook when the appointment is scheduled.
+    # Map package key to display name.
+    package_key = context.get("package") or ""
+    package_display = PACKAGE_DISPLAY.get(package_key, package_key) or "Not specified"
+
+    # Map addon keys to display names.
+    raw_addons = context.get("addons") or ""
+    if raw_addons:
+        addon_keys = [k.strip() for k in raw_addons.split(",") if k.strip()]
+        addon_names = [ADDON_DISPLAY.get(k, k) for k in addon_keys]
+        addons_display = ", ".join(addon_names) if addon_names else None
+    else:
+        addons_display = None
+
+    # Format appointment date + time for display.
+    raw_date = context.get("appointment_date") or ""
+    raw_time = context.get("appointment_time") or ""
+    appointment_date_display = _format_iso_date(raw_date) if raw_date else "Not specified"
+    appointment_time_display = _format_24h_time(raw_time) if raw_time else ""
+
+    # Prefer customer info from note; fall back to Square payment fields.
+    customer_name  = context.get("customer_name") or "Square Checkout"
+    customer_email = context.get("customer_email") or payment.get("buyer_email_address") or "No email"
+    customer_phone_raw = (
+        context.get("customer_phone")
+        or payment.get("buyer_phone_number")
+        or None
+    )
+
     return {
-        "customer_name":  "Square Checkout",
-        "customer_email": buyer,
-        "customer_phone": _normalize_phone_number(
-            payment.get("buyer_phone_number") or None
-        ),
-        "service":          context.get("package") or "Not specified",
-        "addons":           context.get("addons") or None,
-        "address":          context.get("address") or None,
-        "appointment_date": context.get("appointment_time") or "Not specified",
-        "deposit_paid":     deposit_paid,
-        "balance_due":      balance_due,
-        "order_id":         context.get("order_id") or "unknown",
-        "cal_url":          context.get("cal_url") or "",
+        "customer_name":       customer_name,
+        "customer_email":      customer_email,
+        "customer_phone":      _normalize_phone_number(customer_phone_raw),
+        "service":             package_display,
+        "addons":              addons_display,
+        "address":             context.get("customer_address") or None,
+        "appointment_date":    appointment_date_display,
+        "appointment_time":    appointment_time_display,
+        "vehicle":             context.get("vehicle") or "",
+        "special_instructions": context.get("special_instructions") or "",
+        "deposit_paid":        deposit_paid,
+        "balance_due":         balance_due,
+        "order_id":            context.get("order_id") or "unknown",
+        "cal_url":             context.get("cal_url") or "",
     }
 
 
@@ -751,8 +854,8 @@ def _handle_square_webhook(event: dict, body: str) -> dict:
         square_payment_id=payment_id,
         square_order_id=order_id,
         amount_total_cents=int(deposit_paid * 100),
-        detailer_sms_status="pending_calcom",
-        customer_sms_status="pending_calcom",
+        detailer_sms_status="pending",
+        customer_sms_status="pending",
         customer_name=booking["customer_name"],
         customer_email=booking["customer_email"],
         customer_phone=booking["customer_phone"],
@@ -772,6 +875,39 @@ def _handle_square_webhook(event: dict, body: str) -> dict:
         customer_name=booking["customer_name"],
         service=booking["service"],
         deposit_paid=deposit_paid,
+        source="square",
+    )
+
+    # Send SMS notifications immediately using customer info from payment note.
+    divider = "\u2500" * 34
+    detailer_phone_display = _format_detailer_phone()
+
+    detailer_sms_ok = _send_sms_to_detailers(
+        _build_detailer_sms(booking, balance_due, divider)
+    )
+    detailer_sms_status = "sent" if detailer_sms_ok else "failed"
+
+    customer_sms_status = "skipped"
+    if booking["customer_phone"]:
+        customer_sms_ok = _send_sms(
+            booking["customer_phone"],
+            _build_customer_sms(booking, balance_due, detailer_phone_display, divider),
+            "customer",
+        )
+        customer_sms_status = "sent" if customer_sms_ok else "failed"
+    else:
+        _log("INFO", "customer_sms_skipped", detail="no phone in payment note")
+
+    _log(
+        "INFO",
+        "booking_processed",
+        booking_id=order_id,
+        customer_name=booking["customer_name"],
+        service=booking["service"],
+        deposit_paid=deposit_paid,
+        balance_due=balance_due,
+        detailer_sms=detailer_sms_status,
+        customer_sms=customer_sms_status,
         source="square",
     )
 

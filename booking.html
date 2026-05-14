@@ -548,12 +548,66 @@
       #time-slots { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
 
+    .customer-info-card {
+      border: 1px solid var(--black-border);
+      border-top: 2px solid var(--gold);
+      background: var(--black-card);
+      padding: 22px;
+      margin-bottom: 20px;
+    }
+
+    .form-row {
+      display: grid;
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+
+    .form-row:last-child { margin-bottom: 0; }
+    .form-row-1 { grid-template-columns: 1fr; }
+    .form-row-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .form-row-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+    .form-field { display: flex; flex-direction: column; gap: 6px; }
+
+    .field-label {
+      color: var(--gold);
+      font-size: 9px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+
+    .field-input,
+    .field-textarea {
+      background: var(--black-card);
+      border: 1px solid var(--black-border);
+      color: var(--white);
+      padding: 13px 16px;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 13px;
+      font-weight: 400;
+      border-radius: 0;
+      outline: none;
+      width: 100%;
+      -webkit-appearance: none;
+    }
+
+    .field-input:focus,
+    .field-textarea:focus { border-color: var(--gold); }
+
+    .field-input::placeholder,
+    .field-textarea::placeholder { color: var(--white-muted); font-size: 12px; }
+
+    .field-textarea { resize: vertical; }
+
     @media (max-width: 768px) {
       .page-wrap { padding: 34px 18px 90px; }
       .booking-nav { padding: 16px 18px; }
       .waiver-modal-card { padding: 30px 24px; }
       .review-row { flex-direction: column; gap: 4px; }
       .review-row .value { text-align: left; max-width: 100%; }
+      .form-row-2 { grid-template-columns: 1fr; }
+      .form-row-3 { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -645,6 +699,52 @@
       <p class="eyebrow">Review &amp; Pay</p>
       <h2 class="section-heading">Confirm &amp; pay your deposit</h2>
       <p class="section-sub">Review your booking, accept the service agreement, and pay your deposit to lock in your appointment.</p>
+
+      <p class="eyebrow" style="margin-bottom:14px;">Your Information</p>
+      <div class="customer-info-card">
+        <div class="form-row form-row-2">
+          <div class="form-field">
+            <label class="field-label" for="field-full-name">Full Name *</label>
+            <input id="field-full-name" class="field-input" type="text" placeholder="John Smith" autocomplete="name" />
+          </div>
+          <div class="form-field">
+            <label class="field-label" for="field-phone">Phone Number *</label>
+            <input id="field-phone" class="field-input" type="tel" placeholder="(555) 555-5555" autocomplete="tel" />
+          </div>
+        </div>
+        <div class="form-row form-row-1">
+          <div class="form-field">
+            <label class="field-label" for="field-email">Email Address *</label>
+            <input id="field-email" class="field-input" type="email" placeholder="john@example.com" autocomplete="email" />
+          </div>
+        </div>
+        <div class="form-row form-row-1">
+          <div class="form-field">
+            <label class="field-label" for="field-address">Service Address *</label>
+            <input id="field-address" class="field-input" type="text" placeholder="123 Main St, City, AL 36301" autocomplete="street-address" />
+          </div>
+        </div>
+        <div class="form-row form-row-3">
+          <div class="form-field">
+            <label class="field-label" for="field-vehicle-year">Vehicle Year *</label>
+            <input id="field-vehicle-year" class="field-input" type="text" placeholder="2022" />
+          </div>
+          <div class="form-field">
+            <label class="field-label" for="field-vehicle-make">Vehicle Make *</label>
+            <input id="field-vehicle-make" class="field-input" type="text" placeholder="Toyota" />
+          </div>
+          <div class="form-field">
+            <label class="field-label" for="field-vehicle-model">Vehicle Model *</label>
+            <input id="field-vehicle-model" class="field-input" type="text" placeholder="Camry" />
+          </div>
+        </div>
+        <div class="form-row form-row-1">
+          <div class="form-field">
+            <label class="field-label" for="field-notes">Special Instructions <span style="color:var(--white-muted);text-transform:none;letter-spacing:normal;font-weight:400;font-size:9px;">(optional)</span></label>
+            <textarea id="field-notes" class="field-textarea" rows="3" placeholder="Any special requests or notes..."></textarea>
+          </div>
+        </div>
+      </div>
 
       <div class="review-card">
         <div class="review-row"><span class="label">Appointment</span><span class="value" id="review-appointment">—</span></div>
