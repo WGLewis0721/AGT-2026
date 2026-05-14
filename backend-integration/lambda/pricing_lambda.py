@@ -150,6 +150,13 @@ def _calculate_price(package_key: str, addon_keys: list) -> dict:
     }
 
 
+def _sanitize_note_value(value: str) -> str:
+    """Sanitize metadata values before adding to pipe-delimited payment_note."""
+    safe = str(value or "")
+    safe = safe.replace("|", "/").replace("=", "-")
+    return "".join(ch for ch in safe if ch.isprintable()).strip()
+
+
 def _create_square_payment_link(
     price_data: dict,
     package_key: str,
@@ -178,6 +185,10 @@ def _create_square_payment_link(
     )
 
     order_id = str(uuid.uuid4())
+    safe_cal_url = _sanitize_note_value(cal_url)
+    safe_appointment_date = _sanitize_note_value(appointment_date)
+    safe_appointment_time = _sanitize_note_value(appointment_time)
+    safe_cal_event_id = _sanitize_note_value(cal_event_id)
 
     note = "|".join([
         f"package={package_key}",
@@ -185,13 +196,13 @@ def _create_square_payment_link(
         f"total={price_data['total']}",
         f"deposit={price_data['deposit']}",
         f"balance={price_data['balance']}",
-        f"cal_url={cal_url}",
+        f"cal_url={safe_cal_url}",
         f"order_id={order_id}",
         f"client=gentlemens-touch",
         f"environment={ENVIRONMENT}",
-        f"appointment_date={appointment_date}",
-        f"appointment_time={appointment_time}",
-        f"cal_event_id={cal_event_id}",
+        f"appointment_date={safe_appointment_date}",
+        f"appointment_time={safe_appointment_time}",
+        f"cal_event_id={safe_cal_event_id}",
     ])
 
     try:
