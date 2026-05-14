@@ -263,9 +263,6 @@ def lambda_handler(event, context):
         "event":   "checkout_request_received",
         "package": package_key,
         "addons":  addon_keys,
-        "appointment_date": appointment_date,
-        "appointment_time": appointment_time,
-        "cal_event_id": cal_event_id,
         "env":     ENVIRONMENT,
     }))
 

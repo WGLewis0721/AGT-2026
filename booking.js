@@ -486,9 +486,6 @@
       sessionStorage.setItem('agt_addons', [...selectedAddons].join(','));
       sessionStorage.setItem('agt_deposit', deposit.toFixed(2));
       sessionStorage.setItem('agt_balance', balance.toFixed(2));
-      sessionStorage.setItem('agt_appointment_date', capturedSlot.appointment_date);
-      sessionStorage.setItem('agt_appointment_time', capturedSlot.appointment_time);
-      sessionStorage.setItem('agt_cal_event_id', capturedSlot.cal_event_id || '');
 
       window.location.href = data.url;
     } catch (err) {
