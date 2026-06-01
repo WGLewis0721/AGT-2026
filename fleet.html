@@ -254,13 +254,9 @@
     position: absolute;
     inset: 0;
     background:
-      linear-gradient(135deg, rgba(5, 7, 10, 0.72) 0%, rgba(10, 10, 10, 0.62) 50%, rgba(10, 10, 10, 0.84) 100%),
-      radial-gradient(ellipse 80% 60% at 70% 50%, rgba(201,168,76,0.12) 0%, transparent 60%),
-      radial-gradient(ellipse 40% 40% at 20% 80%, rgba(201,168,76,0.08) 0%, transparent 50%),
-      url('assets/fleetwash.webp');
-    background-size: cover;
-    background-position: center center;
-    background-repeat: no-repeat;
+      radial-gradient(ellipse 80% 60% at 70% 50%, rgba(201,168,76,0.07) 0%, transparent 60%),
+      radial-gradient(ellipse 40% 40% at 20% 80%, rgba(201,168,76,0.04) 0%, transparent 50%),
+      linear-gradient(135deg, #0a0a0a 0%, #111111 50%, #0d0d0d 100%);
   }
 
   .hero-bg::after {
@@ -277,7 +273,6 @@
     z-index: 2;
     padding: 0 60px;
     max-width: 800px;
-    overflow: visible;
     animation: heroFadeIn 1.2s ease forwards;
   }
 
@@ -413,19 +408,6 @@
     border-color: rgba(201,168,76,0.25);
     background: #1a1a1a;
   }
-
-  .fleet-card-img {
-    width: 100%;
-    height: 200px;
-    object-fit: cover;
-    object-position: center center;
-    margin-bottom: 28px;
-    display: block;
-  }
-
-  .fleetwash-left { object-position: 17% center; }
-  .fleetwash-center { object-position: 50% center; }
-  .fleetwash-right { object-position: 84% center; }
 
   .fleet-card-img-placeholder {
     width: 100%;
@@ -989,14 +971,7 @@
     .hamburger { min-width: 44px; min-height: 44px; align-items: center; justify-content: center; }
     .social-link { width: 44px; height: 44px; }
     .header-logo { width: clamp(120px, 38vw, 180px); }
-    .hero {
-      min-height: auto;
-      padding-top: 120px;
-    }
-    .hero-bg { background-position: 60% center; }
     .badge-grid { grid-template-columns: 1fr; }
-    .fleetwash-left { object-position: 22% center; }
-    .fleetwash-right { object-position: 78% center; }
   }
 
   /* ─── UTILITY ─── */
@@ -1052,8 +1027,8 @@
     </h1>
     <p class="hero-sub">Custom on-site fleet washing for delivery vehicles, service trucks, and commercial fleets. Flexible scheduling. Professional results. Montgomery, AL and surrounding areas.</p>
     <div class="hero-actions">
-      <a href="booking.html" class="btn-gold">Request Service</a>
-      <a href="tel:3342948228" class="btn-outline">Get A Quote</a>
+      <a href="tel:3342948228" class="btn-gold">Call for a Quote</a>
+      <a href="#fleet-types" class="btn-outline">Our Fleet Services</a>
     </div>
   </div>
 </section>
@@ -1090,15 +1065,8 @@
 
     <!-- Box Trucks / Delivery Vans -->
     <div class="fleet-card fade-in">
-      <img
-        src="assets/fleetwash.webp"
-        alt="Box truck and delivery van fleet washing"
-        class="fleet-card-img fleetwash-left"
-        loading="lazy"
-        onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"
-      >
-      <div class="fleet-card-img-placeholder" style="display:none">
-        🚚
+      <div class="fleet-card-img-placeholder">
+        <span aria-hidden="true">🚚</span>
         <span>Box Truck / Delivery Van</span>
       </div>
       <div class="fleet-card-num">01</div>
@@ -1114,15 +1082,8 @@
 
     <!-- Semi-Trucks -->
     <div class="fleet-card fade-in">
-      <img
-        src="assets/fleetwash.webp"
-        alt="Semi-truck and 18-wheeler fleet washing"
-        class="fleet-card-img fleetwash-center"
-        loading="lazy"
-        onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"
-      >
-      <div class="fleet-card-img-placeholder" style="display:none">
-        🚛
+      <div class="fleet-card-img-placeholder">
+        <span aria-hidden="true">🚛</span>
         <span>Semi-Truck / 18-Wheeler</span>
       </div>
       <div class="fleet-card-num">02</div>
@@ -1138,15 +1099,8 @@
 
     <!-- Municipal / Sanitation -->
     <div class="fleet-card fade-in">
-      <img
-        src="assets/fleetwash.webp"
-        alt="Municipal and sanitation fleet washing"
-        class="fleet-card-img fleetwash-right"
-        loading="lazy"
-        onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"
-      >
-      <div class="fleet-card-img-placeholder" style="display:none">
-        🚛
+      <div class="fleet-card-img-placeholder">
+        <span aria-hidden="true">🏗</span>
         <span>Municipal / Sanitation Fleet</span>
       </div>
       <div class="fleet-card-num">03</div>
