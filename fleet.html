@@ -73,6 +73,24 @@
     text-decoration: none;
   }
 
+  .header-logo {
+    width: clamp(120px, 38vw, 180px);
+    max-width: 45vw;
+    height: auto;
+    overflow: visible;
+    display: inline-flex;
+    align-items: center;
+    flex-shrink: 0;
+  }
+
+  .header-logo img {
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    object-fit: contain;
+    display: block;
+  }
+
   .nav-links {
     display: flex;
     gap: 40px;
@@ -226,7 +244,7 @@
     display: flex;
     align-items: center;
     position: relative;
-    overflow: hidden;
+    overflow: visible;
     background: var(--black);
     padding-top: 100px;
   }
@@ -951,12 +969,11 @@
     .btn-gold, .btn-outline, nav a { min-height: 44px; }
     .hamburger { min-width: 44px; min-height: 44px; align-items: center; justify-content: center; }
     .social-link { width: 44px; height: 44px; }
-    .nav-logo img { height: 52px; }
+    .header-logo { width: clamp(120px, 38vw, 180px); }
     .badge-grid { grid-template-columns: 1fr; }
   }
 
   /* ─── UTILITY ─── */
-  .nav-logo-img { height: 90px; }
   .nav-phone-scroll {
     color: var(--gold);
     font-size: 12px;
@@ -982,7 +999,7 @@
 
 <!-- ─── NAV ─── -->
 <nav id="mainNav">
-  <a href="/" class="nav-logo"><img src="images/photo-10.png" alt="A Gentlemen's Touch Logo" class="nav-logo-img"></a>
+  <a href="/" class="nav-logo header-logo"><img src="images/photo-10.png" alt="A Gentlemen's Touch Logo"></a>
   <ul class="nav-links">
     <li><a href="/#about">About</a></li>
     <li><a href="/#services">Services</a></li>
