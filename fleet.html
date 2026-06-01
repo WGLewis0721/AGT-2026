@@ -73,24 +73,6 @@
     text-decoration: none;
   }
 
-  .header-logo {
-    width: clamp(120px, 38vw, 180px);
-    max-width: 45vw;
-    height: auto;
-    overflow: visible;
-    display: inline-flex;
-    align-items: center;
-    flex-shrink: 0;
-  }
-
-  .header-logo img {
-    width: 100%;
-    max-width: 100%;
-    height: auto;
-    object-fit: contain;
-    display: block;
-  }
-
   .nav-links {
     display: flex;
     gap: 40px;
@@ -244,23 +226,18 @@
     display: flex;
     align-items: center;
     position: relative;
-    overflow: visible;
+    overflow: hidden;
     background: var(--black);
     padding-top: 100px;
-    padding-bottom: 72px;
   }
 
   .hero-bg {
     position: absolute;
     inset: 0;
     background:
-      linear-gradient(135deg, rgba(5, 7, 10, 0.72) 0%, rgba(10, 10, 10, 0.62) 50%, rgba(10, 10, 10, 0.84) 100%),
-      radial-gradient(ellipse 80% 60% at 70% 50%, rgba(201,168,76,0.12) 0%, transparent 60%),
-      radial-gradient(ellipse 40% 40% at 20% 80%, rgba(201,168,76,0.08) 0%, transparent 50%),
-      url('assets/fleetwash.webp');
-    background-size: cover;
-    background-position: center center;
-    background-repeat: no-repeat;
+      radial-gradient(ellipse 80% 60% at 70% 50%, rgba(201,168,76,0.07) 0%, transparent 60%),
+      radial-gradient(ellipse 40% 40% at 20% 80%, rgba(201,168,76,0.04) 0%, transparent 50%),
+      linear-gradient(135deg, #0a0a0a 0%, #111111 50%, #0d0d0d 100%);
   }
 
   .hero-bg::after {
@@ -277,7 +254,6 @@
     z-index: 2;
     padding: 0 60px;
     max-width: 800px;
-    overflow: visible;
     animation: heroFadeIn 1.2s ease forwards;
   }
 
@@ -418,14 +394,9 @@
     width: 100%;
     height: 200px;
     object-fit: cover;
-    object-position: center center;
     margin-bottom: 28px;
     display: block;
   }
-
-  .fleetwash-left { object-position: 17% center; }
-  .fleetwash-center { object-position: 50% center; }
-  .fleetwash-right { object-position: 84% center; }
 
   .fleet-card-img-placeholder {
     width: 100%;
@@ -988,18 +959,12 @@
     .btn-gold, .btn-outline, nav a { min-height: 44px; }
     .hamburger { min-width: 44px; min-height: 44px; align-items: center; justify-content: center; }
     .social-link { width: 44px; height: 44px; }
-    .header-logo { width: clamp(120px, 38vw, 180px); }
-    .hero {
-      min-height: auto;
-      padding-top: 120px;
-    }
-    .hero-bg { background-position: 60% center; }
+    .nav-logo img { height: 52px; }
     .badge-grid { grid-template-columns: 1fr; }
-    .fleetwash-left { object-position: 22% center; }
-    .fleetwash-right { object-position: 78% center; }
   }
 
   /* ─── UTILITY ─── */
+  .nav-logo-img { height: 90px; }
   .nav-phone-scroll {
     color: var(--gold);
     font-size: 12px;
@@ -1025,7 +990,7 @@
 
 <!-- ─── NAV ─── -->
 <nav id="mainNav">
-  <a href="/" class="nav-logo header-logo"><img src="images/photo-10.png" alt="A Gentlemen's Touch Logo"></a>
+  <a href="/" class="nav-logo"><img src="images/photo-10.png" alt="A Gentlemen's Touch Logo" class="nav-logo-img"></a>
   <ul class="nav-links">
     <li><a href="/#about">About</a></li>
     <li><a href="/#services">Services</a></li>
@@ -1052,8 +1017,8 @@
     </h1>
     <p class="hero-sub">Custom on-site fleet washing for delivery vehicles, service trucks, and commercial fleets. Flexible scheduling. Professional results. Montgomery, AL and surrounding areas.</p>
     <div class="hero-actions">
-      <a href="booking.html" class="btn-gold">Request Service</a>
-      <a href="tel:3342948228" class="btn-outline">Get A Quote</a>
+      <a href="tel:3342948228" class="btn-gold">Call for a Quote</a>
+      <a href="#fleet-types" class="btn-outline">Our Fleet Services</a>
     </div>
   </div>
 </section>
@@ -1091,10 +1056,9 @@
     <!-- Box Trucks / Delivery Vans -->
     <div class="fleet-card fade-in">
       <img
-        src="assets/fleetwash.webp"
+        src="assets/box-truck.jpg"
         alt="Box truck and delivery van fleet washing"
-        class="fleet-card-img fleetwash-left"
-        loading="lazy"
+        class="fleet-card-img"
         onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"
       >
       <div class="fleet-card-img-placeholder" style="display:none">
@@ -1115,10 +1079,9 @@
     <!-- Semi-Trucks -->
     <div class="fleet-card fade-in">
       <img
-        src="assets/fleetwash.webp"
+        src="assets/semi-truck.jpg"
         alt="Semi-truck and 18-wheeler fleet washing"
-        class="fleet-card-img fleetwash-center"
-        loading="lazy"
+        class="fleet-card-img"
         onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"
       >
       <div class="fleet-card-img-placeholder" style="display:none">
@@ -1139,10 +1102,9 @@
     <!-- Municipal / Sanitation -->
     <div class="fleet-card fade-in">
       <img
-        src="assets/fleetwash.webp"
+        src="assets/garbage-truck.jpg"
         alt="Municipal and sanitation fleet washing"
-        class="fleet-card-img fleetwash-right"
-        loading="lazy"
+        class="fleet-card-img"
         onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"
       >
       <div class="fleet-card-img-placeholder" style="display:none">
